@@ -2,13 +2,19 @@
 # -*- coding: utf-8 -*-
 """
 对话日志记录器
-自动记录所有对话，并提取De.观点
+自动记录所有用户和AI之间的对话（无论关于什么内容）
+同时提取De.观点（如果有）
 """
 
 import uuid
 from datetime import datetime, timedelta
 from db_config import get_db_manager
 from auto_record_de_viewpoints import process_conversation_for_de
+try:
+    from elasticsearch_logger import get_es_logger
+    ES_LOGGER_AVAILABLE = True
+except ImportError:
+    ES_LOGGER_AVAILABLE = False
 
 class ConversationLogger:
     """对话日志记录器"""
@@ -17,13 +23,22 @@ class ConversationLogger:
         self.session_id = session_id or str(uuid.uuid4())
         self.db = get_db_manager()
     
-    def log_conversation(self, user_message: str, assistant_message: str = None):
-        """记录对话"""
-        # 提取De.内容
+    def log_conversation(self, user_message: str, assistant_message: str = None, 
+                        conversation_type: str = 'general', metadata: dict = None):
+        """
+        记录所有对话（无论关于什么内容）
+        
+        Args:
+            user_message: 用户消息
+            assistant_message: AI助手回复
+            conversation_type: 对话类型（general/trading/system/strategy等）
+            metadata: 额外元数据
+        """
+        # 提取De.内容（如果有）
         de_contents = process_conversation_for_de(user_message, assistant_message)
         de_content_combined = '\n'.join(de_contents) if de_contents else None
         
-        # 记录对话日志
+        # 记录对话日志（所有对话都记录，不仅仅是De.相关的）
         log_id = self.db.add_conversation_log(
             user_message=user_message,
             assistant_message=assistant_message or '',
@@ -31,7 +46,36 @@ class ConversationLogger:
             de_content=de_content_combined
         )
         
-        # 如果有De.内容，自动记录为观点
+        # 同时保存到Elasticsearch（原始对话记录 - 所有对话都保存）
+        if ES_LOGGER_AVAILABLE:
+            try:
+                es_logger = get_es_logger()
+                if es_logger.available:
+                    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    
+                    # 构建原始数据
+                    raw_data = {
+                        'log_id': log_id,
+                        'conversation_type': conversation_type,
+                        'de_content': de_content_combined
+                    }
+                    if metadata:
+                        raw_data.update(metadata)
+                    
+                    es_logger.log_conversation(
+                        user_message=user_message,
+                        assistant_message=assistant_message or '',
+                        timestamp=timestamp,
+                        session_id=self.session_id,
+                        source='conversation',
+                        has_trading_info=bool(de_content_combined),
+                        raw_data=raw_data
+                    )
+            except Exception as e:
+                # Elasticsearch记录失败不影响主流程
+                pass
+        
+        # 如果有De.内容，自动记录为观点（可选）
         if de_contents:
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             for content in de_contents:
@@ -67,8 +111,22 @@ def get_logger(session_id=None):
         _logger = ConversationLogger(session_id)
     return _logger
 
-def log_conversation(user_message: str, assistant_message: str = None, session_id: str = None):
-    """便捷函数：记录对话"""
+def log_conversation(user_message: str, assistant_message: str = None, 
+                    session_id: str = None, conversation_type: str = 'general', 
+                    metadata: dict = None):
+    """
+    便捷函数：记录所有对话（无论关于什么内容）
+    
+    Args:
+        user_message: 用户消息
+        assistant_message: AI助手回复
+        session_id: 会话ID（可选）
+        conversation_type: 对话类型（general/trading/system/strategy等）
+        metadata: 额外元数据（可选）
+    
+    Returns:
+        (log_id, de_contents)
+    """
     logger = get_logger(session_id)
-    return logger.log_conversation(user_message, assistant_message)
+    return logger.log_conversation(user_message, assistant_message, conversation_type, metadata)
 

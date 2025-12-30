@@ -10,7 +10,44 @@
 
 import requests
 import sys
+import json
+from pathlib import Path
 from datetime import datetime
+
+# 读取系统参数（学习改进后的参数）
+def load_system_parameters():
+    """加载系统参数"""
+    params_file = Path(__file__).parent.parent / "trading_signals" / ".ml_models" / "system_parameters.json"
+    if params_file.exists():
+        try:
+            return json.loads(params_file.read_text(encoding='utf-8'))
+        except:
+            pass
+    # 默认参数
+    return {
+        'min_stop_distances': {
+            'low_volatility': 0.4,  # 学习改进后：从0.3%提高到0.4%
+            'medium_volatility': 0.5,
+            'high_volatility': 0.8
+        }
+    }
+
+# 获取最小止损距离（根据波动率）
+def get_min_stop_distance(volatility_level='low'):
+    """根据波动率水平获取最小止损距离"""
+    params = load_system_parameters()
+    min_distances = params.get('min_stop_distances', {})
+    
+    # 映射波动率水平
+    vol_map = {
+        'low': 'low_volatility',
+        'medium': 'medium_volatility',
+        'high': 'high_volatility',
+        'very_high': 'high_volatility'
+    }
+    
+    vol_key = vol_map.get(volatility_level, 'low_volatility')
+    return min_distances.get(vol_key, 0.4)  # 默认0.4%（学习改进后的值）
 
 def get_order_book_binance(symbol='BTCUSDT', limit=50):
     """从Binance获取订单簿数据"""
@@ -415,8 +452,9 @@ def calculate_stop_loss_by_orderbook(entry_price, signal_type, order_book, curre
                     distance = entry_price - stop_loss_price
                     distance_pct = (distance / entry_price) * 100
                     
-                    # 确保止损距离合理（0.3%-3%）
-                    if 0.3 <= distance_pct <= 3.0:
+                    # 确保止损距离合理（min_stop_pct%-3%）
+                    min_stop_pct = get_min_stop_distance('low')  # 默认使用低波动率的最小止损距离
+                    if min_stop_pct <= distance_pct <= 3.0:
                         return stop_loss_price, {
                             'support_zone': nearest_support_price,
                             'support_volume': support_volume,
@@ -532,8 +570,9 @@ def calculate_stop_loss_by_orderbook(entry_price, signal_type, order_book, curre
             distance = entry_price - stop_loss_price
             distance_pct = (distance / entry_price) * 100
             
-            # 如果距离合理，使用稀疏区价格（至少0.3%，最多5%）
-            if 0.3 <= distance_pct <= 5.0:  # 最小0.3%，避免太近被扫止损
+            # 如果距离合理，使用稀疏区价格（至少min_stop_pct%，最多5%）
+            min_stop_pct = get_min_stop_distance('low')  # 默认使用低波动率的最小止损距离
+            if min_stop_pct <= distance_pct <= 5.0:  # 最小min_stop_pct%，避免太近被扫止损
                 return stop_loss_price, {
                     'sparse_zone': sparse_price,
                     'sparse_volume': sparse_vol,
@@ -559,7 +598,8 @@ def calculate_stop_loss_by_orderbook(entry_price, signal_type, order_book, curre
                         distance = entry_price - stop_loss_price
                         distance_pct = (distance / entry_price) * 100
                         
-                        if 0.3 <= distance_pct <= 5.0:  # 最小0.3%
+                        min_stop_pct = get_min_stop_distance('low')  # 默认使用低波动率的最小止损距离
+                        if min_stop_pct <= distance_pct <= 5.0:  # 最小min_stop_pct%
                             return stop_loss_price, {
                                 'support_zone': support_price,
                                 'support_volume': support_amount,
@@ -576,20 +616,22 @@ def calculate_stop_loss_by_orderbook(entry_price, signal_type, order_book, curre
         # 检查基础方案的止损距离是否合理
         if final_stop_loss and final_info:
             distance_pct = final_info.get('distance_pct', 0)
-            # 如果止损距离太近（小于0.3%），调整到至少0.3%
-            if distance_pct < 0.3:
-                min_stop_distance = entry_price * 0.003  # 至少0.3%
+            # 从系统参数读取最小止损距离（学习改进后的参数）
+            # 默认使用低波动率的最小止损距离（0.4%）
+            min_stop_pct = get_min_stop_distance('low')
+            if distance_pct < min_stop_pct:
+                min_stop_distance = entry_price * (min_stop_pct / 100)  # 至少min_stop_pct%
                 adjusted_stop_loss = entry_price - min_stop_distance
                 adjusted_distance = entry_price - adjusted_stop_loss
                 adjusted_distance_pct = (adjusted_distance / entry_price) * 100
                 
-                print(f"DEBUG: 止损距离太近({distance_pct:.2f}%)，调整到至少0.3%: ${adjusted_stop_loss:,.2f}", file=sys.stderr)
+                print(f"DEBUG: 止损距离太近({distance_pct:.2f}%)，调整到至少{min_stop_pct:.2f}%: ${adjusted_stop_loss:,.2f}", file=sys.stderr)
                 
                 final_info['distance'] = adjusted_distance
                 final_info['distance_pct'] = adjusted_distance_pct
                 final_info['is_from_orderbook'] = False  # 调整后的止损不是订单簿实际价格
-                final_info['source_info'] = f'止损距离太近，已调整到至少0.3%（原订单簿止损：${final_stop_loss:,.2f}，距离{distance_pct:.2f}%）'
-                final_info['reason'] = f'基于实时订单簿：原止损距离{distance_pct:.2f}%太近，已调整到至少0.3%：${adjusted_stop_loss:,.2f}'
+                final_info['source_info'] = f'止损距离太近，已调整到至少{min_stop_pct:.2f}%（原订单簿止损：${final_stop_loss:,.2f}，距离{distance_pct:.2f}%）'
+                final_info['reason'] = f'基于实时订单簿：原止损距离{distance_pct:.2f}%太近，已调整到至少{min_stop_pct:.2f}%：${adjusted_stop_loss:,.2f}'
                 
                 return adjusted_stop_loss, final_info
             
@@ -635,8 +677,9 @@ def calculate_stop_loss_by_orderbook(entry_price, signal_type, order_book, curre
                 distance = stop_loss_price - entry_price
                 distance_pct = (distance / entry_price) * 100
                 
-                # 确保止损距离合理（0.3%-3%）
-                if 0.3 <= distance_pct <= 3.0:
+                # 确保止损距离合理（min_stop_pct%-3%）
+                min_stop_pct = get_min_stop_distance('low')  # 默认使用低波动率的最小止损距离
+                if min_stop_pct <= distance_pct <= 3.0:
                     return stop_loss_price, {
                         'resistance_zone': nearest_resistance_price,
                         'resistance_volume': resistance_volume,
@@ -697,13 +740,14 @@ def calculate_stop_loss_by_orderbook(entry_price, signal_type, order_book, curre
                     price_offset = entry_price - current_price
                     # 在阻力位上方，加上相同的偏移量
                     estimated_stop_loss = resistance_price + price_offset
-                    # 确保止损在入场价上方，且至少0.3%
+                    # 确保止损在入场价上方，且至少min_stop_pct%
+                    min_stop_pct = get_min_stop_distance('low')  # 默认使用低波动率的最小止损距离
                     distance = estimated_stop_loss - entry_price
                     distance_pct = (distance / entry_price) * 100
                     
-                    # 如果距离太近，调整到至少0.3%
-                    if distance_pct < 0.3:
-                        estimated_stop_loss = entry_price * 1.003  # 至少0.3%
+                    # 如果距离太近，调整到至少min_stop_pct%
+                    if distance_pct < min_stop_pct:
+                        estimated_stop_loss = entry_price * (1 + min_stop_pct / 100)  # 至少min_stop_pct%
                         distance = estimated_stop_loss - entry_price
                         distance_pct = (distance / entry_price) * 100
                     
@@ -746,15 +790,17 @@ def calculate_stop_loss_by_orderbook(entry_price, signal_type, order_book, curre
                     is_from_orderbook = True
                     source_info = f'阻力位${resistance_price:,.0f}上方实际价格档位${nearest_above_zone:,.0f}'
                 else:
-                    # 如果阻力位上方没有价格档位，使用阻力位上方0.3%（非订单簿）
-                    stop_loss_price = resistance_price * 1.003  # 阻力位上方0.3%
+                    # 如果阻力位上方没有价格档位，使用阻力位上方min_stop_pct%（非订单簿）
+                    min_stop_pct = get_min_stop_distance('low')  # 默认使用低波动率的最小止损距离
+                    stop_loss_price = resistance_price * (1 + min_stop_pct / 100)  # 阻力位上方min_stop_pct%
                     is_from_orderbook = False
-                    source_info = f'备用方案：阻力位${resistance_price:,.0f}上方0.3%（非订单簿实际价格）'
+                    source_info = f'备用方案：阻力位${resistance_price:,.0f}上方{min_stop_pct:.2f}%（非订单簿实际价格）'
                 
                 distance = stop_loss_price - entry_price
                 distance_pct = (distance / entry_price) * 100
                 
-                if 0.3 <= distance_pct <= 3.0:
+                min_stop_pct = get_min_stop_distance('low')  # 默认使用低波动率的最小止损距离
+                if min_stop_pct <= distance_pct <= 3.0:
                     return stop_loss_price, {
                         'resistance_zone': resistance_price,
                         'resistance_volume': resistance_amount,

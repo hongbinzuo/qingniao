@@ -1131,21 +1131,37 @@ def generate_trading_plan():
                 for pattern in pattern_result_5m['reversal_patterns'] + pattern_result_5m['continuation_patterns']:
                     if pattern.get('entry') and pattern.get('stop_loss') and pattern.get('take_profit'):
                         signal_type = 'short' if 'bearish' in pattern['type'] else 'long'
+                        
+                        # 优化入场价：如果入场价距离当前价格太远，调整到合理位置
+                        entry = pattern.get('entry')
+                        entry_reason = pattern.get('entry_reason', '')
+                        if entry and current_price:
+                            price_distance = abs(entry - current_price) / current_price
+                            if signal_type == 'long' and entry > current_price * 1.02:
+                                # 做多入场价高于当前价格超过2%，调整到当前价格上方0.5-1%等待突破
+                                entry = current_price * 1.008  # 当前价格上方0.8%，等待突破
+                                if not entry_reason:
+                                    entry_reason = f"入场价已调整到{entry:.0f}（当前价格上方0.8%，等待突破）"
+                            elif signal_type == 'short' and entry < current_price * 0.98:
+                                # 做空入场价低于当前价格超过2%，调整到当前价格下方0.5-1%等待回调
+                                entry = current_price * 0.992  # 当前价格下方0.8%，等待回调
+                                if not entry_reason:
+                                    entry_reason = f"入场价已调整到{entry:.0f}（当前价格下方0.8%，等待回调）"
+                        
                         # 计算第二个止盈位
-                        risk = abs(pattern['entry'] - pattern['stop_loss'])
+                        risk = abs(entry - pattern['stop_loss'])
                         if risk > 0:
                             if signal_type == 'long':
                                 take_profit_1 = pattern['take_profit']
-                                take_profit_2 = pattern['entry'] + risk * 2.5
+                                take_profit_2 = entry + risk * 2.5
                             else:
                                 take_profit_1 = pattern['take_profit']
-                                take_profit_2 = pattern['entry'] - risk * 2.5
+                                take_profit_2 = entry - risk * 2.5
                         else:
                             take_profit_1 = pattern['take_profit']
                             take_profit_2 = pattern['take_profit']
                         
                         # 构建入场理由，包含入场价设置说明
-                        entry_reason = pattern.get('entry_reason', '')
                         if entry_reason:
                             reason_text = f"识别到{pattern['name']}形态（置信度: {pattern['confidence']:.1f}%），{pattern['type']}信号。{entry_reason}"
                         else:
@@ -1154,7 +1170,7 @@ def generate_trading_plan():
                         signal_dict = {
                             'type': signal_type,
                             'strength': 'strong' if pattern['confidence'] > 75 else 'medium',
-                            'entry': pattern['entry'],
+                            'entry': entry,
                             'stop_loss': pattern['stop_loss'],
                             'take_profit_1': take_profit_1,
                             'take_profit_2': take_profit_2,
@@ -1175,20 +1191,36 @@ def generate_trading_plan():
                 for pattern in pattern_result_15m['reversal_patterns'] + pattern_result_15m['continuation_patterns']:
                     if pattern.get('entry') and pattern.get('stop_loss') and pattern.get('take_profit'):
                         signal_type = 'short' if 'bearish' in pattern['type'] else 'long'
-                        risk = abs(pattern['entry'] - pattern['stop_loss'])
+                        
+                        # 优化入场价：如果入场价距离当前价格太远，调整到合理位置
+                        entry = pattern.get('entry')
+                        entry_reason = pattern.get('entry_reason', '')
+                        if entry and current_price:
+                            price_distance = abs(entry - current_price) / current_price
+                            if signal_type == 'long' and entry > current_price * 1.02:
+                                # 做多入场价高于当前价格超过2%，调整到当前价格上方0.5-1%等待突破
+                                entry = current_price * 1.008  # 当前价格上方0.8%，等待突破
+                                if not entry_reason:
+                                    entry_reason = f"入场价已调整到{entry:.0f}（当前价格上方0.8%，等待突破）"
+                            elif signal_type == 'short' and entry < current_price * 0.98:
+                                # 做空入场价低于当前价格超过2%，调整到当前价格下方0.5-1%等待回调
+                                entry = current_price * 0.992  # 当前价格下方0.8%，等待回调
+                                if not entry_reason:
+                                    entry_reason = f"入场价已调整到{entry:.0f}（当前价格下方0.8%，等待回调）"
+                        
+                        risk = abs(entry - pattern['stop_loss'])
                         if risk > 0:
                             if signal_type == 'long':
                                 take_profit_1 = pattern['take_profit']
-                                take_profit_2 = pattern['entry'] + risk * 2.5
+                                take_profit_2 = entry + risk * 2.5
                             else:
                                 take_profit_1 = pattern['take_profit']
-                                take_profit_2 = pattern['entry'] - risk * 2.5
+                                take_profit_2 = entry - risk * 2.5
                         else:
                             take_profit_1 = pattern['take_profit']
                             take_profit_2 = pattern['take_profit']
                         
                         # 构建入场理由，包含入场价设置说明
-                        entry_reason = pattern.get('entry_reason', '')
                         if entry_reason:
                             reason_text = f"识别到{pattern['name']}形态（置信度: {pattern['confidence']:.1f}%），{pattern['type']}信号。{entry_reason}"
                         else:
@@ -1197,7 +1229,7 @@ def generate_trading_plan():
                         signal_dict = {
                             'type': signal_type,
                             'strength': 'strong' if pattern['confidence'] > 75 else 'medium',
-                            'entry': pattern['entry'],
+                            'entry': entry,
                             'stop_loss': pattern['stop_loss'],
                             'take_profit_1': take_profit_1,
                             'take_profit_2': take_profit_2,
@@ -1566,6 +1598,42 @@ def generate_trading_plan():
                 plan.append(f"止损: ${best_signal['stop_loss']:,.0f} (技术指标，建议使用实时订单簿)")
             
             plan.append(f"止盈: ${best_signal['take_profit_1']:,.0f} (50%) / ${best_signal['take_profit_2']:,.0f} (50%)")
+            
+            # 计算并显示盈亏比
+            if VOLATILITY_ANALYZER_AVAILABLE:
+                try:
+                    stop_loss_price = best_signal.get('orderbook_stop_loss') or best_signal['stop_loss']
+                    rr_analysis = calculate_risk_reward_ratio(
+                        entry=best_signal['entry'],
+                        stop_loss=stop_loss_price,
+                        take_profit_1=best_signal['take_profit_1'],
+                        take_profit_2=best_signal['take_profit_2'],
+                        signal_type=best_signal['type']
+                    )
+                    
+                    quality_map = {
+                        'excellent': '优秀（≥3.0）',
+                        'good': '良好（2.0-3.0）',
+                        'acceptable': '可接受（1.5-2.0）',
+                        'poor': '较低（1.0-1.5）',
+                        'very_poor': '过低（<1.0）'
+                    }
+                    quality_emoji = {
+                        'excellent': '✅✅',
+                        'good': '✅',
+                        'acceptable': '⚠️',
+                        'poor': '⚠️',
+                        'very_poor': '❌'
+                    }
+                    quality = quality_map.get(rr_analysis['quality'], '未知')
+                    emoji = quality_emoji.get(rr_analysis['quality'], '')
+                    
+                    plan.append(f"**预期盈亏比**: {rr_analysis['avg_rr_ratio']:.2f}:1 {emoji} ({quality})")
+                    plan.append(f"   - 风险: ${rr_analysis['risk']:,.0f} ({abs(best_signal['entry'] - stop_loss_price) / best_signal['entry'] * 100:.2f}%)")
+                    plan.append(f"   - 止盈1回报: ${rr_analysis['reward_1']:,.0f} ({rr_analysis['rr_ratio_1']:.2f}:1)")
+                    plan.append(f"   - 止盈2回报: ${rr_analysis['reward_2']:,.0f} ({rr_analysis['rr_ratio_2']:.2f}:1)")
+                except Exception as e:
+                    print(f"5分钟盈亏比计算失败: {e}", file=sys.stderr)
             
             # 明确标注入场模型和入场原因
             entry_model = best_signal.get('entry_model', '未知模型')

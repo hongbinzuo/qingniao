@@ -7,11 +7,11 @@
 import json
 from pathlib import Path
 from datetime import datetime, timedelta
-from db_manager_duckdb import DuckDBManager
+from db_manager_trader import TraderDBManager
 
 def migrate_conversation_json_files():
     """迁移对话JSON文件到数据库"""
-    db = DuckDBManager()
+    db = TraderDBManager('de')
     
     # 查找所有对话JSON文件
     data_dir = Path("data")
@@ -35,7 +35,17 @@ def migrate_conversation_json_files():
                 btc_price = record.get('btc_price')
                 analysis = record.get('analysis', {})
                 context = record.get('context', '')
-                category = record.get('category', 'trading')
+                # 使用改进后的分类，如果没有则使用默认值
+                category = record.get('category', 'conversation')
+                # 如果分类是旧的'trading'，根据内容判断
+                if category == 'trading':
+                    # 检查是否包含交易执行关键词
+                    if any(kw in content for kw in ['已经', '目前', '昨天', '今天', '止盈了', '止损了', '吃了', '拿下']):
+                        category = 'trading_execution'
+                    elif any(kw in content for kw in ['可以', '应该', '建议', '可以空', '可以多', '看起来', '很好']):
+                        category = 'trading_signal'
+                    else:
+                        category = 'conversation'
                 
                 # 构建完整内容
                 full_content = content
@@ -70,7 +80,7 @@ def migrate_conversation_json_files():
                     tags.extend(analysis['concepts'])
                 
                 # 添加到数据库
-                db.add_de_viewpoint(
+                db.add_viewpoint(
                     content=full_content,
                     timestamp=timestamp,
                     source='conversation',
@@ -95,7 +105,7 @@ def migrate_conversation_json_files():
 
 def migrate_trade_record_json_files():
     """迁移交易记录JSON文件到数据库"""
-    db = DuckDBManager()
+    db = TraderDBManager('de')
     
     # 查找所有交易记录JSON文件
     data_dir = Path("data")
@@ -143,14 +153,17 @@ def migrate_trade_record_json_files():
             except:
                 timestamp = timestamp_str
             
-            # 添加到数据库
-            db.add_de_viewpoint(
-                content=content,
+            # 添加到交易记录表
+            db.add_trade_record(
                 timestamp=timestamp,
-                source='trade_record',
-                category='trading',
-                tags=['交易记录', direction, f'{leverage}x杠杆'],
-                btc_price=current_price
+                symbol=symbol,
+                direction=direction,
+                leverage=leverage,
+                entry_price=entry_price,
+                exit_price=current_price,
+                profit_pct=profit_pct,
+                profit_usdt=profit_usdt,
+                text_content=content
             )
             migrated_count += 1
             

@@ -22,11 +22,20 @@ class TraderDBManager:
         self.conn = None
     
     def _get_connection(self):
-        """获取数据库连接"""
+        """获取数据库连接（支持连接复用）"""
         if self.conn is None:
             if not self.db_file.exists():
                 raise FileNotFoundError(f"数据库文件不存在: {self.db_file}")
-            self.conn = duckdb.connect(str(self.db_file))
+            try:
+                self.conn = duckdb.connect(str(self.db_file))
+            except Exception as e:
+                # 如果连接失败，尝试等待后重试
+                import time
+                time.sleep(0.1)
+                try:
+                    self.conn = duckdb.connect(str(self.db_file))
+                except:
+                    raise e
         return self.conn
     
     def close(self):
@@ -39,7 +48,8 @@ class TraderDBManager:
     
     def add_conversation(self, timestamp: str, user_message: str = None, 
                         trader_message: str = None, source: str = 'discord',
-                        btc_price: float = None, extracted_content: str = None) -> int:
+                        btc_price: float = None, extracted_content: str = None,
+                        user_evaluation: str = None, evaluation_keywords: str = None) -> int:
         """添加对话记录"""
         conn = self._get_connection()
         
@@ -49,13 +59,65 @@ class TraderDBManager:
         created_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         has_trading_info = 1 if extracted_content else 0
         
-        conn.execute('''
-            INSERT INTO conversations 
-            (id, timestamp, user_message, trader_message, source, has_trading_info, 
-             extracted_content, btc_price, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (next_id, timestamp, user_message, trader_message, source, 
-              has_trading_info, extracted_content, btc_price, created_at))
+        # 检查字段是否存在
+        try:
+            columns = conn.execute("PRAGMA table_info(conversations)").fetchall()
+            column_names = [col[1] for col in columns]
+            
+            # 如果字段不存在，尝试添加（静默失败，不影响主流程）
+            if 'user_evaluation' not in column_names:
+                try:
+                    conn.execute('ALTER TABLE conversations ADD COLUMN user_evaluation TEXT')
+                except:
+                    pass
+            
+            if 'evaluation_keywords' not in column_names:
+                try:
+                    conn.execute('ALTER TABLE conversations ADD COLUMN evaluation_keywords TEXT')
+                except:
+                    pass
+            
+            # 重新获取列名
+            columns = conn.execute("PRAGMA table_info(conversations)").fetchall()
+            column_names = [col[1] for col in columns]
+            
+            # 构建INSERT语句
+            if 'user_evaluation' in column_names and 'evaluation_keywords' in column_names:
+                conn.execute('''
+                    INSERT INTO conversations 
+                    (id, timestamp, user_message, trader_message, source, has_trading_info, 
+                     extracted_content, btc_price, user_evaluation, evaluation_keywords, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (next_id, timestamp, user_message, trader_message, source, 
+                      has_trading_info, extracted_content, btc_price, 
+                      user_evaluation, evaluation_keywords, created_at))
+            elif 'user_evaluation' in column_names:
+                conn.execute('''
+                    INSERT INTO conversations 
+                    (id, timestamp, user_message, trader_message, source, has_trading_info, 
+                     extracted_content, btc_price, user_evaluation, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (next_id, timestamp, user_message, trader_message, source, 
+                      has_trading_info, extracted_content, btc_price, 
+                      user_evaluation, created_at))
+            else:
+                # 使用原有字段
+                conn.execute('''
+                    INSERT INTO conversations 
+                    (id, timestamp, user_message, trader_message, source, has_trading_info, 
+                     extracted_content, btc_price, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (next_id, timestamp, user_message, trader_message, source, 
+                      has_trading_info, extracted_content, btc_price, created_at))
+        except Exception as e:
+            # 如果出错，使用原有字段
+            conn.execute('''
+                INSERT INTO conversations 
+                (id, timestamp, user_message, trader_message, source, has_trading_info, 
+                 extracted_content, btc_price, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (next_id, timestamp, user_message, trader_message, source, 
+                  has_trading_info, extracted_content, btc_price, created_at))
         
         conn.commit()
         return next_id
@@ -235,8 +297,13 @@ class TraderDBManager:
         params = []
         
         if status:
-            query += ' AND status = ?'
-            params.append(status)
+            if isinstance(status, list):
+                placeholders = ','.join(['?'] * len(status))
+                query += f' AND status IN ({placeholders})'
+                params.extend(status)
+            else:
+                query += ' AND status = ?'
+                params.append(status)
         if start_date:
             query += ' AND signal_time >= ?'
             params.append(start_date)
@@ -273,4 +340,58 @@ class TraderDBManager:
             signals.append(signal)
         
         return signals
+    
+    def get_trading_signals_count(self, status: str = None) -> int:
+        """获取交易信号数量"""
+        conn = self._get_connection()
+        if status:
+            result = conn.execute('SELECT COUNT(*) FROM trading_signals WHERE status = ?', [status]).fetchone()
+        else:
+            result = conn.execute('SELECT COUNT(*) FROM trading_signals').fetchone()
+        return result[0] if result else 0
+    
+    def get_signal_evaluations_count(self) -> int:
+        """获取信号评估数量"""
+        conn = self._get_connection()
+        result = conn.execute('SELECT COUNT(*) FROM signal_evaluations').fetchone()
+        return result[0] if result else 0
+    
+    def get_signal_evaluation(self, signal_id: int) -> Optional[Dict]:
+        """获取信号评估"""
+        conn = self._get_connection()
+        result = conn.execute('''
+            SELECT * FROM signal_evaluations WHERE signal_id = ?
+        ''', [signal_id]).fetchone()
+        
+        if not result:
+            return None
+        
+        return {
+            'id': result[0],
+            'signal_id': result[1],
+            'evaluation_time': result[2],
+            'result': result[3],
+            'actual_entry_price': result[4],
+            'actual_exit_price': result[5],
+            'actual_profit_pct': result[6],
+            'actual_profit_usdt': result[7],
+            'stop_loss_hit': result[8],
+            'take_profit_1_hit': result[9],
+            'take_profit_2_hit': result[10],
+            'missed': result[11],
+            'notes': result[12],
+            'created_at': result[13]
+        }
+    
+    def update_signal_status(self, signal_id: int, status: str):
+        """更新信号状态"""
+        conn = self._get_connection()
+        updated_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        conn.execute('''
+            UPDATE trading_signals 
+            SET status = ?, updated_at = ?
+            WHERE id = ?
+        ''', (status, updated_at, signal_id))
+        conn.commit()
 
+    

@@ -440,17 +440,36 @@ class ChartPatternsDetector:
             clarity_score = min(head_depression * 5, 1.0)
             confidence = (symmetry_score * 0.6 + clarity_score * 0.4) * 100
             
+            # 优化入场价：确保入场价在当前价格的可达范围内
+            # 如果颈线距离当前价格太远（>3%），调整入场价到更合理的位置
+            price_distance_from_neckline = (current_price - neckline) / neckline
+            
+            if price_distance_from_neckline > 0.03:
+                # 当前价格已经远高于颈线，入场价应该设置在等待回调的位置
+                # 设置在当前价格下方1-2%，等待回调
+                entry = current_price * 0.985  # 当前价格下方1.5%，等待回调
+                entry_reason = f"当前价格已突破颈线{price_distance_from_neckline*100:.1f}%，入场价设置在{entry:.0f}等待回调"
+            elif price_distance_from_neckline > 0.01:
+                # 当前价格略高于颈线，入场价设置在颈线附近，但更接近当前价格
+                entry = neckline + (current_price - neckline) * 0.3  # 颈线和当前价格之间的30%位置
+                entry_reason = f"当前价格略高于颈线，入场价设置在{entry:.0f}（颈线{neckline:.0f}上方）"
+            else:
+                # 当前价格刚突破颈线，使用原逻辑
+                entry = neckline * 1.002  # 颈线上方0.2%
+                entry_reason = f"价格刚突破颈线，入场价设置在{entry:.0f}"
+            
             return {
                 'detected': True,
                 'confidence': min(confidence, 85.0),
-                'entry': neckline * 1.002,  # 颈线上方入场做多
+                'entry': entry,
                 'stop_loss': right_shoulder_price * 0.995,  # 右肩下方止损
                 'take_profit': neckline + pattern_height * 0.618,
                 'left_shoulder': left_shoulder_price,
                 'head': head_price,
                 'right_shoulder': right_shoulder_price,
                 'neckline': neckline,
-                'pattern_height': pattern_height
+                'pattern_height': pattern_height,
+                'entry_reason': entry_reason  # 添加入场价设置理由
             }
         
         return {'detected': False, 'confidence': 0}
