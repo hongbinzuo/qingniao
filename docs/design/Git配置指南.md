@@ -59,22 +59,22 @@ git config --list
 **需要的信息**:
 1. GitHub账号
 2. 仓库地址（如果已创建）
-   - HTTPS: `https://github.com/username/qimeng2.git`
-   - SSH: `git@github.com:username/qimeng2.git`
+   - HTTPS: `https://github.com/username/qingniao.git`
+   - SSH: `git@github.com:username/qingniao.git`
 
 **配置步骤**:
 
 1. **创建GitHub仓库**（如果还没有）
    - 登录GitHub
    - 点击 "New repository"
-   - 仓库名: `qimeng2`
+   - 仓库名: `qingniao`
    - 选择 Private（推荐，因为可能包含敏感信息）
 
 2. **添加远程仓库**
 
    **使用HTTPS**（简单，需要输入密码或token）:
    ```bash
-   git remote add origin https://github.com/username/qimeng2.git
+   git remote add origin https://github.com/username/qingniao.git
    ```
 
    **使用SSH**（需要配置SSH key，但更安全）:

@@ -74,17 +74,17 @@ git log
 
 1. **GitHub/GitLab账号**（如果使用）
 2. **仓库地址**（创建仓库后获得）
-   - HTTPS: `https://github.com/username/qimeng2.git`
-   - SSH: `git@github.com:username/qimeng2.git`
+   - HTTPS: `https://github.com/username/qingniao.git`
+   - SSH: `git@github.com:username/qingniao.git`
 
 #### 添加远程仓库
 
 ```bash
 # 添加远程仓库（HTTPS）
-git remote add origin https://github.com/username/qimeng2.git
+git remote add origin https://github.com/username/qingniao.git
 
 # 或使用SSH（需要先配置SSH key）
-git remote add origin git@github.com:username/qimeng2.git
+git remote add origin git@github.com:username/qingniao.git
 
 # 推送到远程
 git push -u origin develop
@@ -172,7 +172,7 @@ init_git_repo.bat
 # 1. 创建GitHub仓库（在GitHub网站）
 
 # 2. 添加远程
-git remote add origin https://github.com/username/qimeng2.git
+git remote add origin https://github.com/username/qingniao.git
 
 # 3. 推送
 git push -u origin develop
