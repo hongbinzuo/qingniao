@@ -1,0 +1,113 @@
+# 策略注册表
+# 管理所有交易策略文档和配置
+
+strategies:
+  # 梦多空策略（涨幅榜做空+追多）
+  meng_duo_kong:
+    name: "梦多空策略"
+    display_name: "梦多空策略"
+    description: "涨幅榜做空 + 追多交易系统"
+    source: "我的小女人"
+    document_path: "../梦多空策略.md"
+    enabled: true
+    priority: 75
+    strategy_type: "涨幅榜策略"
+    target_assets: "山寨币（涨幅榜常客）"
+    core_logic: "空涨幅榜 + 追多"
+    created_date: "2025-12-28"
+    updated_date: "2025-12-28"
+    
+    # 策略参数
+    parameters:
+      # 做空策略参数
+      short_strategy:
+        min_gain_threshold: 20  # 单币涨幅超过20%开始筛选
+        entry_zone: "1.618-2.0斐波扩展位"  # 做空入场区间
+        stop_loss_pct: "1-2%"  # 止损幅度
+        take_profit_levels: [50, 100, 200]  # 止盈档位（%）
+        max_funding_rate: "1%/4h"  # 最大费率（超过不做）
+        holding_time: "第二天上午到下午2点，最迟下午2点平仓"
+      
+      # 做多策略参数
+      long_strategy:
+        gain_range: [8, 12]  # 24小时涨幅区间8%-12%
+        stop_loss_pct: 7  # 从顶部下跌7%止损
+        take_profit_start: 20  # 20%开始分批止盈
+        take_profit_range: [20, 60]  # 止盈区间20%-60%
+        max_positions_per_day: 5  # 一天最多追5个标的
+    
+    # 市场环境要求
+    market_conditions:
+      scan_frequency: "每小时"
+      pause_condition: "大盘下杀5000点以上暂停交易"
+      resume_condition: "等两天后再恢复交易"
+      expected_signals: "三天内应该会有三五个币（符合条件）"
+    
+    # 技术工具
+    technical_tools:
+      - "斐波那契扩展1.618计算"
+      - "裸K线分析（H3D线）"
+      - "关键点位支撑阻力"
+      - "K线形态和K线组合"
+    
+    # 成功率预期
+    success_rate:
+      short_strategy: "约80%"
+      long_strategy: "依赖市场环境（假突破率70-80%）"
+    
+    # 风险提示
+    risk_warnings:
+      - "需要特定的市场环境（涨幅榜活跃）"
+      - "做多策略假突破率高，需要严格止损"
+      - "大盘下杀时需暂停交易"
+      - "需要每小时扫描，及时执行"
+
+  # De.交易系统
+  de_trading_system:
+    name: "De.交易系统"
+    display_name: "De.交易系统"
+    description: "区间震荡剥头皮交易系统"
+    source: "De."
+    document_paths:
+      - "../outputs/De_trading_system_complete_guide.md"
+      - "../outputs/De_trading_system_final_enhanced.md"
+    enabled: true
+    priority: 100
+    strategy_type: "区间震荡策略"
+    target_assets: "BTC/USDT"
+    core_logic: "区间震荡 + 剥头皮"
+    created_date: "2025-12-28"
+    updated_date: "2025-12-28"
+    
+    # 策略参数
+    parameters:
+      timeframes: ["5m", "15m", "1h"]
+      entry_method: "区间挂单 + 回踩入场"
+      stop_loss: "流动性区域外，几百点"
+      take_profit: "区间上下沿，分批止盈"
+      risk_reward: "2倍以上盈亏比"
+    
+    # 市场环境要求
+    market_conditions:
+      preferred_market: "震荡市场"
+      avoid_market: "强趋势市场"
+    
+    # 技术工具
+    technical_tools:
+      - "裸K线分析"
+      - "FVG（Fair Value Gap）"
+      - "M顶/W底形态"
+      - "Vegas通道（EMA144/169）"
+      - "支撑阻力位"
+      - "OTE区间（618-786）"
+    
+    # 成功率预期
+    success_rate:
+      overall: "中等（依赖市场环境）"
+    
+    # 风险提示
+    risk_warnings:
+      - "需要识别震荡区间"
+      - "需要等待挂单成交，不追涨杀跌"
+      - "需要多时间框架确认"
+

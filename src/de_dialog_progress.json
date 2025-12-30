@@ -1,0 +1,14 @@
+{
+  "last_processed_timestamp": "2025-12-20T00:39:15.261+08:00",
+  "last_processed_time": "2025-12-20 00:39:15",
+  "total_processed": 0,
+  "last_processed_content": "最后一条消息: 如果价格875-884区间，看空",
+  "processing_history": [
+    {
+      "timestamp": "2025-12-20T00:39:15.261+08:00",
+      "processed_time": "2025-12-30 08:30:00",
+      "content": "最后一条消息: 如果价格875-884区间，看空"
+    }
+  ]
+}
+
