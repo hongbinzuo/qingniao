@@ -72,7 +72,7 @@ def get_tickers():
 
 def main():
     ap = argparse.ArgumentParser(description="生成风格筛选版BTC信号")
-    ap.add_argument("--min-rr", type=float, default=1.5, help="盈亏比阈值，默认1.5")
+    ap.add_argument("--min-rr", type=float, default=2.0, help="盈亏比阈值，默认2.0")
     ap.add_argument(
         "--timeframes",
         default="5m,15m,1h",
