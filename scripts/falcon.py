@@ -366,14 +366,13 @@ def main():
     parser.add_argument('--interval', type=int, default=3600, help='执行间隔（秒），默认3600')
     args = parser.parse_args()
 
-    ensure_db_ready()
-    db = TraderDBManager('de')
-
     def run_cycle():
         ts_start = datetime.now()
         ok = True
         errs: list[str] = []
         files_created: list[str] = []
+        # 在每轮内部创建/关闭DB，避免长期持锁
+        db = TraderDBManager('de')
         try:
             signal_time_str, results = generate_and_store_signals(db)
             # 粗略检查：若没有任何信号返回，记为警告
@@ -394,6 +393,10 @@ def main():
             errs.append(msg)
             print(f"[Falcon] 评估失败: {e}", file=sys.stderr)
             traceback.print_exc()
+        try:
+            db.close()
+        except Exception:
+            pass
         # 记录最近生成的文件（近15分钟内）
         try:
             now = time.time()
@@ -404,6 +407,7 @@ def main():
             pass
         update_state(running=True, last_ok=ok, last_run_at=ts_start, pid=os.getpid(), last_errors=errs, last_files=files_created)
 
+    ensure_db_ready()
     if args.once and not args.daemon:
         run_cycle()
         print("[Falcon] 一次性任务完成")
