@@ -143,6 +143,18 @@ def main():
         "1h": analyze_timeframe(k1h, tf_map_cn.get("1h", "1小时"), current_price) if k1h else None,
     }
     analysis_4h = analyze_timeframe(k4h, "4小时", current_price) if k4h else None
+    # 改善SR：用 swing+聚类 + 多周期合并
+    try:
+        from sr_detector import detect_levels, merge_multi_tf
+        lv_15 = detect_levels(k15, window=5, grid=50, topk=6)
+        lv_1h = detect_levels(k1h or [], window=5, grid=50, topk=6)
+        merged = merge_multi_tf([lv_15, lv_1h], grid=50, topk=8)
+        if analyses['15m'] is not None:
+            analyses['15m']['support_resistance']={'support': merged['supports'], 'resistance': merged['resistances']}
+        if analyses['1h'] is not None:
+            analyses['1h']['support_resistance']={'support': merged['supports'], 'resistance': merged['resistances']}
+    except Exception:
+        pass
 
     results = []
     for tf in timeframes:
@@ -208,6 +220,24 @@ def main():
     lines.append(cp_line + "  ")
     lines.append("**筛选条件**: RR≥{}, 排除关键词: {}  ".format(args.min_rr, ", ".join(exclude_keywords)))
     lines.append("")
+    # 情绪/流向
+    try:
+        from sentiment_aggregator import aggregate_sentiment
+        sent = aggregate_sentiment()
+        parts=[]
+        if isinstance(sent.get('sentiment_score'), (int,float)):
+            parts.append(f"情绪分: {sent['sentiment_score']:+.1f}")
+        if isinstance(sent.get('coinbase_premium_pct'), (int,float)):
+            parts.append(f"CB溢价: {sent['coinbase_premium_pct']:+.2f}%")
+        if isinstance(sent.get('binance_ls_ratio'), (int,float)):
+            parts.append(f"LS比: {sent['binance_ls_ratio']:.2f}")
+        if isinstance(sent.get('funding_rate_pct'), (int,float)):
+            parts.append(f"资金费: {sent['funding_rate_pct']:+.3f}%")
+        if parts:
+            lines.append("**情绪/流向**: "+" | ".join(parts))
+            lines.append("")
+    except Exception:
+        pass
     # 战术指引（De.）：883 与 0.618-0.786
     try:
         fibs = []
@@ -242,6 +272,71 @@ def main():
                     if res:
                         lines.append("- {} 阻力: {}".format(tf, ", ".join("${:,.0f}".format(x) for x in res[:3])))
     else:
+        def calc_confidence(tf, sig):
+            # 评分要素：OTE命中、883一致性、SR接近、多周期偏向、形态确认
+            score = 0
+            clues = []
+            a = analyses.get(tf)
+            # OTE
+            try:
+                oa = a.get('ote_analysis') if a else None
+                if oa:
+                    f618 = oa.get('fib_618'); f786 = oa.get('fib_786')
+                    if f618 and f786:
+                        if sig['entry']>=min(f618,f786) and sig['entry']<=max(f618,f786):
+                            score += 25; clues.append('OTE')
+                        else:
+                            # 距离边界<0.2%
+                            dist = min(abs(sig['entry']-f618), abs(sig['entry']-f786))/sig['entry']*100
+                            if dist < 0.2:
+                                score += 15; clues.append('OTE邻近')
+            except Exception:
+                pass
+            # 883 规则一致性
+            try:
+                if sig['type']=='short':
+                    if sig['entry'] < 88300: score += 10; clues.append('883下空')
+                    if abs(sig['entry']-88300)/sig['entry']*100 < 0.2: score += 5
+                else:
+                    if sig['entry'] > 88300: score += 10; clues.append('883上多')
+                    if abs(sig['entry']-88300)/sig['entry']*100 < 0.2: score += 5
+            except Exception:
+                pass
+            # SR 接近
+            try:
+                sr = a.get('support_resistance') if a else {}
+                arr = (sr.get('resistance') or []) if sig['type']=='short' else (sr.get('support') or [])
+                if arr:
+                    d = min(abs(sig['entry']-x)/sig['entry']*100 for x in arr)
+                    if d < 0.2: score += 10; clues.append('SR邻近')
+            except Exception:
+                pass
+            # 多周期偏向（EMA144/169同向）
+            try:
+                bias_score = 0
+                for tfk in ('15m','1h'):
+                    aa = analyses.get(tfk)
+                    if aa and aa.get('ema_144') and aa.get('ema_169'):
+                        lo = min(aa['ema_144'], aa['ema_169']); hi = max(aa['ema_144'], aa['ema_169'])
+                        if sig['type']=='short' and current_price<lo: bias_score += 1
+                        if sig['type']=='long' and current_price>hi: bias_score += 1
+                if bias_score==2: score += 20; clues.append('多周期一致')
+                elif bias_score==1: score += 10; clues.append('部分一致')
+            except Exception:
+                pass
+            # 形态确认
+            try:
+                em = (sig.get('entry_model') or '').lower()
+                if 'pinbar' in em or '形态' in em: score += 10; clues.append('形态确认')
+            except Exception:
+                pass
+            # 映射为等级
+            if score>=60: label,prob='A',0.68
+            elif score>=45: label,prob='B',0.58
+            elif score>=30: label,prob='C',0.50
+            else: label,prob='D',0.45
+            return label,prob,score,clues
+
         for tf, sig, passed in results:
             direction = "做多" if sig["type"] == "long" else "做空"
             lines.append("## {} 最优信号（{} — {}）".format(tf, direction, "已通过筛选" if passed else "RR未达标，供参考"))
@@ -253,6 +348,9 @@ def main():
             lines.append("- 模型: {}".format(sig.get("entry_model", "未知")))
             ok, err = validate_signal(sig, current_price, tolerance_pct=args.tolerance)
             lines.append("- 合理性验证: {}{}".format("通过" if ok else "失败", " — " + err if not ok else ""))
+            label,prob,score,clues = calc_confidence(tf, sig)
+            if clues:
+                lines.append(f"- 信心: {label} (≈{int(prob*100)}%) | 得分 {score}/100 | 线索: {', '.join(clues)}")
             lines.append("")
 
     # 追加：4小时趋势背景（不生成4小时信号）
