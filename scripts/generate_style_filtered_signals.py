@@ -208,6 +208,25 @@ def main():
     lines.append(cp_line + "  ")
     lines.append("**筛选条件**: RR≥{}, 排除关键词: {}  ".format(args.min_rr, ", ".join(exclude_keywords)))
     lines.append("")
+    # 战术指引（De.）：883 与 0.618-0.786
+    try:
+        fibs = []
+        for tfk in ("15m", "1h"):
+            a = analyses.get(tfk)
+            if a and a.get("ote_analysis"):
+                oa = a["ote_analysis"]
+                f618 = oa.get("fib_618"); f786 = oa.get("fib_786")
+                if f618 and f786:
+                    fibs.append((tfk, f618, f786))
+        if fibs:
+            tfk, f618, f786 = fibs[0]
+            lines.append("战术指引（De.）：")
+            lines.append(f"- {tfk} 回撤区间: 0.618=${f618:,.0f} / 0.786=${f786:,.0f}")
+            lines.append("- 未破883且价格回到0.618-0.786附近 → 优先空，止损放0.786上方；")
+            lines.append("- 强穿883并回踩不破 → 翻多，目标90k，失效为跌回883下方。")
+            lines.append("")
+    except Exception:
+        pass
 
     if not results:
         lines.append("本轮无符合筛选条件的 5m/15m/1h 信号。建议：等待回踩至近支撑再看多，或至近阻力反抽再看空。")
@@ -311,6 +330,26 @@ def main():
     full.append(cp_line_f + "  ")
     full.append("**筛选条件**: RR≥{}, 排除关键词: {}  ".format(args.min_rr, ", ".join(exclude_keywords)))
     full.append("")
+    # 同步战术指引到详细版
+    try:
+        fibs = []
+        for tfk in ("15m", "1h"):
+            a = analyses.get(tfk)
+            if a and a.get("ote_analysis"):
+                oa = a["ote_analysis"]
+                f618 = oa.get("fib_618"); f786 = oa.get("fib_786")
+                if f618 and f786:
+                    fibs.append((tfk, f618, f786))
+        if fibs:
+            tfk, f618, f786 = fibs[0]
+            full.append("### 战术指引（De.）")
+            full.append("")
+            full.append(f"- {tfk} 回撤区间: 0.618=${f618:,.0f} / 0.786=${f786:,.0f}")
+            full.append("- 未破883且价格回到0.618-0.786附近 → 优先空，止损放0.786上方；")
+            full.append("- 强穿883并回踩不破 → 翻多，目标90k，失效为跌回883下方。")
+            full.append("")
+    except Exception:
+        pass
 
     # 为每个时间框架输出：信号 + 技术分析详情
     order = [tf for tf in ("5m", "15m", "1h") if tf in timeframes]
