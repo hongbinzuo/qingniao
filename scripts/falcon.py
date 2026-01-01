@@ -225,8 +225,21 @@ def generate_and_store_signals(db: TraderDBManager, system_name: str = "de",
     # 将信号入库
     signal_time_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     writes = 0
+    conn = db._get_connection()
+    today = datetime.now().strftime('%Y-%m-%d 00:00:00')
     for tf, s, passed in results:
         rr = s.get("_rr", {})
+        # 去重：当日内若已存在相同 (tf,type,entry,stop) 则跳过写入
+        try:
+            q = (
+                "SELECT COUNT(*) FROM trading_signals WHERE created_at >= ? "
+                "AND timeframe = ? AND signal_type = ? AND ABS(entry_price - ?) < 1e-6 AND ABS(stop_loss - ?) < 1e-6"
+            )
+            cnt = conn.execute(q, [today, tf, s.get("type"), s.get("entry"), s.get("stop_loss")]).fetchone()[0]
+        except Exception:
+            cnt = 0
+        if cnt:
+            continue
         db.add_trading_signal(
             signal_time=signal_time_str,
             timeframe=tf,
