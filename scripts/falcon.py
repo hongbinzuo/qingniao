@@ -190,7 +190,7 @@ def generate_and_store_signals(db: TraderDBManager, system_name: str = "de",
     before = set(str(p) for p in outdir.glob('BTC_de_signals_*_style_filtered*.md'))
     gen_ok = True
     try:
-        r = subprocess.run([exe, str(Path('scripts')/ 'generate_style_filtered_signals.py'), '--min-rr', '2.0', '--outdir', str(outdir)], capture_output=True, text=True, timeout=300)
+        r = subprocess.run([exe, str(Path('scripts')/ 'generate_style_filtered_signals.py'), '--outdir', str(outdir)], capture_output=True, text=True, timeout=300)
         if r.returncode != 0:
             gen_ok = False
             print('[Falcon] style_filtered 生成失败:', r.stderr[:400], file=sys.stderr)

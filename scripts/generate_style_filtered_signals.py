@@ -72,7 +72,8 @@ def get_tickers():
 
 def main():
     ap = argparse.ArgumentParser(description="生成风格筛选版BTC信号")
-    ap.add_argument("--min-rr", type=float, default=2.0, help="盈亏比阈值，默认2.0")
+    # RR 改为软参考：默认0，不作硬过滤，仅用于展示与轻微排序
+    ap.add_argument("--min-rr", type=float, default=0.0, help="盈亏比软阈值（仅参考），默认0不过滤")
     ap.add_argument(
         "--timeframes",
         default="5m,15m,1h",
@@ -174,13 +175,14 @@ def main():
                 sig["entry"], sig["stop_loss"], sig["take_profit_1"], sig["take_profit_2"], sig["type"]
             )
             sig["_rr"] = rr
-            if rr["avg_rr_ratio"] >= args.min_rr:
-                filtered.append(sig)
+            # 不再硬过滤RR，全部纳入候选，由后续评分选优
+            filtered.append(sig)
 
         if filtered:
             def score_good(s):
+                # 轻微考虑RR，主要由后续“信心标记”给出可靠性说明
                 strength = 3 if s["strength"] == "strong" else 2 if s["strength"] == "medium" else 1
-                return (s["_rr"]["avg_rr_ratio"], strength)
+                return (s["_rr"].get("avg_rr_ratio", 0.0) * 0.2 + strength)
             best = sorted(filtered, key=score_good, reverse=True)[0]
             results.append((tf, best, True))
         else:
@@ -220,6 +222,41 @@ def main():
     lines.append(cp_line + "  ")
     lines.append("**筛选条件**: RR≥{}, 排除关键词: {}  ".format(args.min_rr, ", ".join(exclude_keywords)))
     lines.append("")
+    # 执行建议（统一出现在简要版顶部，便于快速决策）
+    try:
+        lines.append("## 执行建议")
+        # 4小时趋势过滤
+        bias_line = None
+        if analysis_4h and analysis_4h.get("ema_144") and analysis_4h.get("ema_169"):
+            lo = min(analysis_4h["ema_144"], analysis_4h["ema_169"]) 
+            hi = max(analysis_4h["ema_144"], analysis_4h["ema_169"]) 
+            vwap_4h = analysis_4h.get("vwap")
+            if current_price > hi and (vwap_4h is None or current_price > vwap_4h):
+                bias_line = "- 趋势过滤: 4h 偏多，仅做多；逆势空直接过滤"
+            elif current_price < lo and (vwap_4h is None or current_price < vwap_4h):
+                bias_line = "- 趋势过滤: 4h 偏空，仅做空；逆势多直接过滤"
+            else:
+                bias_line = "- 趋势过滤: 4h 震荡，优先边界回踩/反抽，谨慎逆势"
+        if bias_line:
+            lines.append(bias_line)
+        # 入场纪律（只接回踩 + 5m确认）
+        ote_line = "- 入场纪律: 只接回踩至 OTE 0.618–0.786/关键位，出现5m反转确认（针/吞没+放量）后入场"
+        try:
+            oa = (analysis_4h or {}).get("ote_analysis") or {}
+            f618 = oa.get("fib_618"); f786 = oa.get("fib_786")
+            if f618 and f786:
+                ote_line += f"（参考: 0.618=${f618:,.0f} / 0.786=${f786:,.0f}）"
+        except Exception:
+            pass
+        lines.append(ote_line)
+        # 风险/目标与RR
+        lines.append(f"- 风险/目标: 止损设最近摆动点；分级止盈（RR≥1.0、RR≥{args.min_rr:.2f}）；加权RR≥{args.min_rr:.2f} 方可入场")
+        # 失效条件
+        lines.append("- 失效条件: N根K线未成交作废；若先破坏入场方向的关键结构/均线/VWAP，信号作废")
+        lines.append("")
+    except Exception:
+        # 建议生成失败时不影响主流程
+        pass
     # 情绪/流向
     try:
         from sentiment_aggregator import aggregate_sentiment
@@ -428,6 +465,36 @@ def main():
     full.append(cp_line_f + "  ")
     full.append("**筛选条件**: RR≥{}, 排除关键词: {}  ".format(args.min_rr, ", ".join(exclude_keywords)))
     full.append("")
+    # 同步执行建议到详细版
+    try:
+        full.append("### 执行建议")
+        bias_line = None
+        if analysis_4h and analysis_4h.get("ema_144") and analysis_4h.get("ema_169"):
+            lo = min(analysis_4h["ema_144"], analysis_4h["ema_169"]) 
+            hi = max(analysis_4h["ema_144"], analysis_4h["ema_169"]) 
+            vwap_4h = analysis_4h.get("vwap")
+            if current_price > hi and (vwap_4h is None or current_price > vwap_4h):
+                bias_line = "- 趋势过滤: 4h 偏多，仅做多；逆势空直接过滤"
+            elif current_price < lo and (vwap_4h is None or current_price < vwap_4h):
+                bias_line = "- 趋势过滤: 4h 偏空，仅做空；逆势多直接过滤"
+            else:
+                bias_line = "- 趋势过滤: 4h 震荡，优先边界回踩/反抽，谨慎逆势"
+        if bias_line:
+            full.append(bias_line)
+        ote_line = "- 入场纪律: 只接回踩至 OTE 0.618–0.786/关键位，出现5m反转确认（针/吞没+放量）后入场"
+        try:
+            oa = (analysis_4h or {}).get("ote_analysis") or {}
+            f618 = oa.get("fib_618"); f786 = oa.get("fib_786")
+            if f618 and f786:
+                ote_line += f"（参考: 0.618=${f618:,.0f} / 0.786=${f786:,.0f}）"
+        except Exception:
+            pass
+        full.append(ote_line)
+        full.append(f"- 风险/目标: 止损设最近摆动点；分级止盈（RR≥1.0、RR≥{args.min_rr:.2f}）；加权RR≥{args.min_rr:.2f} 方可入场")
+        full.append("- 失效条件: N根K线未成交作废；若先破坏入场方向的关键结构/均线/VWAP，信号作废")
+        full.append("")
+    except Exception:
+        pass
     # 同步战术指引到详细版
     try:
         fibs = []
