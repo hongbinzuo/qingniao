@@ -33,27 +33,29 @@ class ChibaTradingSystem:
         # 支持的市场
         self.markets = {
             'BTC': {
-                'symbol': 'BTC_USDT',
-                'exchange': 'gateio',
+                'symbol': 'BTCUSDT',
+                'exchange': 'bybit',
                 'name': '比特币',
                 'base_currency': 'BTC',
-                'quote_currency': 'USDT'
+                'quote_currency': 'USDT',
+                'alternative_exchanges': ['binance', 'bitget', 'gateio']  # 备用交易所
             },
             'GOLD': {
-                'symbol': 'XAU_USDT',  # Gate.io使用XAU_USDT
-                'exchange': 'gateio',
+                'symbol': 'XAUTUSDT',  # Bybit使用XAUTUSDT（黄金交易对）
+                'exchange': 'bybit',
                 'name': '黄金',
-                'base_currency': 'XAU',
+                'base_currency': 'XAUT',
                 'quote_currency': 'USDT',
-                'alternative_symbols': ['XAU_USD', 'GOLD_USDT']  # 备用符号
+                'alternative_symbols': ['PAXGUSDT'],  # 备用符号（其他交易所可能用PAXG）
+                'alternative_exchanges': ['binance', 'gateio']  # 备用交易所
             },
             'SILVER': {
-                'symbol': 'XAG_USDT',  # Gate.io使用XAG_USDT
-                'exchange': 'gateio',
+                'symbol': 'XAG',  # 暂时保留，等待检查Bybit是否有白银交易对
+                'exchange': 'bybit',
                 'name': '白银',
                 'base_currency': 'XAG',
-                'quote_currency': 'USDT',
-                'alternative_symbols': ['XAG_USD', 'SILVER_USDT']  # 备用符号
+                'quote_currency': 'USD',
+                'alternative_exchanges': []  # 待检查
             }
         }
     
@@ -87,7 +89,9 @@ class ChibaTradingSystem:
         exchange = market_info['exchange']
         
         try:
-            if exchange == 'gateio':
+            if exchange == 'bybit':
+                return self._get_bybit_data(market_info, timeframe, limit)
+            elif exchange == 'gateio':
                 # 转换时间框架
                 tf_map = {
                     '5m': '5m',
@@ -139,11 +143,214 @@ class ChibaTradingSystem:
         
         return None
     
+    def _get_bybit_data(self, market_info: Dict, timeframe: str, limit: int) -> Optional[List]:
+        """从Bybit获取K线数据"""
+        symbol = market_info['symbol']
+        tf_map = {
+            '5m': '5',
+            '15m': '15',
+            '1h': '60',
+            '4h': '240',
+            '1d': 'D'
+        }
+        interval = tf_map.get(timeframe, '15')
+        
+        url = "https://api.bybit.com/v5/market/kline"
+        params = {
+            'category': 'spot',
+            'symbol': symbol,
+            'interval': interval,
+            'limit': limit
+        }
+        
+        try:
+            response = requests.get(url, params=params, timeout=15)
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('retCode') == 0 and data.get('result'):
+                    klines_data = data['result'].get('list', [])
+                    if klines_data:
+                        klines = []
+                        # Bybit返回的是倒序，需要反转
+                        for k in reversed(klines_data):
+                            klines.append({
+                                'timestamp': int(k[0]),
+                                'open': float(k[1]),
+                                'high': float(k[2]),
+                                'low': float(k[3]),
+                                'close': float(k[4]),
+                                'volume': float(k[5])
+                            })
+                        return klines
+        except Exception as e:
+            print(f"Bybit获取K线数据失败: {e}", file=sys.stderr)
+        
+        return None
+    
     def get_current_price(self, market: str) -> Optional[float]:
         """获取当前价格"""
+        market_info = self.markets.get(market)
+        if not market_info:
+            return None
+        
+        exchange = market_info['exchange']
+        symbol = market_info['symbol']
+        
+        try:
+            if exchange == 'bybit':
+                # 使用Bybit ticker API获取实时价格
+                url = "https://api.bybit.com/v5/market/tickers"
+                params = {
+                    'category': 'spot',
+                    'symbol': symbol
+                }
+                response = requests.get(url, params=params, timeout=10)
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get('retCode') == 0 and data.get('result'):
+                        ticker_list = data['result'].get('list', [])
+                        if ticker_list and len(ticker_list) > 0:
+                            return float(ticker_list[0].get('lastPrice', 0))
+            
+            elif exchange == 'gateio':
+                # 使用ticker API获取实时价格
+                url = "https://api.gateio.ws/api/v4/spot/tickers"
+                params = {'currency_pair': symbol}
+                response = requests.get(url, params=params, timeout=10)
+                if response.status_code == 200:
+                    data = response.json()
+                    if data and len(data) > 0:
+                        return float(data[0].get('last', 0))
+            
+            elif exchange == 'binance':
+                # 使用Binance ticker API
+                trading_pair = symbol.replace('_', '')
+                url = "https://api.binance.com/api/v3/ticker/price"
+                params = {'symbol': trading_pair}
+                response = requests.get(url, params=params, timeout=10)
+                if response.status_code == 200:
+                    data = response.json()
+                    return float(data.get('price', 0))
+            
+            elif exchange == 'bitget':
+                # 使用Bitget ticker API
+                trading_pair = symbol.replace('_', '')
+                url = "https://api.bitget.com/api/spot/v1/market/ticker"
+                params = {'symbol': trading_pair}
+                response = requests.get(url, params=params, timeout=10)
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get('code') == '00000' and data.get('data'):
+                        return float(data['data'].get('last', 0))
+            
+            elif exchange == 'metals_api':
+                # 获取黄金/白银价格
+                # 注意：免费API有限制，建议使用专业API服务
+                metal_code = 'XAU' if market == 'GOLD' else 'XAG'
+                
+                # 方法1: 尝试从某些交易所获取（如果有贵金属交易对）
+                # 某些交易所可能有XAU/USD或XAG/USD交易对
+                try:
+                    trading_pairs = {
+                        'GOLD': ['XAUUSD', 'GOLDUSD', 'XAUUSDT'],
+                        'SILVER': ['XAGUSD', 'SILVERUSD', 'XAGUSDT']
+                    }
+                    
+                    for pair in trading_pairs.get(market, []):
+                        try:
+                            # 尝试Binance
+                            url = "https://api.binance.com/api/v3/ticker/price"
+                            params = {'symbol': pair}
+                            response = requests.get(url, params=params, timeout=10)
+                            if response.status_code == 200:
+                                data = response.json()
+                                if 'price' in data:
+                                    price = float(data['price'])
+                                    if price > 0:
+                                        return price
+                        except:
+                            continue
+                        
+                        # 尝试Gate.io
+                        try:
+                            url = "https://api.gateio.ws/api/v4/spot/tickers"
+                            params = {'currency_pair': pair}
+                            response = requests.get(url, params=params, timeout=10)
+                            if response.status_code == 200:
+                                data = response.json()
+                                if data and len(data) > 0:
+                                    price = float(data[0].get('last', 0))
+                                    if price > 0:
+                                        return price
+                        except:
+                            continue
+                except:
+                    pass
+                
+                # 方法2: 使用免费的贵金属API（需要API key）
+                # 例如：metals-api.com, goldapi.io等
+                # 用户需要配置API key才能使用
+                
+                # 方法3: 使用网页爬取（不推荐，不稳定）
+                # 暂时返回None，提示用户需要配置API或使用其他数据源
+                print(f"⚠️ {market_info['name']}价格获取失败：请配置贵金属API key或使用支持贵金属交易的交易所", file=sys.stderr)
+                return None
+                
+        except Exception as e:
+            print(f"获取{market_info['name']}价格失败: {e}", file=sys.stderr)
+        
+        # 如果主交易所失败，尝试备用交易所
+        if 'alternative_exchanges' in market_info:
+            for alt_exchange in market_info['alternative_exchanges']:
+                try:
+                    if alt_exchange == 'bybit':
+                        trading_pair = market_info['symbol']
+                        url = "https://api.bybit.com/v5/market/tickers"
+                        params = {
+                            'category': 'spot',
+                            'symbol': trading_pair
+                        }
+                        response = requests.get(url, params=params, timeout=10)
+                        if response.status_code == 200:
+                            data = response.json()
+                            if data.get('retCode') == 0 and data.get('result'):
+                                ticker_list = data['result'].get('list', [])
+                                if ticker_list and len(ticker_list) > 0:
+                                    return float(ticker_list[0].get('lastPrice', 0))
+                    elif alt_exchange == 'binance':
+                        trading_pair = market_info['symbol']
+                        url = "https://api.binance.com/api/v3/ticker/price"
+                        params = {'symbol': trading_pair}
+                        response = requests.get(url, params=params, timeout=10)
+                        if response.status_code == 200:
+                            data = response.json()
+                            return float(data.get('price', 0))
+                    elif alt_exchange == 'bitget':
+                        trading_pair = market_info['symbol']
+                        url = "https://api.bitget.com/api/spot/v1/market/ticker"
+                        params = {'symbol': trading_pair}
+                        response = requests.get(url, params=params, timeout=10)
+                        if response.status_code == 200:
+                            data = response.json()
+                            if data.get('code') == '00000' and data.get('data'):
+                                return float(data['data'].get('last', 0))
+                    elif alt_exchange == 'gateio':
+                        trading_pair = market_info['symbol'].replace('USDT', '_USDT')
+                        url = "https://api.gateio.ws/api/v4/spot/tickers"
+                        params = {'currency_pair': trading_pair}
+                        response = requests.get(url, params=params, timeout=10)
+                        if response.status_code == 200:
+                            data = response.json()
+                            if data and len(data) > 0:
+                                return float(data[0].get('last', 0))
+                except:
+                    continue
+        
+        # 最后尝试从K线获取
         klines = self.get_market_data(market, timeframe='5m', limit=1)
         if klines:
             return klines[-1]['close']
+        
         return None
     
     def generate_signals(self, markets: List[str] = None) -> Dict:
@@ -164,21 +371,22 @@ class ChibaTradingSystem:
             market_name = self.markets[market]['name']
             print(f"分析 {market_name} ({market})...")
             
-            # 获取市场数据
-            klines_15m = self.get_market_data(market, timeframe='15m')
+            # 获取市场数据（多时间框架）
             klines_1h = self.get_market_data(market, timeframe='1h')
+            klines_4h = self.get_market_data(market, timeframe='4h')
+            klines_1d = self.get_market_data(market, timeframe='1d')
             
-            if not klines_15m:
+            if not klines_1h:
                 print(f"  ⚠️ 无法获取{market_name}数据")
                 all_signals[market] = []
                 continue
             
             # 获取当前价格
-            current_price = klines_15m[-1]['close']
+            current_price = klines_1h[-1]['close']
             print(f"  当前价格: ${current_price:,.2f}")
             
-            # 生成信号（基于规则）
-            signals = self._generate_market_signals(market, klines_15m, klines_1h, current_price)
+            # 生成信号（基于规则，使用多时间框架）
+            signals = self._generate_market_signals(market, klines_1h, klines_4h, klines_1d, current_price)
             all_signals[market] = signals
             
             if signals:
@@ -191,12 +399,13 @@ class ChibaTradingSystem:
         
         return all_signals
     
-    def _generate_market_signals(self, market: str, klines_15m: List[Dict], 
-                                 klines_1h: List[Dict], current_price: float) -> List[Dict]:
-        """为特定市场生成信号（基于千叶交易系统规则）"""
+    def _generate_market_signals(self, market: str, klines_1h: List[Dict], 
+                                 klines_4h: List[Dict], klines_1d: List[Dict], 
+                                 current_price: float) -> List[Dict]:
+        """为特定市场生成信号（基于千叶交易系统规则，使用多时间框架）"""
         signals = []
         
-        if not klines_1h or len(klines_1h) < 124:
+        if not klines_1h or len(klines_1h) < 55:
             return signals
         
         # 计算技术指标（基于视频提取的规则）
@@ -228,8 +437,7 @@ class ChibaTradingSystem:
             if not ma_1h_12 or not ma_1h_24 or not ma_1h_55:
                 return signals
             
-            # 获取4小时数据
-            klines_4h = self.get_market_data(market, timeframe='4h', limit=200)
+            # 4小时数据已在参数中传入
             if klines_4h and len(klines_4h) >= 24:
                 ma_4h_24 = calculate_sma(klines_4h, 24)
             else:
@@ -282,22 +490,27 @@ class ChibaTradingSystem:
         
         # 根据市场生成不同策略
         if market == 'BTC':
-            # BTC策略：等待区间突破
+            # BTC策略：等待区间突破（使用日线判断关键价位）
             # 关键价位：9万、8万5、8万6.5
+            # 根据视频：应该使用日线收盘来判断突破，而不是1小时
             btc_key_levels = {
                 'upper': 90000,
                 'lower': 85000,
                 'lower_alt': 86500
             }
             
-            # 检查是否接近关键价位
-            if current_price >= btc_key_levels['upper'] * 0.99:
-                # 接近9万，等待突破确认
-                if klines_1h[-1]['close'] > btc_key_levels['upper']:
+            # 使用日线数据判断关键价位突破（更准确）
+            if klines_1d and len(klines_1d) > 0:
+                latest_daily_close = klines_1d[-1]['close']
+                latest_daily_high = klines_1d[-1]['high']
+                latest_daily_low = klines_1d[-1]['low']
+                
+                # 检查是否突破9万（日线收盘确认）
+                if latest_daily_close > btc_key_levels['upper']:
                     signal = {
                         'market': market,
                         'market_name': self.markets[market]['name'],
-                        'timeframe': '1h',
+                        'timeframe': '1d',
                         'direction': 'long',
                         'entry': current_price,
                         'stop_loss': btc_key_levels['upper'] * 0.98,
@@ -309,14 +522,13 @@ class ChibaTradingSystem:
                         'signal_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                     }
                     signals.append(signal)
-            
-            elif current_price <= btc_key_levels['lower'] * 1.01:
-                # 接近8万5，等待跌破确认
-                if klines_1h[-1]['close'] < btc_key_levels['lower']:
+                
+                # 检查是否跌破8万5（日线收盘确认）
+                elif latest_daily_close < btc_key_levels['lower']:
                     signal = {
                         'market': market,
                         'market_name': self.markets[market]['name'],
-                        'timeframe': '1h',
+                        'timeframe': '1d',
                         'direction': 'short',
                         'entry': current_price,
                         'stop_loss': btc_key_levels['lower'] * 1.02,
@@ -324,7 +536,25 @@ class ChibaTradingSystem:
                         'take_profit_2': btc_key_levels['lower'] * 0.90,
                         'risk_reward_ratio': 2.0,
                         'strength': 'high',
-                        'reason': '跌破8万5关键支撑位',
+                        'reason': '跌破8万5关键支撑位（日线收盘确认）',
+                        'signal_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    }
+                    signals.append(signal)
+                
+                # 检查是否跌破8万6.5（备用支撑位）
+                elif latest_daily_close < btc_key_levels['lower_alt']:
+                    signal = {
+                        'market': market,
+                        'market_name': self.markets[market]['name'],
+                        'timeframe': '1d',
+                        'direction': 'short',
+                        'entry': current_price,
+                        'stop_loss': btc_key_levels['lower_alt'] * 1.02,
+                        'take_profit_1': btc_key_levels['lower_alt'] * 0.95,
+                        'take_profit_2': btc_key_levels['lower_alt'] * 0.90,
+                        'risk_reward_ratio': 2.0,
+                        'strength': 'medium',
+                        'reason': '跌破8万6.5关键支撑位（日线收盘确认）',
                         'signal_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                     }
                     signals.append(signal)
@@ -358,9 +588,31 @@ class ChibaTradingSystem:
             
             # 检查是否在上升趋势中（价格在55均线之上）
             if is_uptrend:
-                # 检查是否回调到均线附近
-                # 优先检查1小时12均线
-                if ma_1h_12 and abs(current_price - ma_1h_12) / ma_1h_12 < 0.005:
+                # 根据视频规则：优先使用4小时24均线
+                # "接下来就是四小时的24所以这要是24能或许是下一次的这样的一个机会"
+                # 如果4小时24均线错过了，再使用1小时12/24均线
+                
+                # 优先检查4小时24均线（更可靠）
+                if ma_4h_24 and abs(current_price - ma_4h_24) / ma_4h_24 < 0.005:
+                    signal = {
+                        'market': market,
+                        'market_name': self.markets[market]['name'],
+                        'timeframe': '4h',
+                        'direction': 'long',
+                        'entry': current_price,
+                        'stop_loss': ma_4h_24 * 0.995,
+                        'take_profit_1': current_price * 1.03,
+                        'take_profit_2': current_price * 1.06,
+                        'risk_reward_ratio': 2.5,
+                        'strength': 'high',
+                        'reason': '回调至4小时24均线（趋势中，按均线执行，优先信号）',
+                        'signal_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    }
+                    signals.append(signal)
+                
+                # 如果4小时24均线没有信号，再检查1小时均线
+                # 1小时12均线
+                elif ma_1h_12 and abs(current_price - ma_1h_12) / ma_1h_12 < 0.005:
                     signal = {
                         'market': market,
                         'market_name': self.markets[market]['name'],
@@ -391,24 +643,6 @@ class ChibaTradingSystem:
                         'risk_reward_ratio': 2.0,
                         'strength': 'high',
                         'reason': '回调至1小时24均线（趋势中，按均线执行）',
-                        'signal_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                    }
-                    signals.append(signal)
-                
-                # 4小时24均线
-                elif ma_4h_24 and abs(current_price - ma_4h_24) / ma_4h_24 < 0.005:
-                    signal = {
-                        'market': market,
-                        'market_name': self.markets[market]['name'],
-                        'timeframe': '4h',
-                        'direction': 'long',
-                        'entry': current_price,
-                        'stop_loss': ma_4h_24 * 0.995,
-                        'take_profit_1': current_price * 1.03,
-                        'take_profit_2': current_price * 1.06,
-                        'risk_reward_ratio': 2.5,
-                        'strength': 'high',
-                        'reason': '回调至4小时24均线（趋势中，按均线执行）',
                         'signal_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                     }
                     signals.append(signal)

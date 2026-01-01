@@ -408,8 +408,25 @@ def evaluate_signal(signal: Dict, klines: List[Dict], signal_time: datetime) -> 
     
     return result
 
-def evaluate_signals_from_report(signals_data: List[Dict], signal_time: datetime) -> List[Dict]:
+def evaluate_signals_from_report(signals_data: List[Dict], signal_time: datetime, 
+                                  auto_sync: bool = True) -> List[Dict]:
     """评估多个信号"""
+    # 自动补充价格数据
+    if auto_sync:
+        try:
+            from src.auto_sync_prices_for_evaluation import auto_sync_prices_for_evaluation
+            # 获取所有需要的时间框架
+            timeframes = list(set([s.get('timeframe', '15m') for s in signals_data]))
+            # 计算需要同步多少小时后的数据（默认24小时，或从信号生成到现在的时间）
+            hours_ahead = max(24, int((datetime.now() - signal_time).total_seconds() / 3600) + 1)
+            print("", file=sys.stderr)
+            auto_sync_prices_for_evaluation(signal_time, timeframes=timeframes, 
+                                           hours_ahead=hours_ahead, verbose=True)
+            print("", file=sys.stderr)
+        except Exception as e:
+            print(f"⚠️ 自动补充价格数据失败: {e}", file=sys.stderr)
+            print("  将继续使用API获取数据", file=sys.stderr)
+    
     results = []
     
     # 计算信号生成时间戳（秒）

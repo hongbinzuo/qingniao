@@ -37,3 +37,4 @@ try {
     Write-Host "⚠️ 连接测试失败，但容器已启动，请稍后重试" -ForegroundColor Yellow
 }
 
+

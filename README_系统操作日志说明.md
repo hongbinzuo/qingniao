@@ -281,3 +281,4 @@ results = logger.es.search(
 3. **原始记录**：所有原始数据都会完整保存
 4. **性能考虑**：大量操作时建议使用Elasticsearch集群
 
+

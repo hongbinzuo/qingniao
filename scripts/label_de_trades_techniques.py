@@ -21,6 +21,19 @@ def near(x, y, pct=0.2):
     except Exception:
         return False
 
+def _ensure_trade_labels_column(conn):
+    """确保 trade_records 存在 tech_labels 列（TEXT, JSON字符串）。"""
+    try:
+        cols = conn.execute("PRAGMA table_info(trade_records)").fetchall()
+        names = [c[1] for c in cols]
+        if 'tech_labels' not in names:
+            conn.execute("ALTER TABLE trade_records ADD COLUMN tech_labels TEXT")
+            conn.commit()
+    except Exception:
+        # 忽略错误（DuckDB旧版可能不支持，或者表不存在）
+        pass
+
+
 def label_one(entry, direction, current_price, kl_15, kl_1h):
     labels = []
     # 分析 15m / 1h
@@ -56,9 +69,98 @@ def label_one(entry, direction, current_price, kl_15, kl_1h):
             if arr and min(abs(entry-x)/entry*100 for x in arr)<0.2: labels.append('SR邻近'); break
     return labels
 
+def get_combo_stats(n: int = 20):
+    """聚合最近 n 笔交易的“技术组合”胜率/均值/尾部风险。
+    返回: [ { 'combo': 'OTE+SR邻近+Vegas邻近', 'count': 7, 'winrate': 0.71,
+             'avg_profit_pct': 1.23, 'tail_risk_pct': -2.8 }, ... ]
+    """
+    db = TraderDBManager('de')
+    con = db._get_connection()
+    _ensure_trade_labels_column(con)
+    rows = con.execute(
+        "SELECT id,direction,profit_pct,tech_labels FROM trade_records ORDER BY id DESC LIMIT ?",
+        [int(n)]
+    ).fetchall()
+    stats = {}
+    for tid, direction, profit, labels_json in rows:
+        try:
+            if not labels_json:
+                continue
+            labels = []
+            # 允许 labels_json 既可能是 JSON 字符串也可能是逗号分隔文本
+            import json as _json
+            try:
+                obj = _json.loads(labels_json)
+                if isinstance(obj, list):
+                    labels = [str(x) for x in obj]
+                elif isinstance(obj, dict) and 'labels' in obj:
+                    labels = [str(x) for x in obj.get('labels') or []]
+            except Exception:
+                labels = [x.strip() for x in str(labels_json).split(',') if x.strip()]
+            if not labels:
+                continue
+            combo = '+'.join(sorted(set(labels)))
+            s = stats.setdefault(combo, {'combo': combo, 'count': 0, 'wins': 0, 'profits': []})
+            s['count'] += 1
+            try:
+                p = float(profit) if profit is not None else 0.0
+            except Exception:
+                p = 0.0
+            s['profits'].append(p)
+            if p > 0:
+                s['wins'] += 1
+        except Exception:
+            continue
+    # 汇总
+    out = []
+    for combo, s in stats.items():
+        if s['count'] <= 0:
+            continue
+        profits = s['profits']
+        avg = sum(profits) / len(profits) if profits else 0.0
+        # 粗略尾部风险：亏损分布的10分位数
+        tail = 0.0
+        if profits:
+            negs = sorted([x for x in profits if x < 0])
+            if negs:
+                import math
+                k = max(0, int(math.floor(0.1 * (len(negs) - 1))))
+                tail = negs[k]
+        out.append({
+            'combo': combo,
+            'count': s['count'],
+            'winrate': s['wins'] / s['count'],
+            'avg_profit_pct': avg,
+            'tail_risk_pct': tail,
+        })
+    # 排序：优先最近命中多且胜率高
+    out.sort(key=lambda x: (x['count'], x['winrate'], x['avg_profit_pct']), reverse=True)
+    db.close()
+    return out
+
+
+def format_combo_snapshot(ns=(20, 50)):
+    """格式化“最近N笔技术组合胜率快照”的 Markdown 行。"""
+    lines = []
+    try:
+        for n in ns:
+            stats = get_combo_stats(n)
+            if not stats:
+                continue
+            lines.append(f"- 最近{n}笔 Top 5 组合：")
+            for row in stats[:5]:
+                lines.append(
+                    f"  - {row['combo']} | 次数 {row['count']} | 胜率 {row['winrate']*100:.0f}% | 平均收益 {row['avg_profit_pct']:.2f}% | 尾部风险 {row['tail_risk_pct']:.2f}%"
+                )
+    except Exception:
+        return []
+    return lines
+
+
 def main():
     db=TraderDBManager('de')
     con=db._get_connection()
+    _ensure_trade_labels_column(con)
     rows=con.execute("SELECT id,timestamp,direction,entry_price FROM trade_records ORDER BY id DESC LIMIT 10").fetchall()
     if not rows:
         print('无交易记录'); return
@@ -71,6 +173,13 @@ def main():
         if labels:
             content=f"De.交易技术归因 | trade#{tid} | {dirc.upper()} | entry ${entry:,.0f} | 技术: {', '.join(labels)}"
             db.add_viewpoint(content=content,timestamp=ts,source='tech-label',category='label',tags=['tech','label'],related_trade_id=tid)
+            # 将标签持久化写回 trade_records.tech_labels
+            try:
+                import json as _json
+                con.execute("UPDATE trade_records SET tech_labels=? WHERE id=?", [_json.dumps(labels, ensure_ascii=False), tid])
+                con.commit()
+            except Exception:
+                pass
             print('✓',tid,labels)
         else:
             print('-',tid,'no-label')
@@ -81,4 +190,3 @@ if __name__=='__main__':
         sys.stdout.reconfigure(encoding='utf-8')
     except Exception: pass
     main()
-

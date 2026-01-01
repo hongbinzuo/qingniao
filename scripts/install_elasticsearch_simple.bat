@@ -79,3 +79,4 @@ echo   2. 测试连接: python src/elasticsearch_logger.py
 echo.
 pause
 
+

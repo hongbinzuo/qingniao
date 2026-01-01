@@ -85,3 +85,4 @@ class UserEvaluationExtractor:
             'evaluation_text': ' | '.join(evaluation_contents) if evaluation_contents else None
         }
 
+

@@ -22,7 +22,7 @@ from db_manager_trader import TraderDBManager
 from de_strategy_extractor import DeStrategyExtractor
 from add_user_evaluation import UserEvaluationExtractor
 from price_validator import PriceValidator
-from elasticsearch_logger import get_es_logger
+from file_logger import get_file_logger
 from system_logger import get_system_logger
 
 def add_conversation(timestamp_str, trader_message, user_message=None, source='discord', btc_price=None):
@@ -186,25 +186,26 @@ def add_conversation(timestamp_str, trader_message, user_message=None, source='d
             success=True
         )
     
-    # 同时保存到Elasticsearch（原始对话记录）
+    # 同时保存到文件日志系统（原始对话记录）
     try:
-        es_logger = get_es_logger()
-        if es_logger.available:
-            es_logger.log_de_conversation(
+        file_logger = get_file_logger()
+        if file_logger and file_logger.available:
+            file_logger.log_de_conversation(
                 timestamp=timestamp,
-                trader_message=stored_trader_message if 'stored_trader_message' in locals() else trader_message,
                 user_message=user_message,
-                source=source,
+                trader_message=stored_trader_message if 'stored_trader_message' in locals() else trader_message,
                 btc_price=btc_price,
-                conversation_id=conv_id,
-                has_trading_info=bool(extracted_content),
-                has_evaluation=bool(evaluation_info and evaluation_info.get('has_evaluation')),
-                evaluation_content=user_evaluation,
-                extracted_content=extracted_content
+                user_evaluation=user_evaluation,
+                evaluation_keywords=evaluation_info.get('evaluation_keywords') if evaluation_info else None,
+                metadata={
+                    'conversation_id': conv_id,
+                    'has_trading_info': bool(extracted_content),
+                    'extracted_content': extracted_content
+                }
             )
     except Exception as e:
-        # Elasticsearch记录失败不影响主流程
-        print(f"⚠️ Elasticsearch记录失败（不影响数据库保存）: {e}", file=sys.stderr)
+        # 文件日志记录失败不影响主流程
+        print(f"⚠️ 文件日志记录失败（不影响数据库保存）: {e}", file=sys.stderr)
     
     # 如果有策略信息，同时录入为观点
     if strategy_info.get('category') and strategy_info['category'] != 'conversation':

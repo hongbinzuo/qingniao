@@ -176,11 +176,15 @@ class MLSignalPredictor:
             categorical_features = ['system', 'timeframe', 'entry_model', 'type', 'strength']
             numerical_features = ['stop_loss_distance_pct', 'tp1_distance_pct', 'tp2_distance_pct', 'risk_reward_ratio']
             
+            # 确保所有特征都存在
+            available_numerical = [f for f in numerical_features if f in df.columns]
+            available_categorical = [f for f in categorical_features if f in df.columns]
+            
             # 编码分类特征
-            X_encoded = df[numerical_features].copy()
+            X_encoded = df[available_numerical].copy()
             self.label_encoders = {}
             
-            for feature in categorical_features:
+            for feature in available_categorical:
                 if feature in df.columns:
                     le = LabelEncoder()
                     X_encoded[feature] = le.fit_transform(df[feature].astype(str))
@@ -188,7 +192,7 @@ class MLSignalPredictor:
             
             X = X_encoded.values
             y = np.array(labels)
-            self.feature_names = numerical_features + categorical_features
+            self.feature_names = available_numerical + available_categorical
             
         else:
             # 如果没有pandas，使用简单的手动编码
@@ -200,10 +204,25 @@ class MLSignalPredictor:
             self.feature_names = ['stop_loss_distance_pct', 'tp1_distance_pct', 
                                  'tp2_distance_pct', 'risk_reward_ratio']
         
+        # 检查标签多样性
+        unique_labels = np.unique(y)
+        if len(unique_labels) < 2:
+            return {
+                'error': f'数据标签单一（只有{unique_labels[0]}），无法训练分类模型。需要成功和失败两种标签。',
+                'samples': len(features_list),
+                'unique_labels': unique_labels.tolist()
+            }
+        
         # 划分训练集和测试集
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=test_size, random_state=42, stratify=y
-        )
+        try:
+            X_train, X_test, y_train, y_test = train_test_split(
+                X, y, test_size=test_size, random_state=42, stratify=y
+            )
+        except ValueError:
+            # 如果stratify失败（某个类别太少），不使用stratify
+            X_train, X_test, y_train, y_test = train_test_split(
+                X, y, test_size=test_size, random_state=42
+            )
         
         # 训练模型（使用随机森林）
         self.model = RandomForestClassifier(
@@ -220,7 +239,15 @@ class MLSignalPredictor:
         accuracy = accuracy_score(y_test, y_pred)
         
         # 计算预测概率（用于评估）
-        y_pred_proba = self.model.predict_proba(X_test)[:, 1]
+        try:
+            y_pred_proba = self.model.predict_proba(X_test)
+            # 如果只有一列，说明只有一个类别
+            if y_pred_proba.shape[1] > 1:
+                y_pred_proba = y_pred_proba[:, 1]
+            else:
+                y_pred_proba = y_pred_proba[:, 0]
+        except:
+            y_pred_proba = None
         
         self.is_trained = True
         

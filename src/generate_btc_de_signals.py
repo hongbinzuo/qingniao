@@ -3,7 +3,7 @@
 """
 使用De.交易系统生成BTC 5分钟和15分钟交易信号
 数据来源：Bitget或Gate.io
-集成实时订单簿止损功能
+提供技术指标止损和实时订单簿止损两种止损方案
 """
 
 import requests
@@ -48,7 +48,11 @@ try:
         calculate_atr_percent,
         assess_volatility_level,
         calculate_risk_reward_ratio,
-        analyze_signal_with_volatility
+        analyze_signal_with_volatility,
+        calculate_dynamic_atr,
+        calculate_adaptive_volatility,
+        get_enhanced_volatility_analysis,
+        get_options_implied_volatility
     )
     VOLATILITY_ANALYZER_AVAILABLE = True
 except ImportError as e:
@@ -387,11 +391,19 @@ def validate_signal(signal, current_price, tolerance_pct=0.05):
             return False, f"做多止盈2${take_profit_2:,.0f}应该在入场价${entry:,.0f}上方"
     
     elif signal_type == 'short':
-        # 做空：入场价应该在当前价格附近或上方（严格检查，不允许低于当前价格超过2%）
-        # 做空应该等待反弹到阻力位，所以入场价应该 >= 当前价格 * 0.98
-        min_entry = current_price * 0.98
-        if entry < min_entry:
-            return False, f"做空入场价${entry:,.0f}低于当前价格${current_price:,.0f}超过2%，不合理（做空应等待反弹到阻力位）"
+        # 做空：入场价必须高于或等于当前价格（做空应该等待反弹到阻力位）
+        # 严格检查：不允许入场价低于当前价格（即使只有0.1%也不行）
+        if entry < current_price:
+            return False, f"做空入场价${entry:,.0f}低于当前价格${current_price:,.0f}，不合理（做空应等待反弹到阻力位，入场价必须≥当前价格）"
+        
+        # 如果入场价等于当前价格，也建议调整到上方（至少0.1%），避免立即成交
+        if entry == current_price:
+            return False, f"做空入场价${entry:,.0f}等于当前价格${current_price:,.0f}，建议等待反弹到当前价格上方至少0.1%再入场"
+        
+        # 入场价不应该过高（超过当前价格5%），但如果是形态阻力位，可以接受
+        if entry > current_price * 1.05:
+            # 这是一个警告，不是错误，但如果太高可能需要调整
+            pass
         
         # 止损应该在入场价上方
         if stop_loss and stop_loss <= entry:
@@ -418,9 +430,9 @@ def add_signal_analysis_to_plan(plan, best_signal, klines, timeframe_name):
     if not VOLATILITY_ANALYZER_AVAILABLE:
         return
     
-    # 计算盈亏比
+    # 计算盈亏比（使用技术止损作为主要计算依据）
     try:
-        stop_loss_price = best_signal.get('orderbook_stop_loss') or best_signal['stop_loss']
+        stop_loss_price = best_signal['stop_loss']  # 预生成信号使用技术止损
         rr_analysis = calculate_risk_reward_ratio(
             entry=best_signal['entry'],
             stop_loss=stop_loss_price,
@@ -444,21 +456,63 @@ def add_signal_analysis_to_plan(plan, best_signal, klines, timeframe_name):
     except Exception as e:
         print(f"{timeframe_name}盈亏比计算失败: {e}", file=sys.stderr)
     
-    # 计算波动率
+    # 计算波动率（使用增强的波动率分析）
     if klines:
         try:
-            atr_percent = calculate_atr_percent(klines, period=14)
-            volatility_assessment = assess_volatility_level(atr_percent)
+            current_price = klines[-1]['close'] if klines else best_signal['entry']
             
-            plan.append(f"**市场波动率**: {volatility_assessment['description']} (ATR: {atr_percent:.2f}%)")
-            plan.append(f"   {volatility_assessment['recommendation']}")
-            
-            # 如果波动率较高，给出止损建议
-            if volatility_assessment['level'] in ['high', 'very_high']:
-                stop_loss_price = best_signal.get('orderbook_stop_loss') or best_signal['stop_loss']
-                current_stop_distance = abs(best_signal['entry'] - stop_loss_price) / best_signal['entry'] * 100
-                suggested_stop_distance = current_stop_distance * volatility_assessment['stop_loss_multiplier']
-                plan.append(f"   ⚠️ 建议止损距离: {suggested_stop_distance:.2f}% (当前: {current_stop_distance:.2f}%)")
+            # 使用增强的波动率分析（包含动态ATR和自适应波动率）
+            if 'get_enhanced_volatility_analysis' in globals():
+                try:
+                    enhanced_vol = get_enhanced_volatility_analysis(klines, current_price, timeframe_name)
+                    if enhanced_vol.get('recommended_atr_percent'):
+                        atr_percent = enhanced_vol['recommended_atr_percent']
+                        volatility_assessment = enhanced_vol.get('assessment') or assess_volatility_level(atr_percent)
+                        
+                        # 显示多种波动率指标
+                        volatility_info = [f"**市场波动率**: {volatility_assessment['description']}"]
+                        if enhanced_vol.get('atr_traditional_percent'):
+                            volatility_info.append(f"传统ATR: {enhanced_vol['atr_traditional_percent']:.2f}%")
+                        if enhanced_vol.get('atr_dynamic_percent'):
+                            volatility_info.append(f"动态ATR: {enhanced_vol['atr_dynamic_percent']:.2f}%")
+                        if enhanced_vol.get('adaptive_volatility'):
+                            adaptive = enhanced_vol['adaptive_volatility']
+                            volatility_info.append(f"波动率趋势: {adaptive['description']} (短期/长期比值: {adaptive['ratio']:.2f})")
+                        
+                        plan.append(" | ".join(volatility_info))
+                        plan.append(f"   推荐ATR: {atr_percent:.2f}% (用于短线止损止盈调整)")
+                        plan.append(f"   {volatility_assessment['recommendation']}")
+                        
+                        # 如果波动率较高，给出止损建议
+                        if volatility_assessment['level'] in ['high', 'very_high']:
+                            stop_loss_price = best_signal['stop_loss']
+                            current_stop_distance = abs(best_signal['entry'] - stop_loss_price) / best_signal['entry'] * 100
+                            suggested_stop_distance = current_stop_distance * volatility_assessment['stop_loss_multiplier']
+                            plan.append(f"   ⚠️ 建议止损距离: {suggested_stop_distance:.2f}% (当前: {current_stop_distance:.2f}%)")
+                        
+                        # 如果期权IV可用，显示
+                        if enhanced_vol.get('options_iv'):
+                            iv_data = enhanced_vol['options_iv']
+                            plan.append(f"   📊 期权隐含波动率: {iv_data.get('iv_30d', 'N/A')}% (30天)")
+                    else:
+                        # 回退到传统ATR
+                        atr_percent = calculate_atr_percent(klines, period=14)
+                        volatility_assessment = assess_volatility_level(atr_percent)
+                        plan.append(f"**市场波动率**: {volatility_assessment['description']} (ATR: {atr_percent:.2f}%)")
+                        plan.append(f"   {volatility_assessment['recommendation']}")
+                except Exception as e:
+                    print(f"增强波动率分析失败，使用传统方法: {e}", file=sys.stderr)
+                    # 回退到传统方法
+                    atr_percent = calculate_atr_percent(klines, period=14)
+                    volatility_assessment = assess_volatility_level(atr_percent)
+                    plan.append(f"**市场波动率**: {volatility_assessment['description']} (ATR: {atr_percent:.2f}%)")
+                    plan.append(f"   {volatility_assessment['recommendation']}")
+            else:
+                # 使用传统ATR
+                atr_percent = calculate_atr_percent(klines, period=14)
+                volatility_assessment = assess_volatility_level(atr_percent)
+                plan.append(f"**市场波动率**: {volatility_assessment['description']} (ATR: {atr_percent:.2f}%)")
+                plan.append(f"   {volatility_assessment['recommendation']}")
         except Exception as e:
             print(f"{timeframe_name}波动率分析失败: {e}", file=sys.stderr)
 
@@ -1142,11 +1196,27 @@ def generate_trading_plan():
                                 entry = current_price * 1.008  # 当前价格上方0.8%，等待突破
                                 if not entry_reason:
                                     entry_reason = f"入场价已调整到{entry:.0f}（当前价格上方0.8%，等待突破）"
-                            elif signal_type == 'short' and entry < current_price * 0.98:
-                                # 做空入场价低于当前价格超过2%，调整到当前价格下方0.5-1%等待回调
-                                entry = current_price * 0.992  # 当前价格下方0.8%，等待回调
-                                if not entry_reason:
-                                    entry_reason = f"入场价已调整到{entry:.0f}（当前价格下方0.8%，等待回调）"
+                            elif signal_type == 'short':
+                                # 做空入场价必须高于当前价格（等待反弹到阻力位）
+                                if entry <= current_price:
+                                    # 如果入场价低于或等于当前价格，必须调整到当前价格上方
+                                    # 优先使用形态的阻力位，如果没有则使用当前价格上方
+                                    if pattern.get('resistance') and pattern['resistance'] > current_price:
+                                        entry = max(pattern['resistance'] * 1.002, current_price * 1.002)  # 阻力位上方0.2%，但至少高于当前价格0.2%
+                                        entry_reason = f"入场价已调整到{entry:.0f}（等待反弹到阻力位{pattern['resistance']:.0f}上方，至少高于当前价格0.2%）"
+                                    elif pattern.get('neckline') and pattern['neckline'] > current_price:
+                                        # 三重顶等形态可能有颈线作为阻力位
+                                        entry = max(pattern['neckline'] * 1.002, current_price * 1.002)
+                                        entry_reason = f"入场价已调整到{entry:.0f}（等待反弹到颈线{pattern['neckline']:.0f}上方）"
+                                    else:
+                                        # 默认调整到当前价格上方0.3-0.5%，等待反弹
+                                        entry = current_price * 1.003  # 当前价格上方0.3%，等待反弹
+                                        entry_reason = f"入场价已调整到{entry:.0f}（当前价格上方0.3%，等待反弹到阻力位）"
+                                elif entry > current_price * 1.02:
+                                    # 入场价高于当前价格超过2%，调整到合理位置
+                                    entry = current_price * 1.008  # 当前价格上方0.8%，等待反弹
+                                    if not entry_reason:
+                                        entry_reason = f"入场价已调整到{entry:.0f}（当前价格上方0.8%，等待反弹）"
                         
                         # 计算第二个止盈位
                         risk = abs(entry - pattern['stop_loss'])
@@ -1202,11 +1272,27 @@ def generate_trading_plan():
                                 entry = current_price * 1.008  # 当前价格上方0.8%，等待突破
                                 if not entry_reason:
                                     entry_reason = f"入场价已调整到{entry:.0f}（当前价格上方0.8%，等待突破）"
-                            elif signal_type == 'short' and entry < current_price * 0.98:
-                                # 做空入场价低于当前价格超过2%，调整到当前价格下方0.5-1%等待回调
-                                entry = current_price * 0.992  # 当前价格下方0.8%，等待回调
-                                if not entry_reason:
-                                    entry_reason = f"入场价已调整到{entry:.0f}（当前价格下方0.8%，等待回调）"
+                            elif signal_type == 'short':
+                                # 做空入场价必须高于当前价格（等待反弹到阻力位）
+                                if entry <= current_price:
+                                    # 如果入场价低于或等于当前价格，必须调整到当前价格上方
+                                    # 优先使用形态的阻力位，如果没有则使用当前价格上方
+                                    if pattern.get('resistance') and pattern['resistance'] > current_price:
+                                        entry = max(pattern['resistance'] * 1.002, current_price * 1.002)  # 阻力位上方0.2%，但至少高于当前价格0.2%
+                                        entry_reason = f"入场价已调整到{entry:.0f}（等待反弹到阻力位{pattern['resistance']:.0f}上方，至少高于当前价格0.2%）"
+                                    elif pattern.get('neckline') and pattern['neckline'] > current_price:
+                                        # 三重顶等形态可能有颈线作为阻力位
+                                        entry = max(pattern['neckline'] * 1.002, current_price * 1.002)
+                                        entry_reason = f"入场价已调整到{entry:.0f}（等待反弹到颈线{pattern['neckline']:.0f}上方）"
+                                    else:
+                                        # 默认调整到当前价格上方0.3-0.5%，等待反弹
+                                        entry = current_price * 1.003  # 当前价格上方0.3%，等待反弹
+                                        entry_reason = f"入场价已调整到{entry:.0f}（当前价格上方0.3%，等待反弹到阻力位）"
+                                elif entry > current_price * 1.02:
+                                    # 入场价高于当前价格超过2%，调整到合理位置
+                                    entry = current_price * 1.008  # 当前价格上方0.8%，等待反弹
+                                    if not entry_reason:
+                                        entry_reason = f"入场价已调整到{entry:.0f}（当前价格上方0.8%，等待反弹）"
                         
                         risk = abs(entry - pattern['stop_loss'])
                         if risk > 0:
@@ -1444,6 +1530,19 @@ def generate_trading_plan():
         else:
             print(f"信号验证失败 ({timeframe}, {signal.get('entry_model', '未知')}): {error_msg}", file=sys.stderr)
     
+    # 最终验证：在所有处理完成后，再次严格验证所有信号
+    # 确保不会有任何不合理的信号被输出
+    final_valid_signals = []
+    for signal, timeframe in valid_signals_to_process:
+        is_valid, error_msg = validate_signal(signal, current_price, tolerance_pct=0.001)  # 更严格的验证（0.1%容差）
+        if is_valid:
+            final_valid_signals.append((signal, timeframe))
+        else:
+            print(f"⚠️ 最终验证失败，信号已过滤 ({timeframe}, {signal.get('entry_model', '未知')}): {error_msg}", file=sys.stderr)
+    
+    # 使用最终验证后的信号列表
+    valid_signals_to_process = final_valid_signals
+    
     # 为所有有效信号获取订单簿止损
     if valid_signals_to_process:
         print(f"正在为 {len(valid_signals_to_process)} 个有效信号获取实时订单簿止损...", file=sys.stderr)
@@ -1543,6 +1642,15 @@ def generate_trading_plan():
             
             best_signal = max(all_signals_5m, key=signal_score)
             
+            # 如果best_signal还没有订单簿止损，尝试获取
+            if not best_signal.get('orderbook_stop_loss'):
+                ob_stop_loss, ob_info = get_orderbook_stop_loss(
+                    best_signal['entry'], best_signal['type'], current_price
+                )
+                if ob_stop_loss:
+                    best_signal['orderbook_stop_loss'] = ob_stop_loss
+                    best_signal['orderbook_info'] = ob_info
+            
             # 添加波动率分析和建议
             if VOLATILITY_ANALYZER_AVAILABLE and klines_5m:
                 try:
@@ -1554,7 +1662,7 @@ def generate_trading_plan():
                     
                     # 如果波动率较高，给出止损建议
                     if volatility_assessment['level'] in ['high', 'very_high']:
-                        current_stop_distance = abs(best_signal['entry'] - (best_signal.get('orderbook_stop_loss') or best_signal['stop_loss'])) / best_signal['entry'] * 100
+                        current_stop_distance = abs(best_signal['entry'] - best_signal['stop_loss']) / best_signal['entry'] * 100
                         suggested_stop_distance = current_stop_distance * volatility_assessment['stop_loss_multiplier']
                         plan.append(f"   ⚠️ 建议止损距离: {suggested_stop_distance:.2f}% (当前: {current_stop_distance:.2f}%)")
                 except Exception as e:
@@ -1582,27 +1690,29 @@ def generate_trading_plan():
             plan.append(f"**{direction}** ({strength})")
             plan.append(f"入场: ${best_signal['entry']:,.0f}")
             
-            # 优先显示基于订单簿的止损
+            # 显示技术指标止损（主要止损）
+            tech_distance = abs(best_signal['entry'] - best_signal['stop_loss'])
+            tech_distance_pct = (tech_distance / best_signal['entry']) * 100
+            plan.append(f"止损: ${best_signal['stop_loss']:,.0f} (技术指标，距离: {tech_distance_pct:.2f}%)")
+            
+            # 同时显示订单簿止损（参考止损）
             if best_signal.get('orderbook_stop_loss'):
                 ob_info = best_signal.get('orderbook_info', {})
                 ob_stop = best_signal['orderbook_stop_loss']
                 is_from_ob = ob_info.get('is_from_orderbook', True)
-                ob_status = "✅ [基于实时订单簿]" if is_from_ob else "⚠️ [备用方案]"
-                distance = abs(best_signal['entry'] - ob_stop)
-                distance_pct = (distance / best_signal['entry']) * 100
-                plan.append(f"止损: ${ob_stop:,.0f} {ob_status} (距离: {distance_pct:.2f}%)")
+                ob_status = "[实时订单簿]" if is_from_ob else "[备用方案]"
+                ob_distance = abs(best_signal['entry'] - ob_stop)
+                ob_distance_pct = (ob_distance / best_signal['entry']) * 100
+                plan.append(f"参考止损: ${ob_stop:,.0f} {ob_status} (距离: {ob_distance_pct:.2f}%)")
                 if ob_info.get('info', {}).get('reason'):
                     plan.append(f"   理由: {ob_info['info']['reason']}")
-                plan.append(f"   参考止损(技术指标): ${best_signal['stop_loss']:,.0f}")
-            else:
-                plan.append(f"止损: ${best_signal['stop_loss']:,.0f} (技术指标，建议使用实时订单簿)")
             
             plan.append(f"止盈: ${best_signal['take_profit_1']:,.0f} (50%) / ${best_signal['take_profit_2']:,.0f} (50%)")
             
-            # 计算并显示盈亏比
+            # 计算并显示盈亏比（使用技术止损作为主要计算依据）
             if VOLATILITY_ANALYZER_AVAILABLE:
                 try:
-                    stop_loss_price = best_signal.get('orderbook_stop_loss') or best_signal['stop_loss']
+                    stop_loss_price = best_signal['stop_loss']  # 预生成信号使用技术止损
                     rr_analysis = calculate_risk_reward_ratio(
                         entry=best_signal['entry'],
                         stop_loss=stop_loss_price,
@@ -1752,6 +1862,15 @@ def generate_trading_plan():
             
             best_signal = max(all_signals_1h, key=signal_score)
             
+            # 如果best_signal还没有订单簿止损，尝试获取
+            if not best_signal.get('orderbook_stop_loss'):
+                ob_stop_loss, ob_info = get_orderbook_stop_loss(
+                    best_signal['entry'], best_signal['type'], current_price
+                )
+                if ob_stop_loss:
+                    best_signal['orderbook_stop_loss'] = ob_stop_loss
+                    best_signal['orderbook_info'] = ob_info
+            
             # 显示所有识别到的形态（如果有多个）
             pattern_signals = [s for s in all_signals_1h if s.get('pattern_priority', 0) > 0]
             if len(pattern_signals) > 1:
@@ -1774,20 +1893,22 @@ def generate_trading_plan():
             plan.append(f"**{direction}** ({strength})")
             plan.append(f"入场: ${best_signal['entry']:,.0f}")
             
-            # 优先显示基于订单簿的止损
+            # 显示技术指标止损（主要止损）
+            tech_distance = abs(best_signal['entry'] - best_signal['stop_loss'])
+            tech_distance_pct = (tech_distance / best_signal['entry']) * 100
+            plan.append(f"止损: ${best_signal['stop_loss']:,.0f} (技术指标，距离: {tech_distance_pct:.2f}%)")
+            
+            # 同时显示订单簿止损（参考止损）
             if best_signal.get('orderbook_stop_loss'):
                 ob_info = best_signal.get('orderbook_info', {})
                 ob_stop = best_signal['orderbook_stop_loss']
                 is_from_ob = ob_info.get('is_from_orderbook', True)
-                ob_status = "✅ [基于实时订单簿]" if is_from_ob else "⚠️ [备用方案]"
-                distance = abs(best_signal['entry'] - ob_stop)
-                distance_pct = (distance / best_signal['entry']) * 100
-                plan.append(f"止损: ${ob_stop:,.0f} {ob_status} (距离: {distance_pct:.2f}%)")
+                ob_status = "[实时订单簿]" if is_from_ob else "[备用方案]"
+                ob_distance = abs(best_signal['entry'] - ob_stop)
+                ob_distance_pct = (ob_distance / best_signal['entry']) * 100
+                plan.append(f"参考止损: ${ob_stop:,.0f} {ob_status} (距离: {ob_distance_pct:.2f}%)")
                 if ob_info.get('info', {}).get('reason'):
                     plan.append(f"   理由: {ob_info['info']['reason']}")
-                plan.append(f"   参考止损(技术指标): ${best_signal['stop_loss']:,.0f}")
-            else:
-                plan.append(f"止损: ${best_signal['stop_loss']:,.0f} (技术指标，建议使用实时订单簿)")
             
             plan.append(f"止盈: ${best_signal['take_profit_1']:,.0f} (50%) / ${best_signal['take_profit_2']:,.0f} (50%)")
             
@@ -1980,6 +2101,15 @@ def generate_trading_plan():
             
             best_signal = max(all_signals_15m, key=signal_score)
             
+            # 如果best_signal还没有订单簿止损，尝试获取
+            if not best_signal.get('orderbook_stop_loss'):
+                ob_stop_loss, ob_info = get_orderbook_stop_loss(
+                    best_signal['entry'], best_signal['type'], current_price
+                )
+                if ob_stop_loss:
+                    best_signal['orderbook_stop_loss'] = ob_stop_loss
+                    best_signal['orderbook_info'] = ob_info
+            
             # 显示所有识别到的形态（如果有多个）
             pattern_signals = [s for s in all_signals_15m if s.get('pattern_priority', 0) > 0]
             if len(pattern_signals) > 1:
@@ -2001,20 +2131,22 @@ def generate_trading_plan():
             plan.append(f"**{direction}** ({strength})")
             plan.append(f"入场: ${best_signal['entry']:,.0f}")
             
-            # 优先显示基于订单簿的止损
+            # 显示技术指标止损（主要止损）
+            tech_distance = abs(best_signal['entry'] - best_signal['stop_loss'])
+            tech_distance_pct = (tech_distance / best_signal['entry']) * 100
+            plan.append(f"止损: ${best_signal['stop_loss']:,.0f} (技术指标，距离: {tech_distance_pct:.2f}%)")
+            
+            # 同时显示订单簿止损（参考止损）
             if best_signal.get('orderbook_stop_loss'):
                 ob_info = best_signal.get('orderbook_info', {})
                 ob_stop = best_signal['orderbook_stop_loss']
                 is_from_ob = ob_info.get('is_from_orderbook', True)
-                ob_status = "✅ [基于实时订单簿]" if is_from_ob else "⚠️ [备用方案]"
-                distance = abs(best_signal['entry'] - ob_stop)
-                distance_pct = (distance / best_signal['entry']) * 100
-                plan.append(f"止损: ${ob_stop:,.0f} {ob_status} (距离: {distance_pct:.2f}%)")
+                ob_status = "[实时订单簿]" if is_from_ob else "[备用方案]"
+                ob_distance = abs(best_signal['entry'] - ob_stop)
+                ob_distance_pct = (ob_distance / best_signal['entry']) * 100
+                plan.append(f"参考止损: ${ob_stop:,.0f} {ob_status} (距离: {ob_distance_pct:.2f}%)")
                 if ob_info.get('info', {}).get('reason'):
                     plan.append(f"   理由: {ob_info['info']['reason']}")
-                plan.append(f"   参考止损(技术指标): ${best_signal['stop_loss']:,.0f}")
-            else:
-                plan.append(f"止损: ${best_signal['stop_loss']:,.0f} (技术指标，建议使用实时订单簿)")
             
             plan.append(f"止盈: ${best_signal['take_profit_1']:,.0f} (50%) / ${best_signal['take_profit_2']:,.0f} (50%)")
             
@@ -2561,28 +2693,25 @@ def generate_trading_plan():
     plan.append("□ RSI是否在合理区域？")
     plan.append("")
     plan.append("**风险管理**:")
-    plan.append("□ 已设置止损（基于实时订单簿，优先使用）")
+    plan.append("□ 已设置止损（技术指标止损为主）")
     plan.append("□ 已设置分批止盈（50%+50%）")
     plan.append("□ 仓位大小已计算（风险2-3%）")
     plan.append("□ 盈亏比≥2:1")
     plan.append("")
     plan.append("### 止损说明")
     plan.append("")
-    plan.append("**实时订单簿止损**（优先使用）:")
-    plan.append("- ✅ 基于实时订单簿的流动性分析")
-    plan.append("- ✅ 识别流动性密集区（支撑/阻力）和稀疏区")
-    plan.append("- ✅ 止损放在稀疏区，避免被扫止损")
-    plan.append("- ✅ 动态调整，不是固定百分比")
+    plan.append("**技术指标止损**（主要使用）:")
+    plan.append("- 基于EMA、VWAP、支撑阻力等技术指标计算")
+    plan.append("- 适合预生成的交易信号（信号生成时的止损位置）")
+    plan.append("- 稳定可靠，不受实时订单簿变化影响")
     plan.append("")
-    plan.append("**技术指标止损**（参考备用）:")
-    plan.append("- 基于EMA、VWAP等技术指标计算")
-    plan.append("- 仅供参考，实际交易时建议使用实时订单簿止损")
+    plan.append("**实时订单簿止损**（参考使用）:")
+    plan.append("- 基于实时订单簿的流动性分析")
+    plan.append("- 识别流动性密集区（支撑/阻力）和稀疏区")
+    plan.append("- 止损放在稀疏区，避免被扫止损")
+    plan.append("- 适合实时交易时动态调整，但预生成信号时订单簿可能已变化")
     plan.append("")
-    plan.append("**如何获取最新止损**:")
-    plan.append("```bash")
-    plan.append("python src/get_realtime_stop_loss.py BTC long sl <入场价>")
-    plan.append("python src/get_realtime_stop_loss.py BTC short sl <入场价>")
-    plan.append("```")
+    plan.append("**建议**: 预生成的信号使用技术指标止损，实时交易时可参考订单簿止损进行调整")
     plan.append("")
     
     plan.append("---")
@@ -2602,20 +2731,21 @@ def generate_trading_plan():
         lines.append(f"**{direction}** ({strength})")
         lines.append(f"入场: ${signal['entry']:,.0f}")
         
-        # 优先显示基于订单簿的止损
-        stop_loss_price = signal.get('orderbook_stop_loss') or signal['stop_loss']
+        # 显示技术指标止损（主要止损）
+        tech_distance = abs(signal['entry'] - signal['stop_loss'])
+        tech_distance_pct = (tech_distance / signal['entry']) * 100
+        lines.append(f"止损: ${signal['stop_loss']:,.0f} (技术指标，{tech_distance_pct:.2f}%)")
+        
+        # 同时显示订单簿止损（参考止损）
+        stop_loss_price = signal['stop_loss']  # 盈亏比计算使用技术止损
         if signal.get('orderbook_stop_loss'):
             ob_info = signal.get('orderbook_info', {})
             ob_stop = signal['orderbook_stop_loss']
             is_from_ob = ob_info.get('is_from_orderbook', True)
-            ob_status = "✅" if is_from_ob else "⚠️"
-            distance = abs(signal['entry'] - ob_stop)
-            distance_pct = (distance / signal['entry']) * 100
-            lines.append(f"止损: ${ob_stop:,.0f} {ob_status} ({distance_pct:.2f}%)")
-        else:
-            distance = abs(signal['entry'] - signal['stop_loss'])
-            distance_pct = (distance / signal['entry']) * 100
-            lines.append(f"止损: ${signal['stop_loss']:,.0f} ({distance_pct:.2f}%)")
+            ob_status = "[实时订单簿]" if is_from_ob else "[备用]"
+            ob_distance = abs(signal['entry'] - ob_stop)
+            ob_distance_pct = (ob_distance / signal['entry']) * 100
+            lines.append(f"参考止损: ${ob_stop:,.0f} {ob_status} ({ob_distance_pct:.2f}%)")
         
         lines.append(f"止盈: ${signal['take_profit_1']:,.0f} (50%) / ${signal['take_profit_2']:,.0f} (50%)")
         

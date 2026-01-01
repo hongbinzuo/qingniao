@@ -258,6 +258,7 @@ def main():
         # 建议生成失败时不影响主流程
         pass
     # 情绪/流向
+    sent = {}
     try:
         from sentiment_aggregator import aggregate_sentiment
         sent = aggregate_sentiment()
@@ -367,6 +368,32 @@ def main():
                 if 'pinbar' in em or '形态' in em: score += 10; clues.append('形态确认')
             except Exception:
                 pass
+            # 情绪加权（逆向倾向）：FG/CB溢价/LS比/资金费
+            try:
+                emo = sent if isinstance(sent, dict) else {}
+                ls = emo.get('binance_ls_ratio'); prem = emo.get('coinbase_premium_pct')
+                fg = emo.get('sentiment_score'); fr = emo.get('funding_rate_pct')
+                adj = 0
+                if sig['type']=='short':
+                    if isinstance(ls,(int,float)) and ls>1.15: adj += 6; clues.append('LS偏多逆向+')
+                    if isinstance(prem,(int,float)) and prem>0.1: adj += 4
+                    if isinstance(fg,(int,float)) and fg>+20: adj += 4
+                    if isinstance(fr,(int,float)) and fr>0.02: adj += 3
+                else:
+                    if isinstance(ls,(int,float)) and ls<0.85: adj += 6; clues.append('LS偏空逆向+')
+                    if isinstance(prem,(int,float)) and prem<-0.1: adj += 4
+                    if isinstance(fg,(int,float)) and fg<-20: adj += 4
+                    if isinstance(fr,(int,float)) and fr<-0.01: adj += 3
+                # 轻微惩罚：与逆向倾向相反时扣分
+                if adj==0:
+                    if isinstance(fg,(int,float)):
+                        if sig['type']=='short' and fg<-15: adj -= 3
+                        if sig['type']=='long' and fg>+15: adj -= 3
+                score += adj
+                if adj>0: clues.append('情绪加权+')
+                if adj<0: clues.append('情绪加权-')
+            except Exception:
+                pass
             # 映射为等级
             if score>=60: label,prob='A',0.68
             elif score>=45: label,prob='B',0.58
@@ -389,6 +416,19 @@ def main():
             if clues:
                 lines.append(f"- 信心: {label} (≈{int(prob*100)}%) | 得分 {score}/100 | 线索: {', '.join(clues)}")
             lines.append("")
+
+    # 技术组合胜率快照
+    try:
+        from label_de_trades_techniques import format_combo_snapshot
+        snap_lines = format_combo_snapshot([20,50])
+        if snap_lines:
+            lines.append('---')
+            lines.append('')
+            lines.append('## 技术组合胜率快照（最近20/50笔）')
+            lines.extend(snap_lines)
+            lines.append('')
+    except Exception:
+        pass
 
     # 追加：4小时趋势背景（不生成4小时信号）
     lines.append("---")
@@ -593,6 +633,19 @@ def main():
                 for b in ob[:3]:
                     full.append("  - {} OB: ${:,.0f}-${:,.0f} ({})".format("看涨" if b.get("type")=="bullish" else "看跌", b.get("low",0), b.get("high",0), b.get("strength","")))
             full.append("")
+
+    # 技术组合胜率快照（详细版同样附上）
+    try:
+        from label_de_trades_techniques import format_combo_snapshot
+        snap_lines = format_combo_snapshot([20,50])
+        if snap_lines:
+            full.append('---')
+            full.append('')
+            full.append('## 技术组合胜率快照（最近20/50笔）')
+            full.extend(snap_lines)
+            full.append('')
+    except Exception:
+        pass
 
     # 末尾：4小时趋势背景（沿用简要版逻辑）
     full.append("---")

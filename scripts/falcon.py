@@ -156,8 +156,8 @@ def analyze_signals(current_price: float, k5: List[Dict], k15: List[Dict], k1h: 
 
 
 def generate_and_store_signals(db: TraderDBManager, system_name: str = "de",
-                               outdir: Path = OUTDIR) -> Tuple[str, List[Tuple[str, Dict, bool]]]:
-    """生成一组信号，写文件，入库。返回(signal_time_str, results)。"""
+                               outdir: Path = OUTDIR) -> Tuple[str, List[Tuple[str, Dict, bool]], int]:
+    """生成一组信号，写文件，入库。返回(signal_time_str, results, writes)。"""
     gate, bitget = get_tickers()
     prices = [p for p in (gate.get("price"), bitget.get("price")) if p]
     if not prices:
@@ -190,7 +190,7 @@ def generate_and_store_signals(db: TraderDBManager, system_name: str = "de",
     before = set(str(p) for p in outdir.glob('BTC_de_signals_*_style_filtered*.md'))
     gen_ok = True
     try:
-        r = subprocess.run([exe, str(Path('scripts')/ 'generate_style_filtered_signals.py'), '--outdir', str(outdir)], capture_output=True, text=True, timeout=300)
+        r = subprocess.run([exe, str(Path('scripts')/ 'generate_style_filtered_signals.py'), '--outdir', str(outdir)], capture_output=True, text=True, encoding='utf-8', timeout=300)
         if r.returncode != 0:
             gen_ok = False
             print('[Falcon] style_filtered 生成失败:', r.stderr[:400], file=sys.stderr)
@@ -198,7 +198,7 @@ def generate_and_store_signals(db: TraderDBManager, system_name: str = "de",
         gen_ok = False
         print('[Falcon] style_filtered 调用异常:', e, file=sys.stderr)
     try:
-        r2 = subprocess.run([exe, str(Path('src')/ 'generate_btc_de_signals.py')], capture_output=True, text=True, timeout=600)
+        r2 = subprocess.run([exe, str(Path('src')/ 'generate_btc_de_signals.py')], capture_output=True, text=True, encoding='utf-8', timeout=600)
         if r2.returncode != 0:
             print('[Falcon] 官方De生成器返回码非0:', r2.returncode, file=sys.stderr)
     except Exception as e:
@@ -211,6 +211,7 @@ def generate_and_store_signals(db: TraderDBManager, system_name: str = "de",
 
     # 将信号入库
     signal_time_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    writes = 0
     for tf, s, passed in results:
         rr = s.get("_rr", {})
         db.add_trading_signal(
@@ -227,19 +228,20 @@ def generate_and_store_signals(db: TraderDBManager, system_name: str = "de",
             volatility_level=None,
             system_name=system_name,
         )
+        writes += 1
     if not gen_ok and not results:
         raise RuntimeError('signal_generation_failed')
-    return signal_time_str, results
+    return signal_time_str, results, writes
 
 
-def eval_pending_older_than_24h_and_store(db: TraderDBManager, outdir: Path = OUTDIR):
-    """评估“未评估且已超过24小时”的所有历史信号，入库并写报告。"""
+def eval_pending_older_than_24h_and_store(db: TraderDBManager, outdir: Path = OUTDIR) -> int:
+    """评估“未评估且已超过24小时”的所有历史信号，入库并写报告。返回写入条数。"""
     threshold_dt = datetime.now() - timedelta(hours=24)
     threshold = threshold_dt.strftime('%Y-%m-%d %H:%M:%S')
     # 获取阈值之前的所有信号
     signals = db.get_trading_signals(end_date=threshold)
     if not signals:
-        return
+        return 0
     # 仅保留尚未有评估记录的信号
     pending: List[Dict] = []
     for s in signals:
@@ -251,13 +253,14 @@ def eval_pending_older_than_24h_and_store(db: TraderDBManager, outdir: Path = OU
             continue
 
     if not pending:
-        return
+        return 0
 
     # 按 signal_time 分组评估
     groups: Dict[str, List[Dict]] = {}
     for s in pending:
         groups.setdefault(s['signal_time'], []).append(s)
 
+    writes = 0
     for stime, group in sorted(groups.items()):
         # 所有信号使用相同的 signal_time（分组）
         try:
@@ -313,6 +316,7 @@ def eval_pending_older_than_24h_and_store(db: TraderDBManager, outdir: Path = OU
                     missed=1 if res.get('status') == 'invalid' else 0,
                     notes=None,
                 )
+                writes += 1
             except Exception as e:
                 print(f"[Falcon] 写入评估失败: {e}", file=sys.stderr)
                 continue
@@ -337,14 +341,25 @@ def eval_pending_older_than_24h_and_store(db: TraderDBManager, outdir: Path = OU
                 content = f"学习建议摘要:\n- 总信号: {analysis.get('total_signals')}\n- 止损问题: {len(analysis.get('stop_loss_issues', []))}\n- 入场价问题: {len(analysis.get('entry_price_issues', []))}"
                 db.add_viewpoint(content=content, timestamp=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                                  source='falcon', category='learning', tags=['learning','improvement'])
+                writes += 1
             except Exception:
                 pass
             system.close()
     except Exception as e:
         print(f"[Falcon] 生成学习建议失败: {e}", file=sys.stderr)
+    return writes
 
 
-def update_state(running: bool, last_ok: bool, last_run_at: datetime, pid: int, last_errors: list | None = None, last_files: list | None = None):
+def load_state() -> dict:
+    try:
+        if STATE_FILE.exists():
+            return json.loads(STATE_FILE.read_text(encoding='utf-8') or '{}')
+    except Exception:
+        pass
+    return {}
+
+
+def update_state(running: bool, last_ok: bool, last_run_at: datetime, pid: int, last_errors: list | None = None, last_files: list | None = None, write_count: int | None = None, last_restart_at: str | None = None):
     OUTDIR.mkdir(parents=True, exist_ok=True)
     state = {
         'running': running,
@@ -356,6 +371,10 @@ def update_state(running: bool, last_ok: bool, last_run_at: datetime, pid: int, 
         state['last_errors'] = last_errors[-10:]
     if last_files:
         state['last_files'] = last_files[:10]
+    if write_count is not None:
+        state['write_count'] = int(write_count)
+    if last_restart_at:
+        state['last_restart_at'] = last_restart_at
     STATE_FILE.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding='utf-8')
 
 
@@ -366,6 +385,11 @@ def main():
     parser.add_argument('--interval', type=int, default=3600, help='执行间隔（秒），默认3600')
     args = parser.parse_args()
 
+    # 从状态加载写计数
+    st = load_state()
+    write_count = int(st.get('write_count') or 0)
+    last_restart_at = st.get('last_restart_at')
+
     def run_cycle():
         ts_start = datetime.now()
         ok = True
@@ -374,7 +398,9 @@ def main():
         # 在每轮内部创建/关闭DB，避免长期持锁
         db = TraderDBManager('de')
         try:
-            signal_time_str, results = generate_and_store_signals(db)
+            signal_time_str, results, w1 = generate_and_store_signals(db)
+            nonlocal write_count
+            write_count += int(w1)
             # 粗略检查：若没有任何信号返回，记为警告
             if not results:
                 ok = False
@@ -386,7 +412,8 @@ def main():
             print(f"[Falcon] 生成信号失败: {e}", file=sys.stderr)
             traceback.print_exc()
         try:
-            eval_pending_older_than_24h_and_store(db)
+            w2 = eval_pending_older_than_24h_and_store(db)
+            write_count += int(w2 or 0)
         except Exception as e:
             ok = False
             msg = f"eval_failed: {e}"
@@ -405,7 +432,14 @@ def main():
                     files_created.append(str(p))
         except Exception:
             pass
-        update_state(running=True, last_ok=ok, last_run_at=ts_start, pid=os.getpid(), last_errors=errs, last_files=files_created)
+        update_state(running=True, last_ok=ok, last_run_at=ts_start, pid=os.getpid(), last_errors=errs, last_files=files_created, write_count=write_count, last_restart_at=last_restart_at)
+
+        # 软重启：每累计>50次写入后，平滑重启一次，释放句柄
+        if write_count >= 50:
+            last_restart_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            update_state(running=True, last_ok=True, last_run_at=datetime.now(), pid=os.getpid(), write_count=0, last_restart_at=last_restart_at)
+            # 执行自重启
+            os.execv(sys.executable, [sys.executable, str(Path(__file__).resolve()), '--daemon', '--interval', str(args.interval)])
 
     ensure_db_ready()
     if args.once and not args.daemon:
@@ -415,7 +449,7 @@ def main():
 
     # 默认守护模式
     print("[Falcon] 守护任务启动，间隔 {} 秒".format(args.interval))
-    update_state(running=True, last_ok=True, last_run_at=datetime.now(), pid=os.getpid())
+    update_state(running=True, last_ok=True, last_run_at=datetime.now(), pid=os.getpid(), write_count=write_count, last_restart_at=last_restart_at)
     while True:
         run_cycle()
         time.sleep(max(10, args.interval))

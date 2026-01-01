@@ -222,3 +222,4 @@ if signal.get('scaling_strategy', {}).get('applicable'):
 - 需要密切监控和手动调整
 - 不适合没有时间看盘的交易者
 
+

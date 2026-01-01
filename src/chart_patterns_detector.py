@@ -1077,16 +1077,17 @@ class ChartPatternsDetector:
         if touches_resistance >= 2 and touches_support >= 2:
             current_price = closes[-1]
             
-            # 如果价格跌破下边界
+            # 如果价格跌破下边界，做空入场应该在阻力位（等待反弹）
             if current_price < support * 1.002:
                 return {
                     'detected': True,
                     'confidence': 65.0,
-                    'entry': support * 0.998,
+                    'entry': resistance * 1.002,  # 做空入场在阻力位上方，等待反弹
                     'stop_loss': resistance * 1.005,
                     'take_profit': support - (resistance - support) * 0.618,
                     'resistance': resistance,
-                    'support': support
+                    'support': support,
+                    'entry_reason': f'价格已跌破支撑{support:.0f}，等待反弹到阻力位{resistance:.0f}上方做空'
                 }
         
         return {'detected': False, 'confidence': 0}

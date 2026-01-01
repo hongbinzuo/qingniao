@@ -1,3 +1,4 @@
 # Elasticsearch日志系统依赖
 elasticsearch>=8.0.0
 
+

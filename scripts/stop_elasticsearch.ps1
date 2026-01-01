@@ -14,3 +14,4 @@ if ($container -and $container -ne "") {
     Write-Host "⚠️ Elasticsearch未运行" -ForegroundColor Yellow
 }
 
+

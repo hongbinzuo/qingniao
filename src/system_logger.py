@@ -14,11 +14,12 @@ if sys.platform == 'win32':
     sys.stdout.reconfigure(encoding='utf-8')
     sys.stderr.reconfigure(encoding='utf-8')
 
+# 使用文件日志系统（简单、高效、零依赖）
 try:
-    from elasticsearch_logger import get_es_logger
-    ES_LOGGER_AVAILABLE = True
+    from file_logger import get_file_logger
+    FILE_LOGGER_AVAILABLE = True
 except ImportError:
-    ES_LOGGER_AVAILABLE = False
+    FILE_LOGGER_AVAILABLE = False
 
 # 操作类型定义
 OPERATION_TYPES = {
@@ -65,7 +66,7 @@ class SystemLogger:
     """系统操作日志记录器"""
     
     def __init__(self):
-        self.es_logger = get_es_logger() if ES_LOGGER_AVAILABLE else None
+        self.file_logger = get_file_logger() if FILE_LOGGER_AVAILABLE else None
     
     def log_signal_generation(self,
                               signals_count: int,
@@ -82,8 +83,8 @@ class SystemLogger:
             "details": details or {}
         }
         
-        if self.es_logger and self.es_logger.available:
-            self.es_logger.log_operation(
+        if self.file_logger and self.file_logger.available:
+            self.file_logger.log_operation(
                 operation_type=OPERATION_TYPES['SIGNAL_GENERATION'],
                 operation_details=operation_details,
                 log_level='info',
@@ -109,8 +110,8 @@ class SystemLogger:
             "details": details or {}
         }
         
-        if self.es_logger and self.es_logger.available:
-            self.es_logger.log_operation(
+        if self.file_logger and self.file_logger.available:
+            self.file_logger.log_operation(
                 operation_type=operation_type_map.get(action, OPERATION_TYPES['TRADE_RECORD_ADD']),
                 operation_details=operation_details,
                 log_level='info'
@@ -135,8 +136,8 @@ class SystemLogger:
         
         log_level = 'error' if not success else 'info'
         
-        if self.es_logger and self.es_logger.available:
-            self.es_logger.log_operation(
+        if self.file_logger and self.file_logger.available:
+            self.file_logger.log_operation(
                 operation_type=OPERATION_TYPES['PRICE_SYNC'],
                 operation_details=operation_details,
                 log_level=log_level
@@ -153,8 +154,8 @@ class SystemLogger:
             "success": success
         }
         
-        if self.es_logger and self.es_logger.available:
-            self.es_logger.log_operation(
+        if self.file_logger and self.file_logger.available:
+            self.file_logger.log_operation(
                 operation_type=OPERATION_TYPES['STRATEGY_EXTRACTION'],
                 operation_details=operation_details,
                 log_level='info'
@@ -178,8 +179,8 @@ class SystemLogger:
         log_level = 'warning' if not is_valid else 'info'
         operation_type = OPERATION_TYPES['PRICE_WARNING'] if not is_valid else OPERATION_TYPES['PRICE_VALIDATION']
         
-        if self.es_logger and self.es_logger.available:
-            self.es_logger.log_operation(
+        if self.file_logger and self.file_logger.available:
+            self.file_logger.log_operation(
                 operation_type=operation_type,
                 operation_details=operation_details,
                 log_level=log_level
@@ -198,8 +199,8 @@ class SystemLogger:
             "traceback": traceback
         }
         
-        if self.es_logger and self.es_logger.available:
-            self.es_logger.log_operation(
+        if self.file_logger and self.file_logger.available:
+            self.file_logger.log_operation(
                 operation_type=OPERATION_TYPES['ERROR'],
                 operation_details=operation_details,
                 log_level='error'
@@ -216,8 +217,8 @@ class SystemLogger:
             "warning_details": warning_details or {}
         }
         
-        if self.es_logger and self.es_logger.available:
-            self.es_logger.log_operation(
+        if self.file_logger and self.file_logger.available:
+            self.file_logger.log_operation(
                 operation_type=OPERATION_TYPES['WARNING'],
                 operation_details=operation_details,
                 log_level='warning'
@@ -236,8 +237,8 @@ class SystemLogger:
             "details": details or {}
         }
         
-        if self.es_logger and self.es_logger.available:
-            self.es_logger.log_operation(
+        if self.file_logger and self.file_logger.available:
+            self.file_logger.log_operation(
                 operation_type=OPERATION_TYPES['PERFORMANCE_METRIC'],
                 operation_details=operation_details,
                 log_level='info'
@@ -249,8 +250,8 @@ class SystemLogger:
                             log_level: str = 'info',
                             btc_price: float = None):
         """记录自定义操作"""
-        if self.es_logger and self.es_logger.available:
-            self.es_logger.log_operation(
+        if self.file_logger and self.file_logger.available:
+            self.file_logger.log_operation(
                 operation_type=operation_type,
                 operation_details=operation_details,
                 log_level=log_level,

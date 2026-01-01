@@ -10,11 +10,12 @@ import uuid
 from datetime import datetime, timedelta
 from db_config import get_db_manager
 from auto_record_de_viewpoints import process_conversation_for_de
+# 使用文件日志系统（简单、高效、零依赖）
 try:
-    from elasticsearch_logger import get_es_logger
-    ES_LOGGER_AVAILABLE = True
+    from file_logger import get_file_logger
+    FILE_LOGGER_AVAILABLE = True
 except ImportError:
-    ES_LOGGER_AVAILABLE = False
+    FILE_LOGGER_AVAILABLE = False
 
 class ConversationLogger:
     """对话日志记录器"""
@@ -46,33 +47,33 @@ class ConversationLogger:
             de_content=de_content_combined
         )
         
-        # 同时保存到Elasticsearch（原始对话记录 - 所有对话都保存）
-        if ES_LOGGER_AVAILABLE:
+        # 同时保存到文件日志系统（原始对话记录 - 所有对话都保存）
+        if FILE_LOGGER_AVAILABLE:
             try:
-                es_logger = get_es_logger()
-                if es_logger.available:
+                file_logger = get_file_logger()
+                if file_logger and file_logger.available:
                     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                     
-                    # 构建原始数据
-                    raw_data = {
+                    # 构建元数据
+                    log_metadata = {
                         'log_id': log_id,
                         'conversation_type': conversation_type,
                         'de_content': de_content_combined
                     }
                     if metadata:
-                        raw_data.update(metadata)
+                        log_metadata.update(metadata)
                     
-                    es_logger.log_conversation(
+                    file_logger.log_conversation(
                         user_message=user_message,
                         assistant_message=assistant_message or '',
                         timestamp=timestamp,
                         session_id=self.session_id,
-                        source='conversation',
-                        has_trading_info=bool(de_content_combined),
-                        raw_data=raw_data
+                        source='user_assistant',
+                        conversation_type=conversation_type,
+                        metadata=log_metadata
                     )
             except Exception as e:
-                # Elasticsearch记录失败不影响主流程
+                # 文件日志记录失败不影响主流程
                 pass
         
         # 如果有De.内容，自动记录为观点（可选）

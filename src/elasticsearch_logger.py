@@ -46,8 +46,16 @@ class ElasticsearchLogger:
             return
         
         # 确保hosts格式正确（完整的URL）
+        # 默认使用HTTP（开发环境已禁用SSL）
         if hosts:
-            self.hosts = [f"http://{h}" if not h.startswith('http') else h for h in hosts]
+            processed_hosts = []
+            for h in hosts:
+                if h.startswith('http://') or h.startswith('https://'):
+                    processed_hosts.append(h)
+                else:
+                    # 默认使用HTTP（开发环境）
+                    processed_hosts.append(f"http://{h}")
+            self.hosts = processed_hosts
         else:
             self.hosts = ['http://localhost:9200']
         self.index_prefix = index_prefix

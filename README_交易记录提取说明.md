@@ -97,3 +97,4 @@ trades = extractor.extract_trades_from_conversation(
 3. **仓位计算**: 自动计算仓位变化
 4. **盈亏计算**: 如果有出场价格，计算盈亏
 
+

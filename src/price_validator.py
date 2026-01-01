@@ -180,3 +180,4 @@ class PriceValidator:
             self.conn.close()
             self.conn = None
 
+

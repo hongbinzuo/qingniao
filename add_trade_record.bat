@@ -10,3 +10,4 @@ python src/add_de_trade_record.py
 pause
 
 
+
