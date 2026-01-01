@@ -35,9 +35,10 @@ from volatility_analyzer import calculate_risk_reward_ratio
 
 
 def get_tickers():
-    """获取 Gate.io 与 Bitget 的 BTCUSDT 实时价格。"""
+    """获取多源 BTCUSDT 实时价格（Gate.io / Bitget / Binance）。"""
     gate = {"exchange": "Gate.io", "price": None, "error": None}
     bitget = {"exchange": "Bitget", "price": None, "error": None}
+    binance = {"exchange": "Binance", "price": None, "error": None}
 
     # Gate.io
     try:
@@ -66,8 +67,21 @@ def get_tickers():
             bitget["raw"] = d["data"]
     except Exception as e:
         bitget["error"] = str(e)
+    # Binance
+    try:
+        r = requests.get(
+            "https://api.binance.com/api/v3/ticker/price",
+            params={"symbol": "BTCUSDT"},
+            timeout=12,
+        )
+        d = r.json()
+        if d and d.get("price"):
+            binance["price"] = float(d["price"]) 
+            binance["raw"] = d
+    except Exception as e:
+        binance["error"] = str(e)
 
-    return gate, bitget
+    return gate, bitget, binance
 
 
 def main():
@@ -101,11 +115,17 @@ def main():
     exclude_keywords = [w.strip() for w in args.exclude.split(",") if w.strip()]
 
     # 1) 获取实时ticker（Gate优先，其次Bitget）
-    gate, bitget = get_tickers()
-    prices = [p for p in (gate.get("price"), bitget.get("price")) if p]
+    gate, bitget, binance = get_tickers()
+    prices = [p for p in (gate.get("price"), bitget.get("price"), binance.get("price")) if p]
     if prices:
-        current_price = prices[0]
-        price_src = "Gate.io ticker" if gate.get("price") else "Bitget ticker"
+        # 使用多源中位数更稳健
+        current_price = sorted(prices)[len(prices)//2]
+        if gate.get("price") == current_price:
+            price_src = "Gate.io ticker"
+        elif bitget.get("price") == current_price:
+            price_src = "Bitget ticker"
+        else:
+            price_src = "Binance ticker"
     else:
         current_price = None
         price_src = "N/A"
@@ -214,11 +234,15 @@ def main():
     lines.append("")
     lines.append("**生成时间**: {}  ".format(now.strftime("%Y-%m-%d %H:%M:%S")))
     cp_line = "**当前价格**: ${:,.2f}  (来源: {})".format(current_price, price_src)
-    if gate.get("price") and bitget.get("price"):
-        spread = (abs(gate["price"] - bitget["price"]) / ((gate["price"] + bitget["price"]) / 2)) * 100
-        cp_line += " | Gate: ${:,.2f} / Bitget: ${:,.2f} (价差 {:.3f}%)".format(
-            gate["price"], bitget["price"], spread
-        )
+    # 展示多源与价差
+    srcs = []
+    for src in (gate, bitget, binance):
+        if src.get('price'):
+            srcs.append(f"{src['exchange']}: ${src['price']:,.2f}")
+    if len(prices) >= 2:
+        mi, ma = min(prices), max(prices)
+        spread = (abs(ma - mi) / ((ma + mi) / 2)) * 100
+        cp_line += " | " + " / ".join(srcs) + f" (跨源最大价差 {spread:.3f}%)"
     lines.append(cp_line + "  ")
     lines.append("**筛选条件**: RR≥{}, 排除关键词: {}  ".format(args.min_rr, ", ".join(exclude_keywords)))
     lines.append("")
@@ -497,11 +521,14 @@ def main():
     full.append("")
     full.append("**生成时间**: {}  ".format(now.strftime("%Y-%m-%d %H:%M:%S")))
     cp_line_f = "**当前价格**: ${:,.2f}  (来源: {})".format(current_price, price_src)
-    if gate.get("price") and bitget.get("price"):
-        spread = (abs(gate["price"] - bitget["price"]) / ((gate["price"] + bitget["price"]) / 2)) * 100
-        cp_line_f += " | Gate: ${:,.2f} / Bitget: ${:,.2f} (价差 {:.3f}%)".format(
-            gate["price"], bitget["price"], spread
-        )
+    srcs = []
+    for src in (gate, bitget, binance):
+        if src.get('price'):
+            srcs.append(f"{src['exchange']}: ${src['price']:,.2f}")
+    if len(prices) >= 2:
+        mi, ma = min(prices), max(prices)
+        spread = (abs(ma - mi) / ((ma + mi) / 2)) * 100
+        cp_line_f += " | " + " / ".join(srcs) + f" (跨源最大价差 {spread:.3f}%)"
     full.append(cp_line_f + "  ")
     full.append("**筛选条件**: RR≥{}, 排除关键词: {}  ".format(args.min_rr, ", ".join(exclude_keywords)))
     full.append("")

@@ -67,9 +67,10 @@ def ensure_db_ready():
         DatabaseDesignV2().init_all_databases()
 
 
-def get_tickers() -> Tuple[Dict, Dict]:
+def get_tickers() -> Tuple[Dict, Dict, Dict]:
     gate = {"exchange": "Gate.io", "price": None, "error": None}
     bitget = {"exchange": "Bitget", "price": None, "error": None}
+    binance = {"exchange": "Binance", "price": None, "error": None}
     try:
         r = requests.get(
             "https://api.gateio.ws/api/v4/spot/tickers",
@@ -92,7 +93,18 @@ def get_tickers() -> Tuple[Dict, Dict]:
             bitget["raw"] = d["data"]
     except Exception as e:
         bitget["error"] = str(e)
-    return gate, bitget
+    try:
+        r = requests.get(
+            "https://api.binance.com/api/v3/ticker/price",
+            params={"symbol": "BTCUSDT"}, timeout=12
+        )
+        d = r.json()
+        if d and d.get("price"):
+            binance["price"] = float(d["price"]) 
+            binance["raw"] = d
+    except Exception as e:
+        binance["error"] = str(e)
+    return gate, bitget, binance
 
 
 def analyze_signals(current_price: float, k5: List[Dict], k15: List[Dict], k1h: List[Dict],
@@ -158,13 +170,14 @@ def analyze_signals(current_price: float, k5: List[Dict], k15: List[Dict], k1h: 
 def generate_and_store_signals(db: TraderDBManager, system_name: str = "de",
                                outdir: Path = OUTDIR) -> Tuple[str, List[Tuple[str, Dict, bool]], int]:
     """生成一组信号，写文件，入库。返回(signal_time_str, results, writes)。"""
-    gate, bitget = get_tickers()
-    prices = [p for p in (gate.get("price"), bitget.get("price")) if p]
+    gate, bitget, binance = get_tickers()
+    prices = [p for p in (gate.get("price"), bitget.get("price"), binance.get("price")) if p]
     if not prices:
         # 回退
         current_price = None
     else:
-        current_price = prices[0]
+        # 使用中位数更稳健
+        current_price = sorted(prices)[len(prices)//2]
 
     # 获取K线（Gate优先，Bitget兜底）
     k5 = get_btc_kline_gateio("5m", 200) or get_btc_kline_bitget("5m", 200)
