@@ -185,25 +185,55 @@ class TraderDBManager:
                           stop_loss: float = None, take_profit_1: float = None,
                           take_profit_2: float = None, entry_model: str = None,
                           strength: str = None, risk_reward_ratio: float = None,
-                          volatility_level: str = None, system_name: str = None) -> int:
-        """添加交易信号"""
+                          volatility_level: str = None, system_name: str = None,
+                          # 可选：挂单区间/规则增强字段（列存在时写入）
+                          entry_lower: float = None, entry_upper: float = None,
+                          stop_distance_points: float = None,
+                          tp_rule: str = None, stop_rule: str = None,
+                          bracket_note: str = None) -> int:
+        """添加交易信号（兼容扩展列）"""
         conn = self._get_connection()
-        
+
         max_id_result = conn.execute('SELECT COALESCE(MAX(id), 0) FROM trading_signals').fetchone()
         next_id = (max_id_result[0] if max_id_result else 0) + 1
-        
+
         created_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        
-        conn.execute('''
-            INSERT INTO trading_signals 
-            (id, signal_time, timeframe, signal_type, entry_price, stop_loss,
-             take_profit_1, take_profit_2, entry_model, strength, risk_reward_ratio,
-             volatility_level, system_name, status, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (next_id, signal_time, timeframe, signal_type, entry_price, stop_loss,
-              take_profit_1, take_profit_2, entry_model, strength, risk_reward_ratio,
-              volatility_level, system_name, 'pending', created_at))
-        
+
+        # 基础必备列
+        cols = [
+            'id','signal_time','timeframe','signal_type','entry_price','stop_loss',
+            'take_profit_1','take_profit_2','entry_model','strength','risk_reward_ratio',
+            'volatility_level','system_name','status','created_at'
+        ]
+        vals = [
+            next_id, signal_time, timeframe, signal_type, entry_price, stop_loss,
+            take_profit_1, take_profit_2, entry_model, strength, risk_reward_ratio,
+            volatility_level, system_name, 'pending', created_at
+        ]
+
+        # 可选扩展列（存在才写）
+        try:
+            table_info = conn.execute("PRAGMA table_info(trading_signals)").fetchall()
+            existing = {c[1] for c in table_info}
+        except Exception:
+            existing = set()
+        opt_map = {
+            'entry_lower': entry_lower,
+            'entry_upper': entry_upper,
+            'stop_distance_points': stop_distance_points,
+            'tp_rule': tp_rule,
+            'stop_rule': stop_rule,
+            'bracket_note': bracket_note,
+        }
+        for k, v in opt_map.items():
+            if k in existing:
+                cols.append(k)
+                vals.append(v)
+
+        placeholders = ','.join(['?'] * len(cols))
+        sql = f"INSERT INTO trading_signals ({','.join(cols)}) VALUES ({placeholders})"
+        conn.execute(sql, vals)
+
         conn.commit()
         return next_id
     
@@ -290,12 +320,17 @@ class TraderDBManager:
     
     def get_trading_signals(self, limit: int = None, status: str = None,
                            start_date: str = None, end_date: str = None) -> List[Dict]:
-        """获取交易信号"""
+        """获取交易信号（稳定列选择，忽略扩展列）"""
         conn = self._get_connection()
-        
-        query = 'SELECT * FROM trading_signals WHERE 1=1'
+
+        base_cols = [
+            'id','signal_time','timeframe','signal_type','entry_price','stop_loss',
+            'take_profit_1','take_profit_2','entry_model','strength','risk_reward_ratio',
+            'volatility_level','system_name','status','created_at'
+        ]
+        query = f"SELECT {', '.join(base_cols)} FROM trading_signals WHERE 1=1"
         params = []
-        
+
         if status:
             if isinstance(status, list):
                 placeholders = ','.join(['?'] * len(status))
@@ -310,14 +345,14 @@ class TraderDBManager:
         if end_date:
             query += ' AND signal_time <= ?'
             params.append(end_date)
-        
+
         query += ' ORDER BY signal_time DESC'
         if limit:
             query += ' LIMIT ?'
             params.append(limit)
-        
+
         result = conn.execute(query, params).fetchall()
-        
+
         signals = []
         for row in result:
             signal = {
@@ -338,7 +373,7 @@ class TraderDBManager:
                 'created_at': row[14]
             }
             signals.append(signal)
-        
+
         return signals
     
     def get_trading_signals_count(self, status: str = None) -> int:

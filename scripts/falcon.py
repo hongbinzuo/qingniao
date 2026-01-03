@@ -45,6 +45,11 @@ from generate_btc_de_signals import (
     validate_signal,
 )
 from volatility_analyzer import calculate_risk_reward_ratio
+try:
+    from de_tactics import build_bracket_short
+    HAVE_TACTICS = True
+except Exception:
+    HAVE_TACTICS = False
 from db_manager_trader import TraderDBManager
 
 # 评估模块
@@ -52,6 +57,12 @@ from evaluate_signal_results import (
     evaluate_signals_from_report,
     format_evaluation_report,
 )
+# 可选：评估之后同步价格时序库，便于后续复盘与模型使用
+try:
+    from auto_sync_prices_for_evaluation import auto_sync_prices_for_evaluation as _auto_sync_prices
+    HAVE_TS_SYNC = True
+except Exception:
+    HAVE_TS_SYNC = False
 
 
 OUTDIR = Path("trading_signals")
@@ -196,6 +207,16 @@ def generate_and_store_signals(db: TraderDBManager, system_name: str = "de",
 
     # 分析并筛选最优信号
     results = analyze_signals(current_price, k5, k15, k1h)
+    # 追加 De. 战术：整位阻力带挂空（RR 达标才加入）
+    try:
+        if HAVE_TACTICS and current_price:
+            _br = build_bracket_short(current_price)
+            _rr = calculate_risk_reward_ratio(_br['entry'], _br['stop_loss'], _br['take_profit_1'], _br['take_profit_2'], 'short')
+            _br['_rr'] = _rr
+            if _rr.get('avg_rr_ratio', 0) >= 1.5:
+                results.append(('15m', _br, True))
+    except Exception:
+        pass
 
     # 写简要/详细文件（复用已有脚本以保持格式）；同时生成官方De.版报告
     exe = sys.executable or 'python'
@@ -218,6 +239,35 @@ def generate_and_store_signals(db: TraderDBManager, system_name: str = "de",
         print('[Falcon] 官方De生成器调用异常:', e, file=sys.stderr)
     # 后验校验：是否真的写出了新文件
     after = set(str(p) for p in outdir.glob('BTC_de_signals_*_style_filtered*.md'))
+
+    # 文件去重：如果新产物与上一版内容完全一致，则删除新文件（避免刷版本）
+    try:
+        import hashlib
+        new_files = sorted(list(after - before))
+        if new_files:
+            # 找到对应类型（简要/完整）的上一版文件
+            before_files = sorted(list(before), key=lambda x: Path(x).stat().st_mtime if Path(x).exists() else 0)
+            def _sha1(p: Path) -> str:
+                try:
+                    return hashlib.sha1(p.read_bytes()).hexdigest()
+                except Exception:
+                    return ''
+            for nf in new_files:
+                np = Path(nf)
+                prev_candidates = [Path(bf) for bf in before_files if ('full' in bf) == ('full' in nf)]
+                if prev_candidates:
+                    prev = sorted(prev_candidates, key=lambda x: x.stat().st_mtime if x.exists() else 0)[-1]
+                    if _sha1(np) and _sha1(prev) and _sha1(np) == _sha1(prev):
+                        # 重复文件，删除
+                        try:
+                            np.unlink(missing_ok=True)
+                        except Exception:
+                            pass
+                        # 从 after 集合移除
+                        after.discard(str(np))
+    except Exception:
+        pass
+
     if not (after - before):
         gen_ok = False
         print('[Falcon] 警告: 未检测到新的风格筛选文件写入', file=sys.stderr)
@@ -229,32 +279,72 @@ def generate_and_store_signals(db: TraderDBManager, system_name: str = "de",
     today = datetime.now().strftime('%Y-%m-%d 00:00:00')
     for tf, s, passed in results:
         rr = s.get("_rr", {})
-        # 去重：当日内若已存在相同 (tf,type,entry,stop) 则跳过写入
+        # 日内去重（原子化）：同一(日内) (tf,type,entry,stop) 不再写入；
+        # 放宽浮点容差到 0.5 美元，避免重复
+        tol_entry = 0.5
+        tol_stop = 0.5
+        # 预检查（容错环境下更直观）
         try:
-            q = (
-                "SELECT COUNT(*) FROM trading_signals WHERE created_at >= ? "
-                "AND timeframe = ? AND signal_type = ? AND ABS(entry_price - ?) < 1e-6 AND ABS(stop_loss - ?) < 1e-6"
-            )
-            cnt = conn.execute(q, [today, tf, s.get("type"), s.get("entry"), s.get("stop_loss")]).fetchone()[0]
+            pre_cnt = conn.execute(
+                "SELECT COUNT(*) FROM trading_signals WHERE created_at >= ? AND timeframe=? AND signal_type=? "
+                "AND ABS(entry_price-?) <= ? AND ABS(stop_loss-?) <= ?",
+                [today, tf, s.get("type"), s.get("entry"), tol_entry, s.get("stop_loss"), tol_stop]
+            ).fetchone()[0]
         except Exception:
-            cnt = 0
-        if cnt:
+            pre_cnt = 0
+        if pre_cnt:
             continue
-        db.add_trading_signal(
-            signal_time=signal_time_str,
-            timeframe=tf,
-            signal_type=s.get("type"),
-            entry_price=s.get("entry"),
-            stop_loss=s.get("stop_loss"),
-            take_profit_1=s.get("take_profit_1"),
-            take_profit_2=s.get("take_profit_2"),
-            entry_model=s.get("entry_model"),
-            strength=s.get("strength"),
-            risk_reward_ratio=rr.get("avg_rr_ratio"),
-            volatility_level=None,
-            system_name=system_name,
-        )
-        writes += 1
+        # 优先通过 DB manager 写入（支持扩展列），失败再回退到原子 SQL
+        created_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        try:
+            db.add_trading_signal(
+                signal_time=signal_time_str,
+                timeframe=tf,
+                signal_type=s.get("type"),
+                entry_price=s.get("entry"),
+                stop_loss=s.get("stop_loss"),
+                take_profit_1=s.get("take_profit_1"),
+                take_profit_2=s.get("take_profit_2"),
+                entry_model=s.get("entry_model"),
+                strength=s.get("strength"),
+                risk_reward_ratio=rr.get("avg_rr_ratio"),
+                volatility_level=None,
+                system_name=system_name,
+                entry_lower=s.get('entry_lower'),
+                entry_upper=s.get('entry_upper'),
+                stop_distance_points=s.get('stop_distance_points'),
+                tp_rule=s.get('tp_rule'),
+                stop_rule=s.get('stop_rule'),
+                bracket_note=s.get('bracket_note'),
+            )
+            writes += 1
+        except Exception:
+            try:
+                conn.execute(
+                    (
+                        "INSERT INTO trading_signals (id, signal_time, timeframe, signal_type, entry_price, stop_loss, "
+                        "take_profit_1, take_profit_2, entry_model, strength, risk_reward_ratio, volatility_level, system_name, status, created_at) "
+                        "SELECT COALESCE((SELECT MAX(id) FROM trading_signals),0)+1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ? "
+                        "WHERE NOT EXISTS (SELECT 1 FROM trading_signals WHERE created_at >= ? AND timeframe=? AND signal_type=? "
+                        "AND ABS(entry_price-?) <= ? AND ABS(stop_loss-?) <= ?)"
+                    ),
+                    [
+                        signal_time_str, tf, s.get("type"), s.get("entry"), s.get("stop_loss"),
+                        s.get("take_profit_1"), s.get("take_profit_2"), s.get("entry_model"), s.get("strength"),
+                        rr.get("avg_rr_ratio"), None, system_name, created_at,
+                        today, tf, s.get("type"), s.get("entry"), tol_entry, s.get("stop_loss"), tol_stop,
+                    ]
+                )
+                # 粗略确认是否插入成功
+                post_cnt = conn.execute(
+                    "SELECT COUNT(*) FROM trading_signals WHERE created_at >= ? AND timeframe=? AND signal_type=? "
+                    "AND ABS(entry_price-?) <= ? AND ABS(stop_loss-?) <= ?",
+                    [today, tf, s.get("type"), s.get("entry"), tol_entry, s.get("stop_loss"), tol_stop]
+                ).fetchone()[0]
+                if post_cnt and not pre_cnt:
+                    writes += 1
+            except Exception:
+                pass
     if not gen_ok and not results:
         raise RuntimeError('signal_generation_failed')
     return signal_time_str, results, writes
@@ -376,6 +466,25 @@ def eval_pending_older_than_24h_and_store(db: TraderDBManager, outdir: Path = OU
     return writes
 
 
+def sync_timeseries_after_cycle(signal_time_str: str) -> bool:
+    """在本轮生成/评估之后，同步BTC价格时序库（5m/15m/1h/4h/1d）。
+    - 仅在可用时执行（HAVE_TS_SYNC=True）
+    - 同步区间：从本轮 signal_time 到当前时间（hours_ahead 自动计算，最少24小时）
+    """
+    if not HAVE_TS_SYNC or not signal_time_str:
+        return False
+    try:
+        from datetime import datetime
+        st = datetime.strptime(signal_time_str, '%Y-%m-%d %H:%M:%S')
+        # 计算 ahead 小时（至少24小时）
+        hours = max(24, int((datetime.now() - st).total_seconds() / 3600) + 1)
+        _auto_sync_prices(st, timeframes=['5m','15m','1h','4h','1d'], hours_ahead=hours, verbose=False)
+        return True
+    except Exception as e:
+        print(f"[Falcon] 时序库同步失败: {e}", file=sys.stderr)
+        return False
+
+
 def load_state() -> dict:
     try:
         if STATE_FILE.exists():
@@ -421,11 +530,17 @@ def main():
         ok = True
         errs: list[str] = []
         files_created: list[str] = []
+        # 避免在异常路径下引用未赋值的局部变量
+        # - signal_time_str 在生成失败时可能未定义
+        # - last_restart_at 在后续赋值前需要从外层读取
+        nonlocal write_count
+        nonlocal last_restart_at
+        signal_time_str = None
+        results = []
         # 在每轮内部创建/关闭DB，避免长期持锁
         db = TraderDBManager('de')
         try:
             signal_time_str, results, w1 = generate_and_store_signals(db)
-            nonlocal write_count
             write_count += int(w1)
             # 粗略检查：若没有任何信号返回，记为警告
             if not results:
@@ -446,6 +561,13 @@ def main():
             errs.append(msg)
             print(f"[Falcon] 评估失败: {e}", file=sys.stderr)
             traceback.print_exc()
+        # 在生成和评估之后，同步价格时序库（可配置地维持评估数据完整）
+        try:
+            synced = sync_timeseries_after_cycle(signal_time_str)
+            if not synced:
+                errs.append('timeseries_sync_skipped')
+        except Exception as e:
+            errs.append(f'timeseries_sync_failed:{e}')
         try:
             db.close()
         except Exception:

@@ -32,6 +32,11 @@ from generate_btc_de_signals import (
     validate_signal,
 )
 from volatility_analyzer import calculate_risk_reward_ratio
+try:
+    from de_tactics import build_bracket_short
+    HAVE_TACTICS = True
+except Exception:
+    HAVE_TACTICS = False
 
 
 def get_tickers():
@@ -226,6 +231,19 @@ def main():
                     return (s["_rr"]["avg_rr_ratio"], strength)
                 best = sorted(candidates, key=score_ref, reverse=True)[0]
                 results.append((tf, best, False))
+
+    # 追加：战术候选（整位阻力带挂空）
+    try:
+        if HAVE_TACTICS and current_price:
+            br = build_bracket_short(current_price)
+            # 用中点做 RR 检查
+            rr = calculate_risk_reward_ratio(br['entry'], br['stop_loss'], br['take_profit_1'], br['take_profit_2'], 'short')
+            br['_rr'] = rr
+            # 简单阈值：RR(mid)≥1.5 才展示
+            if rr.get('avg_rr_ratio', 0) >= 1.5:
+                results.append(('15m', br, True))
+    except Exception:
+        pass
 
     # 5) 生成输出（简要版）
     now = datetime.now()
@@ -428,7 +446,10 @@ def main():
         for tf, sig, passed in results:
             direction = "做多" if sig["type"] == "long" else "做空"
             lines.append("## {} 最优信号（{} — {}）".format(tf, direction, "已通过筛选" if passed else "RR未达标，供参考"))
-            lines.append("- 入场: ${:,.0f}".format(sig["entry"]))
+            if 'entry_lower' in sig and 'entry_upper' in sig and sig.get('entry_lower') and sig.get('entry_upper'):
+                lines.append("- 入场（挂单区间）: ${:,.0f} – ${:,.0f}（中点 ${:,.0f}）".format(sig['entry_lower'], sig['entry_upper'], sig['entry']))
+            else:
+                lines.append("- 入场: ${:,.0f}".format(sig["entry"]))
             lines.append("- 止损: ${:,.0f}".format(sig["stop_loss"]))
             lines.append("- 止盈: ${:,.0f} / ${:,.0f}".format(sig["take_profit_1"], sig["take_profit_2"]))
             rr = sig["_rr"]
