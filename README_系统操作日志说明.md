@@ -282,3 +282,4 @@ results = logger.es.search(
 4. **性能考虑**：大量操作时建议使用Elasticsearch集群
 
 
+

@@ -46,10 +46,15 @@ from generate_btc_de_signals import (
 )
 from volatility_analyzer import calculate_risk_reward_ratio
 try:
-    from de_tactics import build_bracket_short
+    from de_tactics import build_bracket_short, build_confirm_long
     HAVE_TACTICS = True
 except Exception:
     HAVE_TACTICS = False
+try:
+    from persona_config import load_persona
+    HAVE_PERSONA = True
+except Exception:
+    HAVE_PERSONA = False
 from db_manager_trader import TraderDBManager
 
 # 评估模块
@@ -207,14 +212,22 @@ def generate_and_store_signals(db: TraderDBManager, system_name: str = "de",
 
     # 分析并筛选最优信号
     results = analyze_signals(current_price, k5, k15, k1h)
-    # 追加 De. 战术：整位阻力带挂空（RR 达标才加入）
+    # 追加 De. 战术（受 persona 约束）
     try:
+        persona = load_persona() if HAVE_PERSONA else {'allow_bracket_short': True, 'allow_confirm_long': True, 'default_stop_pts_15m': 400}
         if HAVE_TACTICS and current_price:
-            _br = build_bracket_short(current_price)
-            _rr = calculate_risk_reward_ratio(_br['entry'], _br['stop_loss'], _br['take_profit_1'], _br['take_profit_2'], 'short')
-            _br['_rr'] = _rr
-            if _rr.get('avg_rr_ratio', 0) >= 1.5:
-                results.append(('15m', _br, True))
+            if persona.get('allow_bracket_short', True):
+                _br = build_bracket_short(current_price)
+                _rr = calculate_risk_reward_ratio(_br['entry'], _br['stop_loss'], _br['take_profit_1'], _br['take_profit_2'], 'short')
+                _br['_rr'] = _rr
+                if _rr.get('avg_rr_ratio', 0) >= 1.5:
+                    results.append(('15m', _br, True))
+            if persona.get('allow_confirm_long', True):
+                _cl = build_confirm_long(current_price, k15, k5, default_stop_pts=float(persona.get('default_stop_pts_15m', 400)))
+                if _cl:
+                    _rr = calculate_risk_reward_ratio(_cl['entry'], _cl['stop_loss'], _cl['take_profit_1'], _cl['take_profit_2'], 'long')
+                    _cl['_rr'] = _rr
+                    results.append(('15m', _cl, True))
     except Exception:
         pass
 

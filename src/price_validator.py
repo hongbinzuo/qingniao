@@ -181,3 +181,4 @@ class PriceValidator:
             self.conn = None
 
 
+

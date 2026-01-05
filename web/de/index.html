@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>De. Signals</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 16px; }
+    h1 { font-size: 18px; }
+    .sig { border: 1px solid #ddd; border-radius: 6px; padding: 8px; margin: 8px 0; }
+    .tf { font-weight: 600; }
+    .model { color: #666; }
+  </style>
+  <script>
+  async function load() {
+    const r = await fetch('/api/de/status');
+    const j = await r.json();
+    document.getElementById('ts').innerText = j.latest || 'N/A';
+    const box = document.getElementById('list');
+    box.innerHTML='';
+    (j.items||[]).forEach(x => {
+      const div = document.createElement('div');
+      div.className='sig';
+      const rng = (x.entry_lower && x.entry_upper) ? ` | 区间 ${Math.round(x.entry_lower)}-${Math.round(x.entry_upper)}` : '';
+      div.innerHTML = `<div class='tf'>${x.timeframe} ${x.type} <span class='model'>(${x.model||''})</span></div>
+        <div>入场 ${Math.round(x.entry)} 止损 ${Math.round(x.stop)} 止盈 ${Math.round(x.tp1||0)} / ${Math.round(x.tp2||0)}${rng}</div>
+        <div>RR ${(x.rr||0).toFixed(2)} 强度 ${x.strength||''}</div>`;
+      box.appendChild(div);
+    });
+  }
+  window.addEventListener('load', load);
+  </script>
+  </head>
+  <body>
+    <h1>De. 最新信号</h1>
+    <div>最新时间：<span id="ts">加载中...</span></div>
+    <div id="list"></div>
+  </body>
+  </html>
+

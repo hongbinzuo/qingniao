@@ -238,7 +238,6 @@ def main():
             if ts_series and ref_price:
                 # 解析 ts 为 unix 秒（cache 内部可用工具，但我们简化）
                 try:
-                    from datetime import datetime
                     import time
                     if isinstance(ts, str):
                         # 尝试常见格式
@@ -286,4 +285,3 @@ if __name__ == '__main__':
     except Exception:
         pass
     main()
-

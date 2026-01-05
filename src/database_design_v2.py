@@ -15,6 +15,7 @@ DB_DIR = Path(__file__).parent / "data"
 TRADERS = {
     'de': 'De.',
     'meng': '梦',
+    'sherlock': 'Sherlock',
     # 未来可以添加更多交易员
 }
 
@@ -128,6 +129,94 @@ class DatabaseDesignV2:
                 FOREIGN KEY (signal_id) REFERENCES trading_signals(id)
             )
         ''')
+
+        # 6. 执行计划与成交（分表）
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS execution_plans (
+                id INTEGER PRIMARY KEY,
+                signal_id INTEGER NOT NULL,
+                plan_json TEXT,           -- 执行计划原始JSON（hybrid腿、费用、TTL 等）
+                created_at TEXT NOT NULL,
+                updated_at TEXT,
+                FOREIGN KEY (signal_id) REFERENCES trading_signals(id)
+            )
+        ''')
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS order_legs (
+                id INTEGER PRIMARY KEY,
+                plan_id INTEGER NOT NULL,
+                leg_index INTEGER,
+                leg_type TEXT,            -- market / limit
+                frac REAL,                -- 该腿占比（0~1）
+                price REAL,               -- 限价（市价腿可为空）
+                ttl_bars INTEGER,         -- 时效（K根数）
+                tf TEXT,                  -- 时效对应的时间框架，如 5m
+                status TEXT DEFAULT 'pending', -- pending/filled/cancelled/expired
+                created_at TEXT NOT NULL,
+                updated_at TEXT,
+                FOREIGN KEY (plan_id) REFERENCES execution_plans(id)
+            )
+        ''')
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS order_fills (
+                id INTEGER PRIMARY KEY,
+                leg_id INTEGER NOT NULL,
+                fill_time TEXT NOT NULL,
+                price REAL,
+                qty_frac REAL,            -- 成交占该腿比例（0~1）
+                fee_bps REAL,             -- 手续费基点
+                is_taker INTEGER DEFAULT 1,
+                note TEXT,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (leg_id) REFERENCES order_legs(id)
+            )
+        ''')
+
+        # 7. 指标/系统配置（分表）
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS indicator_snapshots (
+                id INTEGER PRIMARY KEY,
+                timestamp TEXT NOT NULL,
+                symbol TEXT,
+                timeframe TEXT,
+                indicator_name TEXT,
+                data TEXT,                -- JSON（如 {"vwap":..., "avwap":..., "rsi":...}）
+                created_at TEXT NOT NULL
+            )
+        ''')
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS system_configs (
+                id INTEGER PRIMARY KEY,
+                name TEXT NOT NULL,
+                version TEXT,
+                config_json TEXT,
+                enabled INTEGER DEFAULT 1,
+                created_at TEXT NOT NULL,
+                updated_at TEXT
+            )
+        ''')
+
+        # 8. Sherlock 命中结果（可用于任意交易员的特定扫描器；此处先为Sherlock设计）
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS sherlock_hits (
+                id INTEGER PRIMARY KEY,
+                computed_at TEXT NOT NULL,
+                symbol TEXT NOT NULL,
+                tf TEXT,
+                exchange TEXT,
+                score REAL,
+                tags TEXT,
+                details_json TEXT,
+                tvem_anchor TEXT,
+                ema_n INTEGER,
+                sigma_k REAL,
+                tvem_line REAL,
+                upper REAL,
+                lower REAL,
+                position TEXT,
+                created_at TEXT NOT NULL
+            )
+        ''')
         
         # 6. 策略规则表（可选，用于存储策略配置）
         conn.execute('''
@@ -150,6 +239,12 @@ class DatabaseDesignV2:
         conn.execute('CREATE INDEX IF NOT EXISTS idx_trading_signals_signal_time ON trading_signals(signal_time)')
         conn.execute('CREATE INDEX IF NOT EXISTS idx_trading_signals_status ON trading_signals(status)')
         conn.execute('CREATE INDEX IF NOT EXISTS idx_signal_evaluations_signal_id ON signal_evaluations(signal_id)')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_exec_plans_signal_id ON execution_plans(signal_id)')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_order_legs_plan_id ON order_legs(plan_id)')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_fills_leg_id ON order_fills(leg_id)')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_indicator_snapshots_ts ON indicator_snapshots(timestamp)')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_hits_time ON sherlock_hits(computed_at)')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_hits_symbol ON sherlock_hits(symbol)')
         
         conn.commit()
         conn.close()

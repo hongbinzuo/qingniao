@@ -357,3 +357,4 @@ def calculate_take_profit_by_theories(start_point, high_point, percentage=0.2):
 这是一个非常系统和实用的交易策略，结合了多种理论，并在实战中得到了验证！
 
 
+

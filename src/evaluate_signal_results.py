@@ -11,7 +11,8 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 from pathlib import Path
 
-# 导入缓存系统
+# 导入缓存系统（兼容运行路径差异）
+CACHE_AVAILABLE = False
 try:
     from src.signal_evaluation_cache import (
         save_evaluation_cache,
@@ -19,9 +20,18 @@ try:
         load_evaluation_cache
     )
     CACHE_AVAILABLE = True
-except ImportError:
-    CACHE_AVAILABLE = False
-    print("⚠️ 缓存系统不可用，将每次都重新计算", file=sys.stderr)
+except Exception:
+    try:
+        from signal_evaluation_cache import (
+            save_evaluation_cache,
+            get_cached_evaluation,
+            load_evaluation_cache
+        )
+        CACHE_AVAILABLE = True
+    except Exception:
+        # 最终兜底：关闭缓存
+        CACHE_AVAILABLE = False
+        print("⚠️ 缓存系统不可用，将每次都重新计算", file=sys.stderr)
 
 # 设置UTF-8编码
 if sys.platform == 'win32':
@@ -688,4 +698,3 @@ if __name__ == "__main__":
     print(f"\n评估报告已保存到: {output_file}", file=sys.stderr)
     print("\n" + "="*60, file=sys.stderr)
     print(report, file=sys.stdout)
-

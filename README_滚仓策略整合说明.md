@@ -223,3 +223,4 @@ if signal.get('scaling_strategy', {}).get('applicable'):
 - 不适合没有时间看盘的交易者
 
 
+
