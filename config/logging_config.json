@@ -1,0 +1,17 @@
+{
+  "log_level": "DEBUG",
+  "log_dir": "data/logs",
+  "retention_days": 90,
+  "enable_file_logging": true,
+  "enable_console_logging": true,
+  "enable_detailed_progress": true,
+  "enable_timing": true,
+  "enable_performance_metrics": true,
+  "console_format": "detailed",
+  "file_format": "jsonl",
+  "log_process_info": true,
+  "log_command_line": true,
+  "log_environment": false,
+  "log_stderr": true,
+  "description": "青鸟系统统一日志配置 - 所有程序默认使用详细日志输出。保留90天的日志记录。"
+}
