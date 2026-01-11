@@ -1,0 +1,19 @@
+# Abu Pattern Weights (initial)
+# Used by src/abu/ranker.py to add a pattern-specific bonus to candidate scores.
+# Tune these values based on learning from abu_index/abu_chart_features.
+
+version: v0.1
+weights:
+  Engulfing:
+    long: 0.4
+    short: 0.4
+  InsideBar:
+    long: 0.2
+    short: 0.2
+  PinBar:
+    long: 0.3
+    short: 0.3
+  KeyLevel:
+    long: 0.1
+    short: 0.1
+
