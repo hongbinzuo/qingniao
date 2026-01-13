@@ -358,3 +358,7 @@ def calculate_take_profit_by_theories(start_point, high_point, percentage=0.2):
 
 
 
+
+
+
+
