@@ -34,8 +34,8 @@ class HybridMatchResult:
     pattern_name: str
     pattern_type: str
     algorithm_score: float  # 算法匹配分数
-    vision_score: Optional[float] = None  # AI视觉匹配分数（如果有）
     final_score: float  # 最终综合分数
+    vision_score: Optional[float] = None  # AI视觉匹配分数（如果有）
     vision_result: Optional[VisionMatchResult] = None
     klines_rendered: bool = False  # 是否已渲染K线图
 
@@ -93,7 +93,9 @@ class HybridVisionPatternMatcher:
         # 初始化算法匹配器
         self.algorithm_matcher = EnhancedGeminiPatternMatcher(
             min_confidence=0.0,
-            exclude_other=False
+            exclude_other=False,
+            require_trading_signals=True,
+            exclude_unmarked=True
         )
         
         # 初始化图表渲染器
@@ -222,16 +224,11 @@ class HybridVisionPatternMatcher:
                             
                             try:
                                 pattern = self._get_pattern_by_id(match['pattern_id'])
-                                if not pattern or not pattern.get('image_path'):
+                                if not pattern:
                                     continue
-                                
-                                pattern_image_path = Path(pattern['image_path'])
-                                if not pattern_image_path.exists():
-                                    # 尝试相对路径
-                                    if ROOT / pattern['image_path']:
-                                        pattern_image_path = ROOT / pattern['image_path']
-                                    if not pattern_image_path.exists():
-                                        continue
+                                pattern_image_path = self._resolve_pattern_image_path(pattern)
+                                if not pattern_image_path:
+                                    continue
                                 
                                 # AI视觉匹配
                                 vision_result = self.vision_matcher.compare_two_images(
@@ -311,6 +308,39 @@ class HybridVisionPatternMatcher:
             if pattern.get('id') == pattern_id:
                 return pattern
         return None
+
+    def _resolve_pattern_image_path(self, pattern: Dict) -> Optional[Path]:
+        """解析模式库图片路径，支持Windows路径与按页码回退"""
+        image_path = pattern.get('image_path')
+        source_page = pattern.get('source_page')
+
+        if image_path:
+            # 直接路径
+            p = Path(image_path)
+            if p.exists():
+                return p
+
+            # Windows路径转WSL
+            if ':' in image_path[:3]:
+                drive, rest = image_path.split(':', 1)
+                drive = drive.lower()
+                rest = rest.replace('\\', '/').lstrip('/')
+                wsl_path = Path('/mnt') / drive / rest
+                if wsl_path.exists():
+                    return wsl_path
+
+            # 相对路径尝试
+            rel_path = ROOT / image_path
+            if rel_path.exists():
+                return rel_path
+
+        # 按页码回退匹配（选取第一页图片）
+        if isinstance(source_page, int):
+            candidates = sorted((ROOT / 'data' / 'abu' / 'images').glob(f'page_{source_page:04d}_img_*.png'))
+            if candidates:
+                return candidates[0]
+
+        return None
     
     def _get_cache_key(self, symbol: str, timeframe: str, klines: List[Dict]) -> str:
         """生成缓存键"""
@@ -342,4 +372,3 @@ class HybridVisionPatternMatcher:
             'cache_size': len(self.cache),
             'version': '3.0'
         }
-

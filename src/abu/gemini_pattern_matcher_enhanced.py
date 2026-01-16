@@ -59,6 +59,14 @@ except ImportError:
     enhance_signal_prices = None
     DLFeatureExtractor = None
 
+# 尝试导入电子书知识检索器
+try:
+    from abu.ebook_knowledge_retriever import EbookKnowledgeRetriever
+    EBOOK_AVAILABLE = True
+except ImportError:
+    EBOOK_AVAILABLE = False
+    EbookKnowledgeRetriever = None
+
 
 class EnhancedGeminiPatternMatcher:
     """优化的Gemini模式匹配器"""
@@ -93,7 +101,8 @@ class EnhancedGeminiPatternMatcher:
     }
     
     def __init__(self, use_dl: bool = False, min_confidence: float = 0.0, 
-                 exclude_other: bool = True, use_ml: bool = True):
+                 exclude_other: bool = True, use_ml: bool = True, use_ebook: bool = True,
+                 require_trading_signals: bool = False, exclude_unmarked: bool = True):
         """
         初始化匹配器
         
@@ -102,12 +111,25 @@ class EnhancedGeminiPatternMatcher:
             min_confidence: 最小置信度阈值（默认0.0，建议0.5）
             exclude_other: 是否排除pattern_type='other'的模式（默认True，排除教学页面）
             use_ml: 是否使用ML模型增强（默认True）
+            use_ebook: 是否使用电子书知识验证（默认True）
         """
         self.pattern_library: List[Dict] = []
         self.learner = PriceActionLearner() if (ML_AVAILABLE and use_ml) else None
         self.dl_extractor = DLFeatureExtractor() if (DL_AVAILABLE and use_dl) else None
         self.use_dl = use_dl and DL_AVAILABLE
         self.use_ml = use_ml and ML_AVAILABLE
+        self.use_ebook = use_ebook and EBOOK_AVAILABLE
+        
+        # 初始化电子书知识检索器
+        if self.use_ebook:
+            try:
+                self.ebook_retriever = EbookKnowledgeRetriever('abu')
+            except Exception as e:
+                print(f"⚠️  电子书知识检索器初始化失败: {e}", file=sys.stderr)
+                self.ebook_retriever = None
+                self.use_ebook = False
+        else:
+            self.ebook_retriever = None
         
         # 优化的权重配置（基于原始算法，优化ML和DL权重）
         ml_weight = 0.3 if self.use_ml else 0.0
@@ -120,7 +142,58 @@ class EnhancedGeminiPatternMatcher:
             'dl_features': dl_weight         # 深度学习特征（增强）
         }
         
+        self.require_trading_signals = require_trading_signals
+        self.exclude_unmarked = exclude_unmarked
+
         self._load_pattern_library(min_confidence=min_confidence, exclude_other=exclude_other)
+
+    def _is_actionable_pattern(self, gemini_annotation: Dict, raw_json: str) -> bool:
+        if self.exclude_unmarked and raw_json:
+            lowered = raw_json.lower()
+            if 'unmarked chart' in lowered or 'your own analysis' in lowered:
+                return False
+
+        parsed = gemini_annotation.get('parsed', gemini_annotation) if isinstance(gemini_annotation, dict) else {}
+
+        if self.require_trading_signals:
+            signals = parsed.get('trading_signals')
+            if not isinstance(signals, list) or not signals:
+                return False
+
+            has_direction = False
+            for sig in signals:
+                if not isinstance(sig, dict):
+                    continue
+                direction = (sig.get('direction') or '').lower()
+                if direction in ('long', 'short', 'buy', 'sell', '做多', '做空'):
+                    has_direction = True
+                    break
+            if not has_direction:
+                return False
+
+        # 过滤无图表内容的占位/标题页面
+        price_behavior = parsed.get('price_action_behavior') or {}
+        trend = str(price_behavior.get('trend', '')).lower()
+        structure = str(price_behavior.get('structure', '')).lower()
+        kline_features = price_behavior.get('kline_features') or []
+        if trend == 'not_applicable' and structure == 'not_applicable' and not kline_features:
+            return False
+
+        patterns = parsed.get('patterns') or []
+        if not kline_features and patterns:
+            only_unknown = True
+            for pat in patterns:
+                if not isinstance(pat, dict):
+                    continue
+                name = (pat.get('name') or '').lower()
+                ptype = (pat.get('type') or '').lower()
+                if name not in ('', 'unknown') or ptype not in ('', 'unknown'):
+                    only_unknown = False
+                    break
+            if only_unknown:
+                return False
+
+        return True
     
     def _normalize_feature_name(self, feature_name: str) -> str:
         """
@@ -162,7 +235,8 @@ class EnhancedGeminiPatternMatcher:
         
         try:
             db = TraderDBManager('abu')
-            conn = db._get_connection()
+            # 使用只读连接，允许多进程同时读取
+            conn = db._get_connection(read_only=True)
             
             # 构建查询条件
             conditions = [
@@ -183,17 +257,63 @@ class EnhancedGeminiPatternMatcher:
             
             query = f'''
                 SELECT id, gemini_annotation_json, pattern_type, pattern_name, 
-                       source_page, COALESCE(confidence, 0.0) as confidence
+                       source_page, image_path, COALESCE(confidence, 0.0) as confidence
                 FROM pattern_library
                 WHERE {' AND '.join(conditions)}
                 ORDER BY id
             '''
-            
-            results = conn.execute(query, params).fetchall()
+
+            try:
+                results = conn.execute(query, params).fetchall()
+                has_source_page = True
+                has_image_path = True
+            except Exception:
+                try:
+                    conn.rollback()
+                except Exception:
+                    pass
+                fallback_query = f'''
+                    SELECT id, gemini_annotation_json, pattern_type, pattern_name,
+                           image_path, COALESCE(confidence, 0.0) as confidence
+                    FROM pattern_library
+                    WHERE {' AND '.join(conditions)}
+                    ORDER BY id
+                '''
+                try:
+                    results = conn.execute(fallback_query, params).fetchall()
+                    has_source_page = False
+                    has_image_path = True
+                except Exception:
+                    try:
+                        conn.rollback()
+                    except Exception:
+                        pass
+                    fallback_query = f'''
+                        SELECT id, gemini_annotation_json, pattern_type, pattern_name,
+                               COALESCE(confidence, 0.0) as confidence
+                        FROM pattern_library
+                        WHERE {' AND '.join(conditions)}
+                        ORDER BY id
+                    '''
+                    results = conn.execute(fallback_query, params).fetchall()
+                    has_source_page = False
+                    has_image_path = False
             db.close()
             
             excluded_count = 0
-            for pattern_id, gemini_json, pattern_type, pattern_name, source_page, confidence in results:
+            for row in results:
+                if has_source_page and has_image_path:
+                    pattern_id, gemini_json, pattern_type, pattern_name, source_page, image_path, confidence = row
+                elif has_source_page and not has_image_path:
+                    pattern_id, gemini_json, pattern_type, pattern_name, source_page, confidence = row
+                    image_path = None
+                elif has_image_path and not has_source_page:
+                    pattern_id, gemini_json, pattern_type, pattern_name, image_path, confidence = row
+                    source_page = None
+                else:
+                    pattern_id, gemini_json, pattern_type, pattern_name, confidence = row
+                    source_page = None
+                    image_path = None
                 try:
                     # 额外检查：排除已知的教学页面（如第222页）
                     if source_page and source_page in [222]:  # 可以扩展这个列表
@@ -201,6 +321,9 @@ class EnhancedGeminiPatternMatcher:
                         continue
                     
                     gemini_annotation = json.loads(gemini_json)
+                    if not self._is_actionable_pattern(gemini_annotation, gemini_json):
+                        excluded_count += 1
+                        continue
                     
                     # 检查置信度（如果数据库有confidence字段）
                     conf_value = confidence if confidence is not None else 0.0
@@ -213,6 +336,7 @@ class EnhancedGeminiPatternMatcher:
                         'pattern_type': pattern_type,
                         'pattern_name': pattern_name,
                         'source_page': source_page,
+                        'image_path': image_path,
                         'confidence': conf_value,
                         'gemini_annotation': gemini_annotation
                     })
@@ -621,9 +745,26 @@ class EnhancedGeminiPatternMatcher:
         # 计算止损和止盈
         entry_price = current_price
         
+        # 尝试从电子书规则获取交易参数（如果启用）
+        ebook_rules = None
+        pattern_type = match.get('pattern_type', '')
+        if self.use_ebook and self.ebook_retriever and pattern_type:
+            try:
+                rules_list = self.ebook_retriever.get_trading_rules(pattern_type)
+                if rules_list:
+                    ebook_rules = rules_list[0].get('rules', {})  # 使用第一个规则
+            except Exception as e:
+                print(f"⚠️  获取电子书规则失败: {e}", file=sys.stderr)
+        
         stop_loss_pct = signal.get('stop_loss_pct') or signal.get('stop_loss_distance_pct')
         take_profit_1_pct = signal.get('take_profit_1_pct') or signal.get('take_profit_distance_pct')
         take_profit_2_pct = signal.get('take_profit_2_pct')
+        
+        # 如果信号中没有，尝试从电子书规则获取
+        if (stop_loss_pct is None or take_profit_1_pct is None) and ebook_rules:
+            # 解析电子书规则中的交易参数（文本形式，需要简单解析）
+            # 这里只是示例，实际需要更复杂的NLP解析
+            pass  # 暂时跳过，因为电子书规则是文本形式
         
         # 如果信号中没有，从K线数据计算
         if stop_loss_pct is None or take_profit_1_pct is None:
@@ -702,4 +843,3 @@ class EnhancedGeminiPatternMatcher:
                 pass
         
         return base_signal
-
