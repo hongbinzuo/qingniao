@@ -1,0 +1,89 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Abu 15m Top10</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 16px; background:#0b0e14; color:#e6e6e6; }
+    h1 { font-size: 18px; }
+    .grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; }
+    .card { background:#121826; border:1px solid #1f2636; border-radius:10px; padding:12px; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border-bottom: 1px solid #1f2636; padding: 6px 8px; }
+    th { color:#a8b3cf; text-align:left; }
+    .pill { padding:2px 8px; border-radius: 999px; font-size:12px; }
+    .long { background:#123f2a; color:#8df0b1; }
+    .short { background:#402124; color:#f29b9b; }
+    .score { font-weight:600; color:#ffd166; }
+    canvas { width:100%; height:280px; }
+  </style>
+  <script>
+  async function load() {
+    const r = await fetch('/api/abu/status?top=10');
+    const j = await r.json();
+    document.getElementById('ts').innerText = j.latest || 'N/A';
+    const tb = document.getElementById('tb');
+    tb.innerHTML = '';
+    const bars = [];
+    const labels = [];
+    (j.items||[]).forEach((x,i) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${i+1}</td><td>${x.symbol||''}</td>`+
+        `<td><span class="pill ${x.type=='long'?'long':'short'}">${x.type||''}</span></td>`+
+        `<td>${Math.round(x.entry||0)}</td><td>${Math.round(x.stop||0)}</td>`+
+        `<td>${Math.round(x.tp1||0)}</td><td>${Math.round(x.tp2||0)}</td>`+
+        `<td class='score'>${(x.score||0).toFixed(2)}</td><td title="${x.reason||''}">${x.model||''}</td>`;
+      tb.appendChild(tr);
+      labels.push(x.symbol||`#${i+1}`);
+      bars.push(Number((x.score||0).toFixed(2)));
+    });
+    renderChart(labels, bars);
+  }
+
+  function renderChart(labels, data) {
+    const c = document.getElementById('chart');
+    const ctx = c.getContext('2d');
+    const W = c.width = c.clientWidth * devicePixelRatio;
+    const H = c.height = c.clientHeight * devicePixelRatio;
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+    const pad = {l:40, r:10, t:10, b:24};
+    const w = c.clientWidth - pad.l - pad.r;
+    const h = c.clientHeight - pad.t - pad.b;
+    ctx.clearRect(0,0,c.clientWidth,c.clientHeight);
+    // axes
+    ctx.strokeStyle = '#1f2636'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, pad.t+h); ctx.lineTo(pad.l+w, pad.t+h); ctx.stroke();
+    const maxv = Math.max(1, Math.max(...data, 1));
+    const barw = Math.max(12, (w / Math.max(1,data.length)) * 0.6);
+    data.forEach((v,i)=>{
+      const x = pad.l + (i+0.5)* (w/Math.max(1,data.length)) - barw/2;
+      const hh = h * (v/maxv);
+      ctx.fillStyle = '#4cc9f0';
+      ctx.fillRect(x, pad.t + h - hh, barw, hh);
+      ctx.fillStyle = '#a8b3cf'; ctx.font = '12px system-ui';
+      const lbl = labels[i]||''; ctx.save();
+      ctx.translate(x+barw/2, pad.t+h+14); ctx.rotate(-Math.PI/6);
+      ctx.textAlign='right'; ctx.fillText(lbl, 0, 0); ctx.restore();
+    });
+  }
+  window.addEventListener('load', load);
+  </script>
+</head>
+<body>
+  <h1>Abu 15m Top10</h1>
+  <div class="grid">
+    <div class="card">
+      <div>最新时间：<span id="ts">加载中...</span></div>
+      <table>
+        <thead>
+          <tr><th>#</th><th>Symbol</th><th>Type</th><th>Entry</th><th>SL</th><th>TP1</th><th>TP2</th><th>Score</th><th>Model</th></tr>
+        </thead>
+        <tbody id="tb"></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <canvas id="chart"></canvas>
+    </div>
+  </div>
+</body>
+</html>

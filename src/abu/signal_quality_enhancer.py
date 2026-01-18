@@ -238,3 +238,5 @@ def enhance_signal_prices(signal: Dict, klines: List[Dict],
     
     return enhanced_signal
 
+
+

@@ -29,20 +29,13 @@ def _yield_files(pats: Iterable[str]):
             if p.is_file():
                 yield p
 
-def _sym_from_text(txt: str) -> list[str]:
+def _sym_pairs_from_text(txt: str) -> list[str]:
+    """Extract explicit pairs only (ABC/USDT) and return bases."""
     out: list[str] = []
-    # explicit pairs ABC/USDT
     for m in re.finditer(r"\b([A-Za-z0-9][A-Za-z0-9._\-]{1,14})\s*/\s*(USDT|USDC|USD)\b", txt):
-        out.append(m.group(1).upper())
-    # bare bases (avoid common words)
-    if not out:
-        for m in re.finditer(r"\b([A-Z0-9]{2,10})\b", txt):
-            b = m.group(1).upper()
-            if b in {'USDT','USDC','USD','TP','SL','MA','EMA','MACD','RSI','VWAP','TVEM'}:
-                continue
-            if b.isdigit():
-                continue
-            out.append(b)
+        base = m.group(1).upper()
+        if 2 <= len(base) <= 15 and not base.isdigit():
+            out.append(base)
     # dedup keep order
     seen=set(); res=[]
     for s in out:
@@ -73,11 +66,11 @@ def _collect_from_dream() -> set[str]:
                                 txt = str(txt)
                     elif isinstance(it, str):
                         txt = it
-                    for s in _sym_from_text(txt):
+                    for s in _sym_pairs_from_text(txt):
                         bases.add(s)
             else:
                 txt = p.read_text(encoding='utf-8', errors='ignore')
-                for s in _sym_from_text(txt):
+                for s in _sym_pairs_from_text(txt):
                     bases.add(s)
         except Exception:
             continue
@@ -98,8 +91,25 @@ def _collect_from_sherlock_md() -> set[str]:
             continue
     return bases
 
+def _collect_from_dream_v2_json() -> set[str]:
+    bases: set[str] = set()
+    for p in _yield_files(['outputs/dream/dream_extracted_trades_v2_*.json']):
+        try:
+            data = json.loads(p.read_text(encoding='utf-8', errors='ignore'))
+            if isinstance(data, list):
+                for it in data:
+                    sym = (it.get('symbol') or '') if isinstance(it, dict) else ''
+                    if isinstance(sym, str) and '/' in sym:
+                        base = sym.split('/',1)[0].strip().upper()
+                        if 2 <= len(base) <= 15 and base and not base.isdigit():
+                            bases.add(base)
+        except Exception:
+            continue
+    return bases
+
 def main():
     bases = set(CORE)
+    bases |= _collect_from_dream_v2_json()
     bases |= _collect_from_dream()
     bases |= _collect_from_sherlock_md()
     # write out
@@ -114,4 +124,3 @@ if __name__ == '__main__':
     except Exception:
         pass
     main()
-

@@ -1,0 +1,32 @@
+{
+  "first_trained_at": "2026-01-11 08:53:42",
+  "last_trained_at": "2026-01-11 08:53:42",
+  "last_trained_samples": 429,
+  "training_data_hash": null,
+  "model_version": "1.0",
+  "accuracy": 1.0,
+  "feature_importance": {
+    "avg_probability": 0.007013254798948765,
+    "avg_rr_ratio": 0.0,
+    "confidence": 0.0,
+    "has_consolidation_pattern": 0.0028388765640556812,
+    "has_continuation_pattern": 0.09797479212284088,
+    "has_engulfing": 0.0,
+    "has_inside_bar": 0.0,
+    "has_pin_bar": 0.0,
+    "has_reversal_pattern": 0.481705904006958,
+    "kline_feature_count": 0.003415298881009221,
+    "pattern_combination_length": 0.379058837890625,
+    "pattern_count": 0.0018951926613226533,
+    "signal_count": 0.0012989751994609833,
+    "structure_hh_hl": 0.00807729922235012,
+    "structure_lh_ll": 0.0,
+    "trend_bearish": 0.001671097008511424,
+    "trend_bullish": 0.0,
+    "trend_neutral": 0.0018946233903989196,
+    "trend_strength_strong": 0.0,
+    "trend_strength_weak": 0.0025874010752886534,
+    "volatility_high": 0.0031109629198908806,
+    "volatility_low": 0.00745740020647645
+  }
+}

@@ -85,7 +85,7 @@ except ImportError:
                 from abu.gemini_pattern_matcher import GeminiPatternMatcher
                 # 兼容旧版本
                 class EnhancedGeminiPatternMatcher:
-                    def __init__(self, use_dl=False):
+                    def __init__(self, use_dl=False, **kwargs):
                         self.matcher = GeminiPatternMatcher()
                         self.pattern_library = self.matcher.pattern_library
                     
@@ -442,7 +442,7 @@ def save_signals_to_file(signals: List[Dict], timeframe: str, days: int, exchang
     """保存信号到Markdown文件"""
     if not signals:
         return None
-    output_dir = ROOT / 'trading_signals'
+    output_dir = ROOT / 'outputs' / 'trading_signals'
     output_dir.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     out_file = output_dir / f'ABU_Gemini_{timeframe}_top{len(signals)}_{timestamp}.md'
@@ -488,6 +488,9 @@ def main():
     parser.add_argument('--write-db', type=int, default=1, help='是否写入数据库（0/1）')
     parser.add_argument('--coins', type=int, default=0, help='覆盖所有时间框架的币种数量（0=默认）')
     parser.add_argument('--days', type=int, default=0, help='覆盖所有时间框架的数据跨度天数（0=默认）')
+    parser.add_argument('--signal-level', type=str, default='trade_ready',
+                        choices=['none', 'basic', 'trade_ready'],
+                        help='交易信号完整性等级（none/basic/trade_ready）')
 
     args = parser.parse_args()
 
@@ -498,7 +501,8 @@ def main():
     matcher = EnhancedGeminiPatternMatcher(
         use_dl=False,
         require_trading_signals=True,
-        exclude_unmarked=True
+        exclude_unmarked=True,
+        signal_completeness=args.signal_level
     )
     pattern_count = len(matcher.pattern_library) if hasattr(matcher, 'pattern_library') else 0
     if pattern_count == 0:

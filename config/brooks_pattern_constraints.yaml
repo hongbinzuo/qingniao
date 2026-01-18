@@ -1,0 +1,240 @@
+version: v1
+rules:
+  - name: SmallPullbackBullTrend
+    aliases:
+      - Small Pullback Bull Trend
+      - Bull Pullback
+      - High 1
+      - High 2
+    direction: long
+    required:
+      - feature: trend_direction
+        op: "=="
+        value: bullish
+      - feature: trend_strength
+        op: ">="
+        value: 0.015
+      - feature: pullback_depth_pct
+        op: "<="
+        value: 0.02
+    avoid:
+      - feature: range_mode
+        op: "=="
+        value: true
+    score_boost: 0.25
+
+  - name: SmallPullbackBearTrend
+    aliases:
+      - Small Pullback Bear Trend
+      - Bear Pullback
+      - Low 1
+      - Low 2
+    direction: short
+    required:
+      - feature: trend_direction
+        op: "=="
+        value: bearish
+      - feature: trend_strength
+        op: ">="
+        value: 0.015
+      - feature: pullback_depth_pct
+        op: "<="
+        value: 0.02
+    avoid:
+      - feature: range_mode
+        op: "=="
+        value: true
+    score_boost: 0.25
+
+  - name: BreakoutPullbackLong
+    aliases:
+      - Breakout Pullback
+      - Breakout
+      - Breakout Bull
+    direction: long
+    required:
+      - feature: breakout_up
+        op: "=="
+        value: true
+    score_boost: 0.2
+
+  - name: BreakoutPullbackShort
+    aliases:
+      - Breakout Bear
+      - Breakout Short
+      - Breakout Down
+    direction: short
+    required:
+      - feature: breakout_down
+        op: "=="
+        value: true
+    score_boost: 0.2
+
+  - name: TradingRangeFadeLong
+    aliases:
+      - Trading Range
+      - Range
+      - TR
+    direction: long
+    required:
+      - feature: range_mode
+        op: "=="
+        value: true
+      - feature: range_low_dist_pct
+        op: "<="
+        value: 0.01
+    score_boost: 0.15
+
+  - name: TradingRangeFadeShort
+    aliases:
+      - Trading Range
+      - Range
+      - TR
+    direction: short
+    required:
+      - feature: range_mode
+        op: "=="
+        value: true
+      - feature: range_high_dist_pct
+        op: "<="
+        value: 0.01
+    score_boost: 0.15
+
+  - name: DoubleBottomLong
+    aliases:
+      - Double Bottom
+    direction: long
+    required:
+      - feature: double_bottom
+        op: "=="
+        value: true
+    score_boost: 0.2
+
+  - name: DoubleTopShort
+    aliases:
+      - Double Top
+    direction: short
+    required:
+      - feature: double_top
+        op: "=="
+        value: true
+    score_boost: 0.2
+
+  - name: WedgeReversalLong
+    aliases:
+      - Wedge
+      - Wedge Bottom
+      - Falling Wedge
+    direction: long
+    required:
+      - feature: swing_low_count
+        op: ">="
+        value: 3
+    score_boost: 0.15
+
+  - name: WedgeReversalShort
+    aliases:
+      - Wedge Top
+      - Rising Wedge
+    direction: short
+    required:
+      - feature: swing_high_count
+        op: ">="
+        value: 3
+    score_boost: 0.15
+
+  - name: EngulfingReversalLong
+    aliases:
+      - Engulfing
+      - Bullish Engulfing
+    direction: long
+    required:
+      - feature: kline_features
+        op: "contains"
+        value: bullish_engulfing
+    score_boost: 0.1
+
+  - name: EngulfingReversalShort
+    aliases:
+      - Engulfing
+      - Bearish Engulfing
+    direction: short
+    required:
+      - feature: kline_features
+        op: "contains"
+        value: bearish_engulfing
+    score_boost: 0.1
+
+  - name: InsideBarBreakoutLong
+    aliases:
+      - InsideBar
+      - Inside Bar
+    direction: long
+    required:
+      - feature: kline_features
+        op: "contains"
+        value: inside_bar
+      - feature: trend_direction
+        op: "=="
+        value: bullish
+    avoid:
+      - feature: range_mode
+        op: "=="
+        value: true
+    score_boost: 0.12
+
+  - name: InsideBarBreakoutShort
+    aliases:
+      - InsideBar
+      - Inside Bar
+    direction: short
+    required:
+      - feature: kline_features
+        op: "contains"
+        value: inside_bar
+      - feature: trend_direction
+        op: "=="
+        value: bearish
+    avoid:
+      - feature: range_mode
+        op: "=="
+        value: true
+    score_boost: 0.12
+
+  - name: PinBarReversalLong
+    aliases:
+      - Pin Bar
+      - Bullish Pin Bar
+      - Bullish PinBar
+    direction: long
+    required:
+      - feature: kline_features
+        op: "contains"
+        value: bullish_pin_bar
+      - feature: range_low_dist_pct
+        op: "<="
+        value: 0.01
+    avoid:
+      - feature: breakout_down
+        op: "=="
+        value: true
+    score_boost: 0.12
+
+  - name: PinBarReversalShort
+    aliases:
+      - Pin Bar
+      - Bearish Pin Bar
+      - Bearish PinBar
+    direction: short
+    required:
+      - feature: kline_features
+        op: "contains"
+        value: bearish_pin_bar
+      - feature: range_high_dist_pct
+        op: "<="
+        value: 0.01
+    avoid:
+      - feature: breakout_up
+        op: "=="
+        value: true
+    score_boost: 0.12

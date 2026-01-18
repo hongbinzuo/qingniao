@@ -71,7 +71,8 @@ class HybridVisionPatternMatcher:
         
         # API配置
         vision_api_key: Optional[str] = None,
-        vision_model: str = "google/gemini-2.5-flash-image"  # 或 "google/gemini-3-flash-preview"
+        vision_model: str = "google/gemini-2.5-flash-image",  # 或 "google/gemini-3-flash-preview"
+        signal_completeness: str = "trade_ready"
     ):
         """
         初始化混合匹配器
@@ -95,7 +96,8 @@ class HybridVisionPatternMatcher:
             min_confidence=0.0,
             exclude_other=False,
             require_trading_signals=True,
-            exclude_unmarked=True
+            exclude_unmarked=True,
+            signal_completeness=signal_completeness
         )
         
         # 初始化图表渲染器

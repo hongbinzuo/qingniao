@@ -1,0 +1,2924 @@
+<!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>ABU ML&sol;DL &#x5b8c;&#x6574;&#x6267;&#x884c;&#x62a5;&#x544a;&#x6c47;&#x603b;</title>
+            <style>
+/* From extension vscode.github */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+.vscode-dark img[src$=\#gh-light-mode-only],
+.vscode-light img[src$=\#gh-dark-mode-only],
+.vscode-high-contrast:not(.vscode-high-contrast-light) img[src$=\#gh-light-mode-only],
+.vscode-high-contrast-light img[src$=\#gh-dark-mode-only] {
+	display: none;
+}
+
+</style>
+    <script type="module">
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+      mermaid.initialize({ startOnLoad: true });
+    </script>
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex/dist/katex.min.css">
+<link href="https://cdn.jsdelivr.net/npm/katex-copytex@latest/dist/katex-copytex.min.css" rel="stylesheet" type="text/css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/markdown.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/highlight.css">
+<style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, 'Ubuntu', 'Droid Sans', sans-serif;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+        </style>
+        <style>
+.task-list-item {
+    list-style-type: none;
+}
+
+.task-list-item-checkbox {
+    margin-left: -20px;
+    vertical-align: middle;
+    pointer-events: none;
+}
+</style>
+<style>
+:root {
+  --color-note: #0969da;
+  --color-tip: #1a7f37;
+  --color-warning: #9a6700;
+  --color-severe: #bc4c00;
+  --color-caution: #d1242f;
+  --color-important: #8250df;
+}
+
+</style>
+<style>
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-note: #2f81f7;
+    --color-tip: #3fb950;
+    --color-warning: #d29922;
+    --color-severe: #db6d28;
+    --color-caution: #f85149;
+    --color-important: #a371f7;
+  }
+}
+
+</style>
+<style>
+.markdown-alert {
+  padding: 0.5rem 1rem;
+  margin-bottom: 16px;
+  color: inherit;
+  border-left: .25em solid #888;
+}
+
+.markdown-alert>:first-child {
+  margin-top: 0
+}
+
+.markdown-alert>:last-child {
+  margin-bottom: 0
+}
+
+.markdown-alert .markdown-alert-title {
+  display: flex;
+  font-weight: 500;
+  align-items: center;
+  line-height: 1
+}
+
+.markdown-alert .markdown-alert-title .octicon {
+  margin-right: 0.5rem;
+  display: inline-block;
+  overflow: visible !important;
+  vertical-align: text-bottom;
+  fill: currentColor;
+}
+
+.markdown-alert.markdown-alert-note {
+  border-left-color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-note .markdown-alert-title {
+  color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-important {
+  border-left-color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-important .markdown-alert-title {
+  color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-warning {
+  border-left-color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-warning .markdown-alert-title {
+  color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-tip {
+  border-left-color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-tip .markdown-alert-title {
+  color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-caution {
+  border-left-color: var(--color-caution);
+}
+
+.markdown-alert.markdown-alert-caution .markdown-alert-title {
+  color: var(--color-caution);
+}
+
+</style>
+        
+        </head>
+        <body class="vscode-body vscode-light">
+            <h1 id="abu-mldl-完整执行报告汇总">ABU ML/DL 完整执行报告汇总</h1>
+<p><strong>生成时间</strong>: 2026-01-10 20:23:42</p>
+<hr>
+<h2 id="文档-1-abu_ml_dl完整执行方案">文档 1: ABU_ML_DL完整执行方案</h2>
+<p><strong>路径</strong>: <code>docs\design\features\ABU_ML_DL完整执行方案.md</code></p>
+<hr>
+<h1 id="abu-机器学习和深度学习完整执行方案">ABU 机器学习和深度学习完整执行方案</h1>
+<h2 id="-方案概述">📊 方案概述</h2>
+<p>基于ABU最新流程（模式库 + 实时匹配），设计机器学习和深度学习方案，提升模式匹配准确率和交易信号质量。</p>
+<p><strong>范围</strong>: 仅限ABU系统，不包含Dream系统</p>
+<hr>
+<h2 id="-abu-mldl-完整主流程图">🔄 ABU ML/DL 完整主流程图</h2>
+<h3 id="整体架构流程">整体架构流程</h3>
+<pre><code>┌─────────────────────────────────────────────────────────────────────────┐
+│                        ABU ML/DL 完整流程                                │
+└─────────────────────────────────────────────────────────────────────────┘
+
+【阶段0: Gemini Vision API完整分析（必须先完成）】
+┌─────────────────────────────────────────────────────────────────────┐
+│ 0.1 图片准备 (已有)                                                  │
+│   └─ data/abu/images/*.png (1000张图片)                             │
+│   └─ pattern_library表 (1004条记录，但gemini_annotation_json为空)   │
+└─────────────────────────────────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────────────────────────────────┐
+│ 0.2 Gemini Vision API分析 (abu_gemini_annotate_enhanced.py)         │
+│   ├─ 增强Prompt: 提取多模式组合、K线行为、交易参数                   │
+│   ├─ 批量分析: 1000张图片                                            │
+│   │   ├─ 模型: gemini-1.5-flash (推荐，成本低)                     │
+│   │   ├─ 成本: 约$0.125 (Flash) 或 $2.5 (Pro)                      │
+│   │   └─ 耗时: 约20-30分钟 (分批处理)                               │
+│   ├─ 输出: outputs/abu_gemini_annotations_enhanced.jsonl            │
+│   └─ 内容: patterns[], pattern_combination, trading_signals[], etc. │
+└─────────────────────────────────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────────────────────────────────┐
+│ 0.3 智能解析Gemini输出 (abu_parse_gemini_output.py)                 │
+│   ├─ 解析非结构化JSON                                                │
+│   ├─ 提取: 多模式组合、交易参数（概率、入场、止损、止盈）            │
+│   ├─ 补全: 缺失字段、标准化格式                                       │
+│   └─ 输出: 标准化的结构化数据                                        │
+└─────────────────────────────────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────────────────────────────────┐
+│ 0.4 更新模式库数据 (abu_update_pattern_library_from_gemini.py)      │
+│   ├─ 读取Gemini分析结果                                              │
+│   ├─ 匹配pattern_library记录（通过image_path）                       │
+│   ├─ 更新gemini_annotation_json字段                                  │
+│   ├─ 更新pattern_type（支持多模式组合）                              │
+│   ├─ 更新key_features（K线行为特征）                                 │
+│   └─ 更新trading_signals（交易参数）                                 │
+└─────────────────────────────────────────────────────────────────────┘
+                    ↓
+【阶段1: 数据准备与收集（增强版）】
+┌─────────────────────────────────────────────────────────────────────┐
+│ 1.1 模式库准备 (增强后)                                              │
+│   └─ pattern_library (1004条，已包含Gemini分析)                     │
+│      ├─ gemini_annotation_json: 包含多模式组合、交易参数             │
+│      ├─ pattern_combination: &quot;W底 + 三角形 + 突破&quot;                  │
+│      ├─ trading_signals: [{direction, probability, entry, sl, tp}]  │
+│      └─ price_action_behavior: {kline_features, trend, structure}   │
+└─────────────────────────────────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────────────────────────────────┐
+│ 1.2 信号生成流程 (增强版: pa_scan_15m_top10.py)                      │
+│   ├─ 扫描TOP30币种 (BTC, ETH, SOL等)                                │
+│   ├─ 获取K线数据 (15m + 1h)                                          │
+│   ├─ 模式检测 (detect_all_15m - 增强版)                              │
+│   │   ├─ 传统检测 (detect_inside_bar, engulfing, pin_bar等)        │
+│   │   ├─ Gemini模式匹配 (新增)                                       │
+│   │   │   ├─ 查找相似的Gemini模式（基于pattern_combination）         │
+│   │   │   ├─ 提取Gemini识别的交易参数（概率、入场、止损、止盈）      │
+│   │   │   └─ 匹配K线行为特征                                         │
+│   │   └─ 价格行为学习预测 (新增)                                     │
+│   │       ├─ 使用价格行为学习模型预测当前K线行为                      │
+│   │       ├─ 验证是否匹配Gemini识别的模式组合                        │
+│   │       └─ 结合Gemini概率调整置信度                                │
+│   ├─ 评分排序 (rank_and_pick - 增强版)                               │
+│   │   ├─ 规则评分 (RR + trend + pattern_bonus)                      │
+│   │   ├─ Gemini概率加权 (新增)                                       │
+│   │   │   └─ 如果Gemini识别了概率，作为额外权重                       │
+│   │   ├─ 价格行为预测加权 (新增)                                     │
+│   │   │   └─ 如果价格行为学习模型预测匹配，加分                       │
+│   │   └─ 综合评分: combine(rule_score, gemini_prob, price_action)  │
+│   └─ 输出Top10信号 → trading_signals表 + Markdown文件                │
+│       └─ 信号中包含: pattern_combination, gemini_probability等       │
+└─────────────────────────────────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────────────────────────────────┐
+│ 1.3 记录匹配历史 (新增: abu_record_match_history.py)                 │
+│   ├─ 从每个生成的信号提取:                                            │
+│   │   ├─ pattern_type (模式类型)                                     │
+│   │   ├─ pattern_id (关联pattern_library)                            │
+│   │   ├─ entry_price, stop_loss, take_profit_1/2                    │
+│   │   ├─ direction (long/short)                                      │
+│   │   └─ symbol, timeframe                                           │
+│   ├─ 提取市场特征:                                                    │
+│   │   ├─ trend_backing (EMA200趋势)                                  │
+│   │   ├─ volatility (波动率)                                         │
+│   │   ├─ volume_ratio (成交量比)                                     │
+│   │   ├─ rsi (RSI指标)                                               │
+│   │   └─ market_state (bull/bear/neutral)                            │
+│   ├─ 保存K线上下文 (klines_context_json)                              │
+│   └─ 写入 pattern_match_history 表 (status='pending')                │
+└─────────────────────────────────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────────────────────────────────┐
+│ 1.4 信号评估 (新增: abu_evaluate_signals.py)                         │
+│   ├─ 读取待评估信号 (status='pending')                                │
+│   ├─ 获取历史K线数据 (匹配后288小时窗口)                              │
+│   ├─ 判断结果:                                                        │
+│   │   ├─ TP命中: take_profit_1/2 触发 → result='tp'                 │
+│   │   ├─ SL命中: stop_loss 触发 → result='sl'                       │
+│   │   └─ 未命中: 窗口内未触发 → result='none'                        │
+│   ├─ 计算: profit_pct, hit_time                                      │
+│   ├─ 更新 pattern_match_history (match_result, hit_time, profit_pct) │
+│   └─ 创建 signal_evaluations 记录                                    │
+└─────────────────────────────────────────────────────────────────────┘
+                    ↓
+【阶段2: ML模型训练（增强版）】
+┌─────────────────────────────────────────────────────────────────────┐
+│ 2.0 价格行为特征学习模型 (abu_price_action_learner.py) ⭐ 新增      │
+│   ├─ 数据准备:                                                        │
+│   │   ├─ 从gemini_annotation_json提取特征                            │
+│   │   │   ├─ 模式组合特征 (pattern_count, combination)              │
+│   │   │   ├─ K线行为特征 (engulfing, pin_bar, inside_bar)          │
+│   │   │   ├─ 交易参数特征 (probability, risk_reward_ratio)          │
+│   │   │   └─ 市场条件特征 (trend_strength, volatility)              │
+│   │   ├─ 从实际K线数据提取特征                                        │
+│   │   │   ├─ actual_trend, actual_volatility                        │
+│   │   │   └─ price_action_match_score                                │
+│   │   └─ 标签: 价格行为类别 (reversal/continuation/indecision)       │
+│   ├─ 模型训练:                                                        │
+│   │   ├─ 特征工程: 组合Gemini特征 + K线特征                          │
+│   │   ├─ 模型: XGBoost分类器（预测价格行为）                         │
+│   │   ├─ 输出: 价格行为类别 + 概率                                   │
+│   │   └─ 评估: 准确率、混淆矩阵                                       │
+│   ├─ 应用:                                                            │
+│   │   ├─ 在信号检测时，匹配相似的Gemini模式                          │
+│   │   ├─ 使用价格行为学习模型预测当前K线的行为                        │
+│   │   └─ 结合Gemini识别的交易参数（概率、入场、止损、止盈）          │
+│   └─ 模型保存: abu_price_action_model.pkl                            │
+└─────────────────────────────────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────────────────────────────────┐
+│ 2.1 模式匹配成功率预测模型 (abu_pattern_match_predictor.py) 增强    │
+│   ├─ 数据准备:                                                        │
+│   │   ├─ 从 pattern_match_history 读取训练数据                       │
+│   │   ├─ 特征提取:                                                    │
+│   │   │   ├─ 模式特征: pattern_type, pattern_confidence             │
+│   │   │   ├─ 市场特征: trend, volatility, volume, rsi              │
+│   │   │   └─ 交易特征: entry, sl, tp, rr_ratio                      │
+│   │   └─ 标签: success (1=TP, 0=SL/None)                            │
+│   ├─ 模型训练:                                                        │
+│   │   ├─ 数据划分: train/test (80/20)                                │
+│   │   ├─ 基线模型: Random Forest                                     │
+│   │   ├─ 提升模型: XGBoost / LightGBM                                │
+│   │   └─ 深度学习: LSTM / Transformer (可选)                         │
+│   ├─ 模型评估:                                                        │
+│   │   ├─ accuracy, precision, recall, F1                            │
+│   │   ├─ ROC-AUC                                                    │
+│   │   └─ 特征重要性分析                                               │
+│   └─ 模型保存: .pkl文件 → trading_signals/.ml_models/                │
+└─────────────────────────────────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────────────────────────────────┐
+│ 2.2 候选信号评分模型 (abu_candidate_scorer.py)                       │
+│   ├─ 数据准备:                                                        │
+│   │   ├─ 从 pattern_match_history 构建训练样本                       │
+│   │   ├─ 特征: 候选信号的所有特征 + 市场上下文                         │
+│   │   └─ 标签: 实际表现分数 (基于profit_pct归一化)                    │
+│   ├─ 模型训练:                                                        │
+│   │   ├─ LightGBM Regressor (回归任务，输出评分)                     │
+│   │   └─ 目标: 预测信号的最终表现分数                                 │
+│   └─ 模型保存: candidate_scorer.pkl                                  │
+└─────────────────────────────────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────────────────────────────────┐
+│ 2.3 模式权重优化器 (abu_pattern_weight_optimizer.py)                 │
+│   ├─ 数据准备:                                                        │
+│   │   ├─ 统计各模式的历史胜率                                         │
+│   │   ├─ 计算: win_rate, avg_profit, sharpe_ratio                   │
+│   │   └─ 当前权重: config/abu_pattern_weights.yaml                   │
+│   ├─ 优化算法:                                                        │
+│   │   ├─ 方法1: 多臂老虎机 (Thompson Sampling)                       │
+│   │   ├─ 方法2: 强化学习 (Q-Learning)                                │
+│   │   └─ 方法3: 遗传算法 (Genetic Algorithm)                         │
+│   ├─ 优化目标:                                                        │
+│   │   ├─ 最大化: 组合信号胜率                                         │
+│   │   ├─ 最大化: 平均盈亏比                                           │
+│   │   └─ 最大化: Sharpe比率                                           │
+│   └─ 输出: 更新的 abu_pattern_weights.yaml                           │
+└─────────────────────────────────────────────────────────────────────┘
+                    ↓
+【阶段3: ML模型集成与使用】
+┌─────────────────────────────────────────────────────────────────────┐
+│ 3.1 增强信号生成流程 (pa_scan_15m_top10.py 增强版)                   │
+│   ├─ 模式检测 (不变)                                                  │
+│   ├─ ML预测成功率 (新增)                                              │
+│   │   ├─ 加载模式匹配预测模型                                         │
+│   │   ├─ 对每个候选信号预测成功率                                     │
+│   │   └─ candidate['ml_success_prob'] = predictor.predict(...)      │
+│   ├─ ML评分 (新增，可选)                                              │
+│   │   ├─ 如果ML评分器可用，使用ML评分替代规则评分                     │
+│   │   ├─ 否则，结合规则评分和ML预测概率                               │
+│   │   └─ final_score = combine(rule_score, ml_prob)                 │
+│   ├─ 评分排序 (增强)                                                  │
+│   │   └─ 考虑ML预测概率调整排序                                       │
+│   └─ 输出Top10信号 (已包含ML预测信息)                                 │
+└─────────────────────────────────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────────────────────────────────┐
+│ 3.2 自动记录匹配历史 (集成到信号生成流程)                             │
+│   ├─ 生成信号后自动调用 record_match_history()                       │
+│   ├─ 提取匹配信息并保存到 pattern_match_history                      │
+│   └─ 异步触发评估任务 (如启用)                                        │
+└─────────────────────────────────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────────────────────────────────┐
+│ 3.3 定期模型重训练 (abu_retrain_ml_models.py)                        │
+│   ├─ 每周/每月自动触发                                                │
+│   ├─ 使用最新数据重新训练模型                                         │
+│   ├─ A/B测试: 对比新旧模型性能                                       │
+│   ├─ 如果新模型更好: 替换旧模型                                       │
+│   └─ 否则: 保留旧模型                                                 │
+└─────────────────────────────────────────────────────────────────────┘
+                    ↓
+【阶段4: 持续优化与监控】
+┌─────────────────────────────────────────────────────────────────────┐
+│ 4.1 模型性能监控 (abu_ml_model_evaluation.py)                        │
+│   ├─ 监控指标:                                                        │
+│   │   ├─ 预测准确率 (实际TP率 vs 预测概率)                            │
+│   │   ├─ 信号质量 (Top10信号的实际胜率)                               │
+│   │   ├─ 盈亏比改善 (对比规则评分)                                    │
+│   │   └─ 模型漂移检测                                                 │
+│   ├─ 生成报告:                                                        │
+│   │   └─ outputs/abu/ml_model_performance_*.md                       │
+│   └─ 告警: 如果性能下降 &gt; 10%                                         │
+└─────────────────────────────────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────────────────────────────────┐
+│ 4.2 模式权重自动更新 (定时任务)                                       │
+│   ├─ 每月运行权重优化器                                               │
+│   ├─ 基于最近3个月数据优化权重                                        │
+│   ├─ 更新 config/abu_pattern_weights.yaml                            │
+│   └─ 无需重启服务，下次加载自动生效                                   │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 id="详细数据流">详细数据流</h3>
+<pre><code>【信号生成时的数据流】
+┌──────────────────────────────────────────────────────────────┐
+│ K线数据获取                                                   │
+│   ├─ 15m K线 (200根) → 模式检测                              │
+│   └─ 1h K线 (300根) → 趋势分析                               │
+└──────────────────────────────────────────────────────────────┘
+                    ↓
+┌──────────────────────────────────────────────────────────────┐
+│ 模式检测 (detectors.py)                                       │
+│   ├─ 输入: 15m K线数据                                        │
+│   ├─ 输出: candidates[] 候选信号列表                          │
+│   │   └─ {pattern, type, entry, sl, tp1, tp2, reason, score_hint} │
+│   └─ 模式类型: InsideBar, Engulfing, PinBar, KeyLevel        │
+└──────────────────────────────────────────────────────────────┘
+                    ↓
+┌──────────────────────────────────────────────────────────────┐
+│ ML预测成功率 (可选，如果模型可用)                              │
+│   ├─ 加载模型: abu_pattern_match_predictor.pkl                │
+│   ├─ 提取特征:                                                 │
+│   │   ├─ pattern_type, pattern_confidence                    │
+│   │   ├─ trend, volatility, volume, rsi                      │
+│   │   └─ entry, sl, tp, rr_ratio                            │
+│   ├─ 预测: success_probability                               │
+│   └─ 添加: candidate['ml_success_prob'] = prob               │
+└──────────────────────────────────────────────────────────────┘
+                    ↓
+┌──────────────────────────────────────────────────────────────┐
+│ 评分排序 (ranker.py，增强版)                                  │
+│   ├─ 规则评分 (现有):                                          │
+│   │   ├─ base_score (score_hint)                             │
+│   │   ├─ rr_score (盈亏比，权重0.6)                           │
+│   │   ├─ trend_backing (趋势共振，权重0.6)                     │
+│   │   └─ pattern_bonus (模式权重，从YAML加载)                  │
+│   ├─ ML评分 (可选):                                           │
+│   │   └─ 如果ML评分器可用，使用ML评分                          │
+│   ├─ 综合评分:                                                │
+│   │   └─ final_score = combine(rule_score, ml_prob)          │
+│   └─ 排序: 按final_score降序                                   │
+└──────────────────────────────────────────────────────────────┘
+                    ↓
+┌──────────────────────────────────────────────────────────────┐
+│ 输出Top10信号                                                 │
+│   ├─ 写入数据库: trading_signals表                            │
+│   ├─ 生成Markdown: ABU_top10_15m_*.md                         │
+│   └─ 自动记录: pattern_match_history表 (新增)                  │
+│       ├─ pattern_id, pattern_type                             │
+│       ├─ entry_price, sl, tp1, tp2                           │
+│       ├─ direction, symbol, timeframe                         │
+│       ├─ klines_context_json                                  │
+│       ├─ market_features_json                                 │
+│       └─ match_result='pending'                               │
+└──────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 id="关键决策点">关键决策点</h3>
+<pre><code>【是否使用ML模型？】
+                    ↓
+        ┌───────────┴───────────┐
+        │ 模型文件是否存在？      │
+        └───────────┬───────────┘
+                    ↓
+        ┌───────────┴───────────┐
+     YES │                   NO │
+        ↓                       ↓
+┌──────────────┐      ┌──────────────────┐
+│ 使用ML评分   │      │ 使用规则评分      │
+│ - 加载模型   │      │ - 回退到原逻辑    │
+│ - 预测概率   │      │ - 不破坏现有流程  │
+│ - 增强评分   │      └──────────────────┘
+└──────────────┘
+</code></pre>
+<pre><code>【模式权重优化策略】
+                    ↓
+        ┌───────────┴───────────┐
+        │ 是否启用自动优化？      │
+        └───────────┬───────────┘
+                    ↓
+        ┌───────────┴───────────┐
+     YES │                   NO │
+        ↓                       ↓
+┌──────────────┐      ┌──────────────────┐
+│ 每月优化     │      │ 手动优化          │
+│ - 读取历史   │      │ - 人工分析        │
+│ - 计算权重   │      │ - 更新YAML        │
+│ - 更新YAML   │      └──────────────────┘
+└──────────────┘
+</code></pre>
+<hr>
+<h2 id="-现有abu流程梳理">🔄 现有ABU流程梳理</h2>
+<h3 id="1-abu模式库流程增强版">1. ABU模式库流程（增强版）</h3>
+<pre><code>PDF提取 → 图片提取 → Gemini Vision分析 → 智能解析 → 模式库(数据库) → 价格行为学习 → 实时检测器 → ML增强评分 → 交易信号
+    ↓         ↓            ↓              ↓            ↓              ↓              ↓            ↓           ↓
+PyMuPDF  1000张图片   Gemini Vision API  解析器    pattern_library  特征学习模型   detectors.py  ML评分器   top10信号
+</code></pre>
+<p><strong>重要说明</strong>：</p>
+<ul>
+<li><strong>每页PDF包含复杂信息</strong>：不只是单一模式，而是多模式组合（W底+三角形+其他）+ K线走势 + 交易参数</li>
+<li><strong>Gemini需要识别</strong>：模式组合、K线行为、概率、入场/止损/止盈点、市场条件等</li>
+<li><strong>需要智能解析</strong>：将Gemini的非结构化输出转换为结构化数据</li>
+<li><strong>需要机器学习</strong>：从Gemini识别的内容中学习价格行为特征，而不仅仅是模式匹配</li>
+</ul>
+<p><strong>核心组件</strong>:</p>
+<ul>
+<li>
+<p><strong>模式库</strong>: <code>src/data/qingniao_abu.duckdb</code> (表: <code>pattern_library</code>)</p>
+<ul>
+<li>当前状态: 1004条记录，但<code>gemini_annotation_json</code>字段为空（需要重新分析）</li>
+<li>目标: 通过Gemini Vision API重新分析1000张图片，提取丰富的结构化信息</li>
+</ul>
+</li>
+<li>
+<p><strong>实时检测器</strong> (<code>src/abu/detectors.py</code>):</p>
+<ul>
+<li><code>detect_inside_bar()</code> - 内包线检测</li>
+<li><code>detect_engulfing()</code> - 吞没形态检测</li>
+<li><code>detect_pin_bar()</code> - 影线形态检测</li>
+<li><code>detect_key_levels()</code> - 关键位检测</li>
+</ul>
+</li>
+<li>
+<p><strong>评分排序器</strong> (<code>src/abu/ranker.py</code>):</p>
+<ul>
+<li><code>score_candidate()</code> - 基于规则评分
+<ul>
+<li>base_score (0.6权重)</li>
+<li>RR_score (0.6权重)</li>
+<li>trend_backing (0.6权重)</li>
+<li>pattern_bonus (从config/abu_pattern_weights.yaml加载)</li>
+</ul>
+</li>
+<li><code>rank_and_pick()</code> - 排序并选择top10</li>
+</ul>
+</li>
+</ul>
+<p><strong>输出</strong>: <code>trading_signals/ABU_top*.md</code> - Top10交易信号文件</p>
+<h3 id="2-abu信号生成流程">2. ABU信号生成流程</h3>
+<pre><code>实时K线获取 → 模式检测 → 评分排序 → Top10信号 → 数据库存储
+    ↓            ↓           ↓           ↓            ↓
+多币种扫描  detectors.py  ranker.py   Markdown    trading_signals
+</code></pre>
+<p><strong>核心组件</strong>:</p>
+<ul>
+<li>
+<p><strong>信号生成</strong> (<code>scripts/pa_scan_15m_top10.py</code>):</p>
+<ul>
+<li>扫描TOP30币种（BTC, ETH, SOL等）</li>
+<li>获取15m和1h K线数据</li>
+<li>调用 <code>detect_all_15m()</code> 检测模式</li>
+<li>使用 <code>rank_and_pick()</code> 评分排序</li>
+<li>输出Top10信号到Markdown文件</li>
+</ul>
+</li>
+<li>
+<p><strong>价格评估</strong> (未来扩展):</p>
+<ul>
+<li>评估历史信号的实际表现</li>
+<li>判断: tp_hit, sl_hit, profit_pct</li>
+<li>更新 <code>signal_evaluations</code> 表</li>
+</ul>
+</li>
+</ul>
+<p><strong>输出</strong>:</p>
+<ul>
+<li><code>trading_signals/ABU_top*.md</code> - Top10信号文件</li>
+<li>数据库: <code>trading_signals</code> 表 (system_name='abu')</li>
+<li>评估: <code>signal_evaluations</code> 表 (待实施)</li>
+</ul>
+<h2 id="-关键环节gemini-vision-api-完整分析流程">🔍 关键环节：Gemini Vision API 完整分析流程</h2>
+<h3 id="步骤0-gemini-vision-api-分析1000张图片必须完成">步骤0: Gemini Vision API 分析1000张图片（必须完成）</h3>
+<p><strong>现状</strong>：</p>
+<ul>
+<li>图片数量: 1000张（<code>data/abu/images/*.png</code>）</li>
+<li>数据库状态: pattern_library表已有1004条记录，但<code>gemini_annotation_json</code>字段为空</li>
+<li>问题: 缺少丰富的模式特征、交易参数、多模式组合信息</li>
+</ul>
+<p><strong>解决方案</strong>：使用Gemini Vision API完整分析所有图片</p>
+<h4 id="01-增强的gemini-prompt设计">0.1 增强的Gemini Prompt设计</h4>
+<p><strong>现有Prompt问题</strong>：</p>
+<ul>
+<li>只提取单一模式名称</li>
+<li>缺少多模式组合识别</li>
+<li>缺少交易参数提取（概率、入场、止损、止盈）</li>
+<li>缺少K线行为特征</li>
+</ul>
+<p><strong>增强后的Prompt</strong>（更新 <code>scripts/abu_gemini_annotate.py</code>）:</p>
+<pre><code class="language-python">ENHANCED_PROMPT = <span class="hljs-string">&quot;&quot;&quot;
+You are an expert price-action trading analyst. Analyze this chart image and extract ALL relevant trading information in structured JSON format.
+
+IMPORTANT: Each page may contain:
+- Multiple pattern combinations (e.g., &quot;W底 + 三角形 + 突破&quot;)
+- K-line price action behavior (trends, reversals, continuations)
+- Trading signals with probabilities, entry/stop/profit levels
+- Market conditions and context
+
+Extract the following structure:
+{
+  &quot;patterns&quot;: [
+    {
+      &quot;name&quot;: &quot;W底&quot;,  // 或 &quot;Head and Shoulders&quot;, &quot;Triangle&quot;, &quot;Engulfing&quot; 等
+      &quot;type&quot;: &quot;reversal&quot;,  // reversal/continuation/indecision
+      &quot;location&quot;: &quot;bottom&quot;,  // top/bottom/middle
+      &quot;confidence&quot;: 0.85
+    },
+    {
+      &quot;name&quot;: &quot;Triangle&quot;,
+      &quot;type&quot;: &quot;continuation&quot;,
+      &quot;location&quot;: &quot;middle&quot;,
+      &quot;confidence&quot;: 0.75
+    }
+  ],
+  &quot;pattern_combination&quot;: &quot;W底 + 三角形 + 突破&quot;,  // 整体组合描述
+  &quot;price_action_behavior&quot;: {
+    &quot;trend&quot;: &quot;bullish&quot;,  // bullish/bearish/neutral
+    &quot;structure&quot;: &quot;higher_lows&quot;,  // higher_lows/lower_highs/consolidation
+    &quot;kline_features&quot;: [&quot;engulfing&quot;, &quot;pin_bar&quot;, &quot;inside_bar&quot;],  // K线特征列表
+    &quot;volume_behavior&quot;: &quot;increasing&quot;  // increasing/decreasing/stable
+  },
+  &quot;trading_signals&quot;: [
+    {
+      &quot;direction&quot;: &quot;long&quot;,  // long/short
+      &quot;entry_condition&quot;: &quot;回调到W底颈线附近&quot;,  // 入场条件描述
+      &quot;entry_price_hint&quot;: &quot;87,500&quot;,  // 如果图表标注了价格
+      &quot;stop_loss_hint&quot;: &quot;87,000&quot;,  // 止损价格
+      &quot;take_profit_1_hint&quot;: &quot;88,500&quot;,  // 第一止盈
+      &quot;take_profit_2_hint&quot;: &quot;89,000&quot;,  // 第二止盈
+      &quot;probability&quot;: 75,  // 成功率百分比（如 &quot;75% chance&quot;）
+      &quot;target&quot;: &quot;test_of_high_of_day&quot;,  // test_of_high_of_day/test_of_low_of_day/fibonacci_level等
+      &quot;risk_reward_ratio&quot;: 2.5,  // 盈亏比（如果可计算）
+      &quot;timeframe_hint&quot;: &quot;15m&quot;  // 时间框架提示
+    }
+  ],
+  &quot;market_conditions&quot;: {
+    &quot;context&quot;: &quot;small PB bull trend&quot;,  // 市场环境描述
+    &quot;trend_strength&quot;: &quot;strong&quot;,  // strong/moderate/weak
+    &quot;volatility&quot;: &quot;low&quot;,  // high/medium/low
+    &quot;key_levels&quot;: [&quot;87,500&quot;, &quot;88,000&quot;, &quot;89,000&quot;]  // 关键价位
+  },
+  &quot;annotations&quot;: [
+    {
+      &quot;label&quot;: &quot;A&quot;,  // 图表标注（A/B/C等）
+      &quot;description&quot;: &quot;W底左底&quot;,
+      &quot;price&quot;: 86500
+    },
+    {
+      &quot;label&quot;: &quot;Entry&quot;,
+      &quot;description&quot;: &quot;入场点：回调到颈线&quot;,
+      &quot;price&quot;: 87500
+    }
+  ],
+  &quot;text_notes&quot;: [
+    &quot;20-Gap bar buy in small PB bull trend so 75% chance of test of high of day&quot;,
+    &quot;三角形突破后目标位89,000&quot;
+  ],
+  &quot;confidence&quot;: 0.90
+}
+
+CRITICAL REQUIREMENTS:
+1. Identify ALL patterns visible, not just one
+2. Extract ALL trading signals with entry/stop/profit if mentioned
+3. Capture probability percentages if stated (e.g., &quot;75% chance&quot;)
+4. Extract K-line behavior features (engulfing, pin bar, inside bar, etc.)
+5. Note pattern combinations and their relationships
+6. Extract market context descriptions
+7. Identify key price levels marked on the chart
+8. Be precise with price levels if visible on the chart
+
+Respond with ONLY valid JSON, no additional text.
+&quot;&quot;&quot;</span>
+</code></pre>
+<h4 id="02-gemini分析执行流程">0.2 Gemini分析执行流程</h4>
+<p><strong>脚本</strong>: <code>scripts/abu_gemini_annotate_enhanced.py</code> (新建，增强版)</p>
+<pre><code class="language-bash"><span class="hljs-comment"># 完整分析1000张图片</span>
+python scripts/abu_gemini_annotate_enhanced.py \
+    --model gemini-1.5-pro \
+    --<span class="hljs-built_in">limit</span> 0 \  <span class="hljs-comment"># 0表示处理所有图片</span>
+    --context-window 2 \
+    --sleep-ms 1000 \  <span class="hljs-comment"># API限流，每张图片间隔1秒</span>
+    --output outputs/abu_gemini_annotations_enhanced.jsonl
+
+<span class="hljs-comment"># 分批处理（推荐，避免长时间运行中断）</span>
+<span class="hljs-comment"># 第一批：1-300</span>
+python scripts/abu_gemini_annotate_enhanced.py --start-idx 0 --end-idx 300
+
+<span class="hljs-comment"># 第二批：301-600</span>
+python scripts/abu_gemini_annotate_enhanced.py --start-idx 300 --end-idx 600
+
+<span class="hljs-comment"># 第三批：601-1000</span>
+python scripts/abu_gemini_annotate_enhanced.py --start-idx 600 --end-idx 1000
+</code></pre>
+<p><strong>成本估算</strong>:</p>
+<ul>
+<li>Gemini 1.5 Pro: 约 $0.0025/张图片</li>
+<li>1000张图片: 约 $2.5 USD</li>
+<li>Gemini 1.5 Flash: 约 $0.000125/张图片（更快更便宜）</li>
+<li>1000张图片: 约 $0.125 USD（推荐使用Flash）</li>
+</ul>
+<p><strong>输出</strong>: <code>outputs/abu_gemini_annotations_enhanced.jsonl</code></p>
+<ul>
+<li>每行一个JSON对象，包含图片路径和Gemini分析结果</li>
+</ul>
+<h4 id="03-智能解析gemini输出">0.3 智能解析Gemini输出</h4>
+<p><strong>问题</strong>: Gemini返回的JSON可能不完整、格式不一致，需要智能解析和补全</p>
+<p><strong>实现</strong>: <code>scripts/abu_parse_gemini_output.py</code> (新建)</p>
+<pre><code class="language-python"><span class="hljs-keyword">class</span> <span class="hljs-title class_">GeminiOutputParser</span>:
+    <span class="hljs-string">&quot;&quot;&quot;智能解析Gemini Vision API输出&quot;&quot;&quot;</span>
+    
+    <span class="hljs-keyword">def</span> <span class="hljs-title function_">parse_gemini_result</span>(<span class="hljs-params">self, gemini_output: <span class="hljs-type">Dict</span></span>) -&gt; <span class="hljs-type">Dict</span>:
+        <span class="hljs-string">&quot;&quot;&quot;解析Gemini输出，补全缺失字段&quot;&quot;&quot;</span>
+        result = {
+            <span class="hljs-string">&#x27;patterns&#x27;</span>: [],
+            <span class="hljs-string">&#x27;pattern_combination&#x27;</span>: <span class="hljs-string">&#x27;&#x27;</span>,
+            <span class="hljs-string">&#x27;price_action_behavior&#x27;</span>: {},
+            <span class="hljs-string">&#x27;trading_signals&#x27;</span>: [],
+            <span class="hljs-string">&#x27;market_conditions&#x27;</span>: {},
+            <span class="hljs-string">&#x27;annotations&#x27;</span>: [],
+            <span class="hljs-string">&#x27;text_notes&#x27;</span>: [],
+            <span class="hljs-string">&#x27;confidence&#x27;</span>: <span class="hljs-number">0.0</span>
+        }
+        
+        <span class="hljs-comment"># 1. 解析patterns（支持多模式）</span>
+        <span class="hljs-keyword">if</span> <span class="hljs-built_in">isinstance</span>(gemini_output.get(<span class="hljs-string">&#x27;patterns&#x27;</span>), <span class="hljs-built_in">list</span>):
+            result[<span class="hljs-string">&#x27;patterns&#x27;</span>] = gemini_output[<span class="hljs-string">&#x27;patterns&#x27;</span>]
+        <span class="hljs-keyword">elif</span> gemini_output.get(<span class="hljs-string">&#x27;pattern&#x27;</span>):
+            <span class="hljs-comment"># 单一模式，转换为列表</span>
+            result[<span class="hljs-string">&#x27;patterns&#x27;</span>] = [{
+                <span class="hljs-string">&#x27;name&#x27;</span>: gemini_output[<span class="hljs-string">&#x27;pattern&#x27;</span>],
+                <span class="hljs-string">&#x27;type&#x27;</span>: self._infer_pattern_type(gemini_output[<span class="hljs-string">&#x27;pattern&#x27;</span>]),
+                <span class="hljs-string">&#x27;confidence&#x27;</span>: gemini_output.get(<span class="hljs-string">&#x27;confidence&#x27;</span>, <span class="hljs-number">0.5</span>)
+            }]
+        
+        <span class="hljs-comment"># 2. 提取pattern_combination</span>
+        <span class="hljs-keyword">if</span> gemini_output.get(<span class="hljs-string">&#x27;pattern_combination&#x27;</span>):
+            result[<span class="hljs-string">&#x27;pattern_combination&#x27;</span>] = gemini_output[<span class="hljs-string">&#x27;pattern_combination&#x27;</span>]
+        <span class="hljs-keyword">else</span>:
+            <span class="hljs-comment"># 从patterns列表推断组合</span>
+            pattern_names = [p[<span class="hljs-string">&#x27;name&#x27;</span>] <span class="hljs-keyword">for</span> p <span class="hljs-keyword">in</span> result[<span class="hljs-string">&#x27;patterns&#x27;</span>]]
+            <span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(pattern_names) &gt; <span class="hljs-number">1</span>:
+                result[<span class="hljs-string">&#x27;pattern_combination&#x27;</span>] = <span class="hljs-string">&#x27; + &#x27;</span>.join(pattern_names)
+        
+        <span class="hljs-comment"># 3. 解析trading_signals（提取交易参数）</span>
+        <span class="hljs-keyword">if</span> <span class="hljs-built_in">isinstance</span>(gemini_output.get(<span class="hljs-string">&#x27;trading_signals&#x27;</span>), <span class="hljs-built_in">list</span>):
+            result[<span class="hljs-string">&#x27;trading_signals&#x27;</span>] = gemini_output[<span class="hljs-string">&#x27;trading_signals&#x27;</span>]
+        <span class="hljs-keyword">else</span>:
+            <span class="hljs-comment"># 从单一字段推断</span>
+            signal = self._extract_signal_from_text(gemini_output)
+            <span class="hljs-keyword">if</span> signal:
+                result[<span class="hljs-string">&#x27;trading_signals&#x27;</span>] = [signal]
+        
+        <span class="hljs-comment"># 4. 从text_notes提取额外信息</span>
+        text_notes = gemini_output.get(<span class="hljs-string">&#x27;text_notes&#x27;</span>, [])
+        <span class="hljs-keyword">if</span> <span class="hljs-built_in">isinstance</span>(text_notes, <span class="hljs-built_in">str</span>):
+            text_notes = [text_notes]
+        
+        <span class="hljs-comment"># 从文本中提取概率、价格等</span>
+        <span class="hljs-keyword">for</span> note <span class="hljs-keyword">in</span> text_notes:
+            extracted = self._parse_trading_note(note)
+            <span class="hljs-keyword">if</span> extracted:
+                <span class="hljs-comment"># 合并到trading_signals</span>
+                result[<span class="hljs-string">&#x27;trading_signals&#x27;</span>].append(extracted)
+        
+        <span class="hljs-comment"># 5. 解析price_action_behavior</span>
+        result[<span class="hljs-string">&#x27;price_action_behavior&#x27;</span>] = gemini_output.get(<span class="hljs-string">&#x27;price_action_behavior&#x27;</span>, {})
+        <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> result[<span class="hljs-string">&#x27;price_action_behavior&#x27;</span>]:
+            <span class="hljs-comment"># 从patterns和market_conditions推断</span>
+            result[<span class="hljs-string">&#x27;price_action_behavior&#x27;</span>] = self._infer_price_action(result)
+        
+        <span class="hljs-keyword">return</span> result
+    
+    <span class="hljs-keyword">def</span> <span class="hljs-title function_">_parse_trading_note</span>(<span class="hljs-params">self, text: <span class="hljs-built_in">str</span></span>) -&gt; <span class="hljs-type">Optional</span>[<span class="hljs-type">Dict</span>]:
+        <span class="hljs-string">&quot;&quot;&quot;从文本提取交易信息（如 &quot;75% chance of test of high&quot;）&quot;&quot;&quot;</span>
+        <span class="hljs-keyword">import</span> re
+        
+        <span class="hljs-comment"># 提取概率</span>
+        prob_match = re.search(<span class="hljs-string">r&#x27;(\d+)%&#x27;</span>, text)
+        probability = <span class="hljs-built_in">int</span>(prob_match.group(<span class="hljs-number">1</span>)) <span class="hljs-keyword">if</span> prob_match <span class="hljs-keyword">else</span> <span class="hljs-literal">None</span>
+        
+        <span class="hljs-comment"># 提取方向</span>
+        direction = <span class="hljs-literal">None</span>
+        <span class="hljs-keyword">if</span> re.search(<span class="hljs-string">r&#x27;\b(buy|long|做多|买入)\b&#x27;</span>, text, re.I):
+            direction = <span class="hljs-string">&#x27;long&#x27;</span>
+        <span class="hljs-keyword">elif</span> re.search(<span class="hljs-string">r&#x27;\b(sell|short|做空|卖出)\b&#x27;</span>, text, re.I):
+            direction = <span class="hljs-string">&#x27;short&#x27;</span>
+        
+        <span class="hljs-comment"># 提取目标</span>
+        target = <span class="hljs-literal">None</span>
+        <span class="hljs-keyword">if</span> <span class="hljs-string">&#x27;test of high&#x27;</span> <span class="hljs-keyword">in</span> text.lower() <span class="hljs-keyword">or</span> <span class="hljs-string">&#x27;test of high of day&#x27;</span> <span class="hljs-keyword">in</span> text.lower():
+            target = <span class="hljs-string">&#x27;test_of_high_of_day&#x27;</span>
+        <span class="hljs-keyword">elif</span> <span class="hljs-string">&#x27;test of low&#x27;</span> <span class="hljs-keyword">in</span> text.lower() <span class="hljs-keyword">or</span> <span class="hljs-string">&#x27;test of low of day&#x27;</span> <span class="hljs-keyword">in</span> text.lower():
+            target = <span class="hljs-string">&#x27;test_of_low_of_day&#x27;</span>
+        
+        <span class="hljs-keyword">if</span> direction <span class="hljs-keyword">or</span> probability:
+            <span class="hljs-keyword">return</span> {
+                <span class="hljs-string">&#x27;direction&#x27;</span>: direction,
+                <span class="hljs-string">&#x27;probability&#x27;</span>: probability,
+                <span class="hljs-string">&#x27;target&#x27;</span>: target,
+                <span class="hljs-string">&#x27;entry_condition&#x27;</span>: text[:<span class="hljs-number">200</span>]  <span class="hljs-comment"># 保留原始文本</span>
+            }
+        <span class="hljs-keyword">return</span> <span class="hljs-literal">None</span>
+</code></pre>
+<h4 id="04-更新模式库数据">0.4 更新模式库数据</h4>
+<p><strong>脚本</strong>: <code>scripts/abu_update_pattern_library_from_gemini.py</code> (新建)</p>
+<pre><code class="language-python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">update_pattern_library_from_gemini</span>():
+    <span class="hljs-string">&quot;&quot;&quot;将Gemini分析结果更新到pattern_library表&quot;&quot;&quot;</span>
+    db = TraderDBManager(<span class="hljs-string">&#x27;abu&#x27;</span>)
+    conn = db._get_connection()
+    
+    <span class="hljs-comment"># 读取Gemini输出</span>
+    parser = GeminiOutputParser()
+    annotations_file = Path(<span class="hljs-string">&#x27;outputs/abu_gemini_annotations_enhanced.jsonl&#x27;</span>)
+    
+    updated_count = <span class="hljs-number">0</span>
+    <span class="hljs-keyword">for</span> line <span class="hljs-keyword">in</span> annotations_file.<span class="hljs-built_in">open</span>():
+        record = json.loads(line)
+        image_path = record[<span class="hljs-string">&#x27;image&#x27;</span>]
+        gemini_result = record[<span class="hljs-string">&#x27;result&#x27;</span>]
+        
+        <span class="hljs-comment"># 解析Gemini输出</span>
+        parsed = parser.parse_gemini_result(gemini_result)
+        
+        <span class="hljs-comment"># 查找对应的pattern_library记录（通过image_path）</span>
+        pattern_record = conn.execute(<span class="hljs-string">&#x27;&#x27;&#x27;
+            SELECT id FROM pattern_library 
+            WHERE image_path LIKE ?
+        &#x27;&#x27;&#x27;</span>, (<span class="hljs-string">f&#x27;%<span class="hljs-subst">{Path(image_path).name}</span>%&#x27;</span>,)).fetchone()
+        
+        <span class="hljs-keyword">if</span> pattern_record:
+            pattern_id = pattern_record[<span class="hljs-number">0</span>]
+            
+            <span class="hljs-comment"># 更新gemini_annotation_json</span>
+            conn.execute(<span class="hljs-string">&#x27;&#x27;&#x27;
+                UPDATE pattern_library
+                SET gemini_annotation_json = ?,
+                    pattern_type = ?,
+                    direction = ?,
+                    key_features = ?,
+                    confidence = ?,
+                    updated_at = ?
+                WHERE id = ?
+            &#x27;&#x27;&#x27;</span>, (
+                json.dumps(parsed, ensure_ascii=<span class="hljs-literal">False</span>),
+                parsed[<span class="hljs-string">&#x27;patterns&#x27;</span>][<span class="hljs-number">0</span>][<span class="hljs-string">&#x27;name&#x27;</span>] <span class="hljs-keyword">if</span> parsed[<span class="hljs-string">&#x27;patterns&#x27;</span>] <span class="hljs-keyword">else</span> <span class="hljs-literal">None</span>,
+                parsed[<span class="hljs-string">&#x27;trading_signals&#x27;</span>][<span class="hljs-number">0</span>][<span class="hljs-string">&#x27;direction&#x27;</span>] <span class="hljs-keyword">if</span> parsed[<span class="hljs-string">&#x27;trading_signals&#x27;</span>] <span class="hljs-keyword">else</span> <span class="hljs-literal">None</span>,
+                json.dumps(parsed[<span class="hljs-string">&#x27;price_action_behavior&#x27;</span>], ensure_ascii=<span class="hljs-literal">False</span>),
+                parsed[<span class="hljs-string">&#x27;confidence&#x27;</span>],
+                datetime.now().strftime(<span class="hljs-string">&#x27;%Y-%m-%d %H:%M:%S&#x27;</span>),
+                pattern_id
+            ))
+            updated_count += <span class="hljs-number">1</span>
+    
+    conn.commit()
+    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;✓ 更新了 <span class="hljs-subst">{updated_count}</span> 条模式库记录&quot;</span>)
+</code></pre>
+<hr>
+<h2 id="-mldl应用场景">🎯 ML/DL应用场景</h2>
+<h3 id="场景0-价格行为特征学习基于gemini分析-最高优先级">场景0: 价格行为特征学习（基于Gemini分析）⭐⭐⭐ (最高优先级)</h3>
+<p><strong>目标</strong>: 从Gemini识别的模式组合和K线行为中，使用机器学习学习价格行为特征</p>
+<p><strong>数据源</strong>:</p>
+<ul>
+<li>Gemini分析结果: <code>gemini_annotation_json</code> 字段（包含多模式组合、K线特征、交易参数）</li>
+<li>历史价格数据: K线数据用于验证和训练</li>
+</ul>
+<p><strong>特征工程</strong>:</p>
+<pre><code class="language-python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">extract_price_action_features</span>(<span class="hljs-params">gemini_annotation: <span class="hljs-type">Dict</span>, klines: <span class="hljs-type">List</span>[<span class="hljs-type">Dict</span>]</span>) -&gt; <span class="hljs-type">Dict</span>:
+    <span class="hljs-string">&quot;&quot;&quot;从Gemini分析结果和K线数据提取价格行为特征&quot;&quot;&quot;</span>
+    features = {
+        <span class="hljs-comment"># 1. 模式组合特征</span>
+        <span class="hljs-string">&#x27;pattern_count&#x27;</span>: <span class="hljs-built_in">len</span>(gemini_annotation[<span class="hljs-string">&#x27;patterns&#x27;</span>]),
+        <span class="hljs-string">&#x27;pattern_types&#x27;</span>: [p[<span class="hljs-string">&#x27;type&#x27;</span>] <span class="hljs-keyword">for</span> p <span class="hljs-keyword">in</span> gemini_annotation[<span class="hljs-string">&#x27;patterns&#x27;</span>]],
+        <span class="hljs-string">&#x27;has_reversal&#x27;</span>: <span class="hljs-built_in">any</span>(p[<span class="hljs-string">&#x27;type&#x27;</span>] == <span class="hljs-string">&#x27;reversal&#x27;</span> <span class="hljs-keyword">for</span> p <span class="hljs-keyword">in</span> gemini_annotation[<span class="hljs-string">&#x27;patterns&#x27;</span>]),
+        <span class="hljs-string">&#x27;has_continuation&#x27;</span>: <span class="hljs-built_in">any</span>(p[<span class="hljs-string">&#x27;type&#x27;</span>] == <span class="hljs-string">&#x27;continuation&#x27;</span> <span class="hljs-keyword">for</span> p <span class="hljs-keyword">in</span> gemini_annotation[<span class="hljs-string">&#x27;patterns&#x27;</span>]),
+        <span class="hljs-string">&#x27;pattern_combination&#x27;</span>: gemini_annotation.get(<span class="hljs-string">&#x27;pattern_combination&#x27;</span>, <span class="hljs-string">&#x27;&#x27;</span>),
+        
+        <span class="hljs-comment"># 2. K线行为特征（从Gemini识别）</span>
+        <span class="hljs-string">&#x27;kline_features&#x27;</span>: gemini_annotation[<span class="hljs-string">&#x27;price_action_behavior&#x27;</span>].get(<span class="hljs-string">&#x27;kline_features&#x27;</span>, []),
+        <span class="hljs-string">&#x27;has_engulfing&#x27;</span>: <span class="hljs-string">&#x27;engulfing&#x27;</span> <span class="hljs-keyword">in</span> gemini_annotation[<span class="hljs-string">&#x27;price_action_behavior&#x27;</span>].get(<span class="hljs-string">&#x27;kline_features&#x27;</span>, []),
+        <span class="hljs-string">&#x27;has_pin_bar&#x27;</span>: <span class="hljs-string">&#x27;pin_bar&#x27;</span> <span class="hljs-keyword">in</span> gemini_annotation[<span class="hljs-string">&#x27;price_action_behavior&#x27;</span>].get(<span class="hljs-string">&#x27;kline_features&#x27;</span>, []),
+        <span class="hljs-string">&#x27;has_inside_bar&#x27;</span>: <span class="hljs-string">&#x27;inside_bar&#x27;</span> <span class="hljs-keyword">in</span> gemini_annotation[<span class="hljs-string">&#x27;price_action_behavior&#x27;</span>].get(<span class="hljs-string">&#x27;kline_features&#x27;</span>, []),
+        <span class="hljs-string">&#x27;trend_structure&#x27;</span>: gemini_annotation[<span class="hljs-string">&#x27;price_action_behavior&#x27;</span>].get(<span class="hljs-string">&#x27;structure&#x27;</span>, <span class="hljs-string">&#x27;&#x27;</span>),
+        
+        <span class="hljs-comment"># 3. 交易参数特征（从Gemini提取）</span>
+        <span class="hljs-string">&#x27;signal_count&#x27;</span>: <span class="hljs-built_in">len</span>(gemini_annotation[<span class="hljs-string">&#x27;trading_signals&#x27;</span>]),
+        <span class="hljs-string">&#x27;avg_probability&#x27;</span>: np.mean([s.get(<span class="hljs-string">&#x27;probability&#x27;</span>, <span class="hljs-number">0</span>) <span class="hljs-keyword">for</span> s <span class="hljs-keyword">in</span> gemini_annotation[<span class="hljs-string">&#x27;trading_signals&#x27;</span>]]),
+        <span class="hljs-string">&#x27;risk_reward_ratio&#x27;</span>: np.mean([s.get(<span class="hljs-string">&#x27;risk_reward_ratio&#x27;</span>, <span class="hljs-number">0</span>) <span class="hljs-keyword">for</span> s <span class="hljs-keyword">in</span> gemini_annotation[<span class="hljs-string">&#x27;trading_signals&#x27;</span>]]),
+        
+        <span class="hljs-comment"># 4. 市场条件特征</span>
+        <span class="hljs-string">&#x27;market_context&#x27;</span>: gemini_annotation[<span class="hljs-string">&#x27;market_conditions&#x27;</span>].get(<span class="hljs-string">&#x27;context&#x27;</span>, <span class="hljs-string">&#x27;&#x27;</span>),
+        <span class="hljs-string">&#x27;trend_strength&#x27;</span>: gemini_annotation[<span class="hljs-string">&#x27;market_conditions&#x27;</span>].get(<span class="hljs-string">&#x27;trend_strength&#x27;</span>, <span class="hljs-string">&#x27;&#x27;</span>),
+        <span class="hljs-string">&#x27;volatility_level&#x27;</span>: gemini_annotation[<span class="hljs-string">&#x27;market_conditions&#x27;</span>].get(<span class="hljs-string">&#x27;volatility&#x27;</span>, <span class="hljs-string">&#x27;&#x27;</span>),
+        
+        <span class="hljs-comment"># 5. 从实际K线数据计算的特征（用于验证）</span>
+        <span class="hljs-string">&#x27;actual_trend&#x27;</span>: calculate_actual_trend(klines),
+        <span class="hljs-string">&#x27;actual_volatility&#x27;</span>: calculate_volatility(klines),
+        <span class="hljs-string">&#x27;actual_volume_change&#x27;</span>: calculate_volume_change(klines),
+        <span class="hljs-string">&#x27;price_action_match_score&#x27;</span>: compare_price_action(klines, gemini_annotation)
+    }
+    <span class="hljs-keyword">return</span> features
+</code></pre>
+<p><strong>ML模型设计</strong>:</p>
+<pre><code class="language-python"><span class="hljs-keyword">class</span> <span class="hljs-title class_">PriceActionLearner</span>:
+    <span class="hljs-string">&quot;&quot;&quot;价格行为特征学习器&quot;&quot;&quot;</span>
+    
+    <span class="hljs-keyword">def</span> <span class="hljs-title function_">train_price_action_model</span>(<span class="hljs-params">self, training_data</span>):
+        <span class="hljs-string">&quot;&quot;&quot;训练价格行为识别模型&quot;&quot;&quot;</span>
+        <span class="hljs-comment"># 输入: Gemini识别的特征 + 实际K线特征</span>
+        <span class="hljs-comment"># 输出: 价格行为类别（reversal/continuation/indecision）</span>
+        
+        X = []
+        y = []
+        
+        <span class="hljs-keyword">for</span> record <span class="hljs-keyword">in</span> training_data:
+            <span class="hljs-comment"># 从Gemini分析提取特征</span>
+            gemini_features = self.extract_gemini_features(record[<span class="hljs-string">&#x27;gemini_annotation&#x27;</span>])
+            
+            <span class="hljs-comment"># 从实际K线提取特征</span>
+            kline_features = self.extract_kline_features(record[<span class="hljs-string">&#x27;klines&#x27;</span>])
+            
+            <span class="hljs-comment"># 组合特征</span>
+            combined_features = {**gemini_features, **kline_features}
+            X.append(combined_features)
+            
+            <span class="hljs-comment"># 标签：基于后续价格表现</span>
+            label = self.infer_price_action_label(record[<span class="hljs-string">&#x27;klines&#x27;</span>], record[<span class="hljs-string">&#x27;signal&#x27;</span>])
+            y.append(label)
+        
+        <span class="hljs-comment"># 训练模型</span>
+        model = XGBoostClassifier()
+        model.fit(X, y)
+        <span class="hljs-keyword">return</span> model
+    
+    <span class="hljs-keyword">def</span> <span class="hljs-title function_">predict_price_action</span>(<span class="hljs-params">self, gemini_annotation: <span class="hljs-type">Dict</span>, klines: <span class="hljs-type">List</span>[<span class="hljs-type">Dict</span>]</span>) -&gt; <span class="hljs-type">Dict</span>:
+        <span class="hljs-string">&quot;&quot;&quot;预测当前K线的价格行为&quot;&quot;&quot;</span>
+        features = extract_price_action_features(gemini_annotation, klines)
+        prediction = self.model.predict([features])[<span class="hljs-number">0</span>]
+        probability = self.model.predict_proba([features])[<span class="hljs-number">0</span>]
+        
+        <span class="hljs-keyword">return</span> {
+            <span class="hljs-string">&#x27;price_action&#x27;</span>: prediction,  <span class="hljs-comment"># reversal/continuation/indecision</span>
+            <span class="hljs-string">&#x27;probability&#x27;</span>: probability,
+            <span class="hljs-string">&#x27;features&#x27;</span>: features
+        }
+</code></pre>
+<p><strong>实现文件</strong>: <code>src/ml_dl/abu_price_action_learner.py</code></p>
+<p><strong>集成到信号生成</strong>:</p>
+<pre><code class="language-python"><span class="hljs-comment"># src/abu/detectors.py 增强版</span>
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">detect_with_price_action_learning</span>(<span class="hljs-params">klines, gemini_patterns</span>):
+    <span class="hljs-string">&quot;&quot;&quot;结合Gemini分析和价格行为学习的检测&quot;&quot;&quot;</span>
+    
+    <span class="hljs-comment"># 1. 传统检测（现有逻辑）</span>
+    candidates = detect_all_15m(klines)
+    
+    <span class="hljs-comment"># 2. 从Gemini模式库匹配</span>
+    learner = PriceActionLearner()
+    
+    <span class="hljs-keyword">for</span> candidate <span class="hljs-keyword">in</span> candidates:
+        <span class="hljs-comment"># 查找相似的Gemini模式</span>
+        similar_patterns = find_similar_gemini_patterns(candidate, gemini_patterns)
+        
+        <span class="hljs-keyword">for</span> gemini_pattern <span class="hljs-keyword">in</span> similar_patterns:
+            <span class="hljs-comment"># 学习价格行为</span>
+            price_action = learner.predict_price_action(
+                gemini_pattern[<span class="hljs-string">&#x27;gemini_annotation&#x27;</span>],
+                klines
+            )
+            
+            <span class="hljs-comment"># 增强候选信号</span>
+            candidate[<span class="hljs-string">&#x27;price_action_prediction&#x27;</span>] = price_action
+            candidate[<span class="hljs-string">&#x27;pattern_combination&#x27;</span>] = gemini_pattern[<span class="hljs-string">&#x27;pattern_combination&#x27;</span>]
+            candidate[<span class="hljs-string">&#x27;gemini_probability&#x27;</span>] = gemini_pattern[<span class="hljs-string">&#x27;trading_signals&#x27;</span>][<span class="hljs-number">0</span>].get(<span class="hljs-string">&#x27;probability&#x27;</span>, <span class="hljs-number">0</span>)
+            
+            <span class="hljs-comment"># 如果Gemini识别了交易参数，优先使用</span>
+            <span class="hljs-keyword">if</span> gemini_pattern[<span class="hljs-string">&#x27;trading_signals&#x27;</span>]:
+                signal = gemini_pattern[<span class="hljs-string">&#x27;trading_signals&#x27;</span>][<span class="hljs-number">0</span>]
+                candidate[<span class="hljs-string">&#x27;ml_entry_hint&#x27;</span>] = signal.get(<span class="hljs-string">&#x27;entry_price_hint&#x27;</span>)
+                candidate[<span class="hljs-string">&#x27;ml_tp_hint&#x27;</span>] = signal.get(<span class="hljs-string">&#x27;take_profit_1_hint&#x27;</span>)
+                candidate[<span class="hljs-string">&#x27;ml_sl_hint&#x27;</span>] = signal.get(<span class="hljs-string">&#x27;stop_loss_hint&#x27;</span>)
+    
+    <span class="hljs-keyword">return</span> candidates
+</code></pre>
+<hr>
+<h3 id="场景1-模式匹配成功率预测--高优先级">场景1: 模式匹配成功率预测 ⭐⭐⭐ (高优先级)</h3>
+<p><strong>目标</strong>: 预测模式库中的模式在实时K线中匹配后的成功率</p>
+<p><strong>现有流程中的位置</strong>:</p>
+<pre><code>模式库 → 实时检测器 → [ML预测成功率] → 评分排序 → Top10信号
+</code></pre>
+<p><strong>数据源</strong>:</p>
+<ol>
+<li>
+<p><strong>历史匹配记录</strong> (需新建表):</p>
+<ul>
+<li><code>pattern_match_history</code> 表</li>
+<li>字段: pattern_id, match_time, klines_context, match_result (tp/sl), actual_hit_time</li>
+</ul>
+</li>
+<li>
+<p><strong>模式特征</strong> (已有):</p>
+<ul>
+<li><code>pattern_library</code> 表: pattern_type, features_json, confidence</li>
+</ul>
+</li>
+<li>
+<p><strong>实时K线上下文</strong>:</p>
+<ul>
+<li>检测时刻的K线数据、技术指标、市场状态</li>
+</ul>
+</li>
+</ol>
+<p><strong>ML模型设计</strong>:</p>
+<ul>
+<li>
+<p><strong>特征工程</strong>:</p>
+<pre><code class="language-python">features = {
+    <span class="hljs-comment"># 模式特征</span>
+    <span class="hljs-string">&#x27;pattern_type&#x27;</span>: categorical,  <span class="hljs-comment"># Triangle/HeadAndShoulders/InsideBar等</span>
+    <span class="hljs-string">&#x27;pattern_confidence&#x27;</span>: <span class="hljs-built_in">float</span>,  <span class="hljs-comment"># 模式置信度</span>
+    <span class="hljs-string">&#x27;pattern_features&#x27;</span>: <span class="hljs-built_in">dict</span>,     <span class="hljs-comment"># 模式几何特征</span>
+    
+    <span class="hljs-comment"># 市场上下文特征</span>
+    <span class="hljs-string">&#x27;trend_strength&#x27;</span>: <span class="hljs-built_in">float</span>,      <span class="hljs-comment"># 趋势强度 (EMA200)</span>
+    <span class="hljs-string">&#x27;volatility&#x27;</span>: <span class="hljs-built_in">float</span>,          <span class="hljs-comment"># 波动率</span>
+    <span class="hljs-string">&#x27;volume_ratio&#x27;</span>: <span class="hljs-built_in">float</span>,        <span class="hljs-comment"># 成交量比</span>
+    <span class="hljs-string">&#x27;rsi&#x27;</span>: <span class="hljs-built_in">float</span>,                 <span class="hljs-comment"># RSI指标</span>
+    <span class="hljs-string">&#x27;market_state&#x27;</span>: categorical,  <span class="hljs-comment"># bull/bear/neutral</span>
+    
+    <span class="hljs-comment"># 检测时刻特征</span>
+    <span class="hljs-string">&#x27;entry_price&#x27;</span>: <span class="hljs-built_in">float</span>,
+    <span class="hljs-string">&#x27;stop_loss_distance_pct&#x27;</span>: <span class="hljs-built_in">float</span>,
+    <span class="hljs-string">&#x27;take_profit_distance_pct&#x27;</span>: <span class="hljs-built_in">float</span>,
+    <span class="hljs-string">&#x27;risk_reward_ratio&#x27;</span>: <span class="hljs-built_in">float</span>,
+    <span class="hljs-string">&#x27;timeframe&#x27;</span>: categorical,     <span class="hljs-comment"># 15m/1h/4h</span>
+}
+</code></pre>
+</li>
+<li>
+<p><strong>标签</strong>:</p>
+<ul>
+<li>二分类: <code>success</code> (1=TP命中, 0=SL命中或未命中)</li>
+<li>回归: <code>hit_time_hours</code> (从匹配到TP/SL的时间)</li>
+</ul>
+</li>
+<li>
+<p><strong>模型选择</strong>:</p>
+<ol>
+<li><strong>基线模型</strong>: Random Forest / XGBoost (快速验证)</li>
+<li><strong>深度学习</strong>:
+<ul>
+<li>LSTM (时序特征)</li>
+<li>CNN+LSTM (K线图像 + 时序)</li>
+<li>Transformer (注意力机制，捕捉模式特征重要性)</li>
+</ul>
+</li>
+</ol>
+</li>
+</ul>
+<p><strong>实现文件</strong>: <code>src/ml_dl/abu_pattern_match_predictor.py</code></p>
+<hr>
+<h3 id="场景2-模式权重优化--高优先级">场景2: 模式权重优化 ⭐⭐⭐ (高优先级)</h3>
+<p><strong>目标</strong>: 基于历史表现优化 <code>config/abu_pattern_weights.yaml</code> 中的模式权重</p>
+<p><strong>现有问题</strong>:</p>
+<ul>
+<li>当前权重是人工设定的固定值</li>
+<li>无法根据历史表现自适应调整</li>
+</ul>
+<p><strong>ML/DL方案</strong>:</p>
+<ol>
+<li>
+<p><strong>收集历史数据</strong>:</p>
+<ul>
+<li>从 <code>pattern_match_history</code> 统计每个模式的胜率</li>
+<li>计算: win_rate, avg_profit, avg_loss, sharpe_ratio</li>
+</ul>
+</li>
+<li>
+<p><strong>强化学习优化权重</strong>:</p>
+<pre><code class="language-python"><span class="hljs-comment"># 状态: 当前权重配置 + 市场状态</span>
+<span class="hljs-comment"># 动作: 调整各模式权重 (±0.1)</span>
+<span class="hljs-comment"># 奖励: 组合信号的胜率提升 + 盈亏比改善</span>
+</code></pre>
+</li>
+<li>
+<p><strong>多臂老虎机 (Multi-Armed Bandit)</strong>:</p>
+<ul>
+<li>快速探索不同权重组合</li>
+<li>平衡探索与利用</li>
+</ul>
+</li>
+</ol>
+<p><strong>实现文件</strong>: <code>src/ml_dl/abu_pattern_weight_optimizer.py</code></p>
+<p><strong>输出</strong>: 自动更新 <code>config/abu_pattern_weights.yaml</code></p>
+<hr>
+<h3 id="场景3-候选信号评分优化--中优先级">场景3: 候选信号评分优化 ⭐⭐ (中优先级)</h3>
+<p><strong>目标</strong>: 使用ML模型替代 <code>src/abu/ranker.py</code> 中的规则评分</p>
+<p><strong>现有评分公式</strong> (rule-based):</p>
+<pre><code class="language-python">score = base_score * <span class="hljs-number">0.6</span> + rr_score * <span class="hljs-number">0.6</span> + trend_backing * <span class="hljs-number">0.6</span> + pattern_bonus
+</code></pre>
+<p><strong>ML评分模型</strong>:</p>
+<ul>
+<li>
+<p><strong>训练数据</strong>: 历史候选信号 + 实际表现 (TP/SL)</p>
+</li>
+<li>
+<p><strong>特征</strong>:</p>
+<ul>
+<li>现有特征 (entry, sl, tp, pattern, trend)</li>
+<li>扩展特征 (volatility, volume, market_regime, time_features)</li>
+</ul>
+</li>
+<li>
+<p><strong>模型</strong>:</p>
+<ul>
+<li>Gradient Boosting (XGBoost/LightGBM) - 可解释性强</li>
+<li>神经网络 - 捕捉复杂非线性关系</li>
+</ul>
+</li>
+</ul>
+<p><strong>优势</strong>:</p>
+<ul>
+<li>自动学习特征重要性</li>
+<li>捕捉规则无法表达的复杂模式</li>
+<li>可随数据积累持续优化</li>
+</ul>
+<p><strong>实现文件</strong>: <code>src/ml_dl/abu_candidate_scorer.py</code></p>
+<p><strong>集成方式</strong>:</p>
+<pre><code class="language-python"><span class="hljs-comment"># src/abu/ranker.py</span>
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">score_candidate</span>(<span class="hljs-params">c: <span class="hljs-type">Dict</span>, k1h: <span class="hljs-type">List</span>[<span class="hljs-type">Dict</span>]</span>) -&gt; <span class="hljs-built_in">float</span>:
+    <span class="hljs-comment"># 如果ML模型可用，优先使用</span>
+    <span class="hljs-keyword">if</span> ml_scorer.is_available():
+        <span class="hljs-keyword">return</span> ml_scorer.predict_score(c, k1h)
+    <span class="hljs-comment"># 否则使用规则评分</span>
+    <span class="hljs-keyword">return</span> rule_based_score(c, k1h)
+</code></pre>
+<hr>
+<h3 id="场景4-模式识别增强-深度学习--低优先级长期">场景4: 模式识别增强 (深度学习) ⭐ (低优先级，长期)</h3>
+<p><strong>目标</strong>: 使用深度学习直接从K线图像识别模式</p>
+<p><strong>方案</strong>:</p>
+<ul>
+<li><strong>CNN模型</strong>: 将K线数据转换为图像，使用CNN识别形态</li>
+<li><strong>对比学习</strong>: 将PDF模式图片与实时K线图片对比，计算相似度</li>
+<li><strong>Transformer</strong>: 将K线序列作为token，使用注意力机制识别模式</li>
+</ul>
+<p><strong>数据准备</strong>:</p>
+<ul>
+<li>PDF模式图片: <code>data/abu/images/</code></li>
+<li>实时K线图片: 从K线数据生成</li>
+</ul>
+<p><strong>实现文件</strong>: <code>src/ml_dl/abu_pattern_vision_matcher.py</code></p>
+<hr>
+<h2 id="-实施计划">📋 实施计划</h2>
+<h3 id="阶段0-gemini-vision-api完整分析必须首先完成1-2周">阶段0: Gemini Vision API完整分析（必须首先完成，1-2周）</h3>
+<p><strong>⚠️ 重要说明：成本控制和健壮性</strong></p>
+<ul>
+<li>✅ <strong>成本控制</strong>：强制使用 <code>gemini-1.5-flash</code>，禁止Pro模型</li>
+<li>✅ <strong>去重机制</strong>：SHA1检查、输出文件检查、缓存检查，确保每张图片只分析一次</li>
+<li>✅ <strong>断点续传</strong>：支持中断后继续，不浪费API调用</li>
+<li>✅ <strong>独立模块</strong>：只用于图形识别，不做其他用途</li>
+<li>✅ <strong>日志完整</strong>：详细记录处理状态，便于排查问题</li>
+</ul>
+<h4 id="01-gemini-vision-图形识别模块独立模块成本可控">0.1 Gemini Vision 图形识别模块（独立模块，成本可控）</h4>
+<p><strong>文件</strong>: <code>src/abu/gemini_vision_analyzer.py</code> (新建，独立模块)</p>
+<p><strong>设计原则</strong>（严格遵循）:</p>
+<ol>
+<li>✅ <strong>独立模块</strong>: 只用于图形识别，不做其他用途</li>
+<li>✅ <strong>成本控制</strong>: 强制使用 <code>gemini-1.5-flash</code>（禁止使用Pro）</li>
+<li>✅ <strong>去重机制</strong>:
+<ul>
+<li>SHA1检查（文件内容去重）</li>
+<li>输出文件检查（避免重复写入）</li>
+<li>缓存检查（避免重复API调用）</li>
+</ul>
+</li>
+<li>✅ <strong>断点续传</strong>:
+<ul>
+<li>状态文件保存（<code>outputs/abu_gemini_analysis_state.json</code>）</li>
+<li>支持中断后继续，不浪费API调用</li>
+<li>自动跳过已处理的图片</li>
+</ul>
+</li>
+<li>✅ <strong>健壮性</strong>:
+<ul>
+<li>完整的错误处理和重试机制（最多3次）</li>
+<li>异常捕获和日志记录</li>
+<li>每10张保存一次状态</li>
+</ul>
+</li>
+<li>✅ <strong>日志完整</strong>:
+<ul>
+<li>详细日志文件（<code>outputs/abu_gemini/gemini_analysis.log</code>）</li>
+<li>记录每张图片的处理状态、耗时、成本</li>
+<li>记录所有错误和警告</li>
+</ul>
+</li>
+<li>✅ <strong>输入输出明确</strong>:
+<ul>
+<li>输入: <code>data/abu/images/*.png</code> (1000张图片)</li>
+<li>输出: <code>outputs/abu_gemini_annotations_enhanced.jsonl</code></li>
+<li>状态: <code>outputs/abu_gemini_analysis_state.json</code></li>
+<li>缓存: <code>outputs/.cache/abu_gemini/{sha1}.json</code></li>
+<li>日志: <code>outputs/abu_gemini/gemini_analysis.log</code></li>
+</ul>
+</li>
+</ol>
+<p><strong>成本控制机制</strong>:</p>
+<ul>
+<li><strong>模型强制</strong>: 自动检测并禁止使用Pro模型</li>
+<li><strong>成本估算</strong>: 实时显示每次调用成本和总成本</li>
+<li><strong>API限流</strong>: 默认1秒间隔（可配置）</li>
+<li><strong>批量控制</strong>: 支持分批处理，控制单次运行成本</li>
+</ul>
+<p><strong>断点续传机制</strong>:</p>
+<ul>
+<li>状态文件结构:<pre><code class="language-json"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;start_time&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-01-10 10:00:00&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;last_update&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-01-10 10:30:00&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;total_images&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">1000</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;completed_count&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">300</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;failed_count&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">5</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;skipped_count&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">50</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;images&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+    <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">&quot;image_path&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;data/abu/images/page_0001_img_01_xxx.png&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;image_sha1&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;abc123...&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;status&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;completed&quot;</span><span class="hljs-punctuation">,</span>  <span class="hljs-comment">// pending/processing/completed/failed/skipped</span>
+      <span class="hljs-attr">&quot;processed_at&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-01-10 10:05:00&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;retry_count&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;error_message&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-keyword">null</span>
+    <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+    ...
+  <span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;settings&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;model&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;gemini-1.5-flash&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;sleep_ms&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">1000</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;max_retries&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">3</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+</li>
+</ul>
+<p><strong>使用方式</strong>:</p>
+<pre><code class="language-bash"><span class="hljs-comment"># 设置API Key（必须）</span>
+<span class="hljs-built_in">export</span> GEMINI_API_KEY=<span class="hljs-string">&quot;your_api_key&quot;</span>
+
+<span class="hljs-comment"># 方式1: 完整处理1000张图片（自动断点续传）</span>
+python -m src.abu.gemini_vision_analyzer \
+    --api-key <span class="hljs-variable">$GEMINI_API_KEY</span> \
+    --model gemini-1.5-flash \
+    --resume  <span class="hljs-comment"># 默认开启，从上次中断处继续</span>
+
+<span class="hljs-comment"># 方式2: 分批处理（推荐，控制成本）</span>
+<span class="hljs-comment"># 第一批：1-300</span>
+python -m src.abu.gemini_vision_analyzer \
+    --start-idx 0 --end-idx 300 \
+    --sleep-ms 1000
+
+<span class="hljs-comment"># 第二批：301-600（自动跳过已处理）</span>
+python -m src.abu.gemini_vision_analyzer \
+    --start-idx 300 --end-idx 600 \
+    --resume  <span class="hljs-comment"># 自动从状态文件恢复</span>
+
+<span class="hljs-comment"># 第三批：601-1000</span>
+python -m src.abu.gemini_vision_analyzer \
+    --start-idx 600 \
+    --resume
+
+<span class="hljs-comment"># 方式3: 查看当前状态（不执行分析）</span>
+python -m src.abu.gemini_vision_analyzer --status
+
+<span class="hljs-comment"># 方式4: 测试模式（只处理前10张）</span>
+python -m src.abu.gemini_vision_analyzer --<span class="hljs-built_in">limit</span> 10
+
+<span class="hljs-comment"># 方式5: 强制重新分析（忽略缓存和已处理记录，谨慎使用）</span>
+python -m src.abu.gemini_vision_analyzer --force
+</code></pre>
+<p><strong>成本估算</strong>:</p>
+<ul>
+<li>Gemini 1.5 Flash: 约 $0.000125/张图片</li>
+<li>1000张图片: 约 <strong>$0.125 USD</strong> (12.5美分)</li>
+<li>实际成本可能略有差异，以Gemini官方定价为准</li>
+</ul>
+<p><strong>输出文件格式</strong> (<code>outputs/abu_gemini_annotations_enhanced.jsonl</code>):</p>
+<pre><code class="language-json"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;image&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;data/abu/images/page_0001_img_01_xxx.png&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;sha1&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;abc123def456...&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;page&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">1</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;result&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;patterns&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+      <span class="hljs-punctuation">{</span><span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;W底&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;reversal&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;location&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;bottom&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;confidence&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0.85</span><span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-punctuation">{</span><span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;三角形&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;continuation&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;location&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;middle&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;confidence&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0.75</span><span class="hljs-punctuation">}</span>
+    <span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;pattern_combination&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;W底 + 三角形 + 突破&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;price_action_behavior&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">&quot;trend&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;bullish&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;structure&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;higher_lows&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;kline_features&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-string">&quot;engulfing&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-string">&quot;pin_bar&quot;</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;volume_behavior&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;increasing&quot;</span>
+    <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;trading_signals&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+      <span class="hljs-punctuation">{</span>
+        <span class="hljs-attr">&quot;direction&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;long&quot;</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;entry_condition&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;回调到W底颈线附近&quot;</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;entry_price_hint&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">87500</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;stop_loss_hint&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">87000</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;take_profit_1_hint&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">88500</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;take_profit_2_hint&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">89000</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;probability&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">75</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;target&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;test_of_high_of_day&quot;</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;risk_reward_ratio&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">2.5</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;timeframe_hint&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;15m&quot;</span>
+      <span class="hljs-punctuation">}</span>
+    <span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;market_conditions&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">&quot;context&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;small PB bull trend&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;trend_strength&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;strong&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;volatility&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;low&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;key_levels&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-string">&quot;87500&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-string">&quot;88000&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-string">&quot;89000&quot;</span><span class="hljs-punctuation">]</span>
+    <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;annotations&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+      <span class="hljs-punctuation">{</span><span class="hljs-attr">&quot;label&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;A&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;description&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;W底左底&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;price&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">86500</span><span class="hljs-punctuation">}</span>
+    <span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;text_notes&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+      <span class="hljs-string">&quot;20-Gap bar buy in small PB bull trend so 75% chance of test of high of day&quot;</span>
+    <span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;confidence&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0.90</span>
+  <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;cached&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-keyword">false</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;elapsed_seconds&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">2.34</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;estimated_cost_usd&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0.000125</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<p><strong>状态检查命令</strong>:</p>
+<pre><code class="language-bash"><span class="hljs-comment"># 查看处理状态</span>
+python -m src.abu.gemini_vision_analyzer --status
+
+<span class="hljs-comment"># 输出示例:</span>
+<span class="hljs-comment"># {</span>
+<span class="hljs-comment">#   &quot;status&quot;: &quot;in_progress&quot;,</span>
+<span class="hljs-comment">#   &quot;start_time&quot;: &quot;2026-01-10 10:00:00&quot;,</span>
+<span class="hljs-comment">#   &quot;last_update&quot;: &quot;2026-01-10 10:30:00&quot;,</span>
+<span class="hljs-comment">#   &quot;total_images&quot;: 1000,</span>
+<span class="hljs-comment">#   &quot;completed&quot;: 300,</span>
+<span class="hljs-comment">#   &quot;failed&quot;: 5,</span>
+<span class="hljs-comment">#   &quot;skipped&quot;: 50,</span>
+<span class="hljs-comment">#   &quot;pending&quot;: 645,</span>
+<span class="hljs-comment">#   &quot;progress_pct&quot;: 35.0,</span>
+<span class="hljs-comment">#   &quot;estimated_remaining_cost&quot;: 0.080625</span>
+<span class="hljs-comment"># }</span>
+</code></pre>
+<h4 id="02-智能解析gemini输出独立模块的一部分">0.2 智能解析Gemini输出（独立模块的一部分）</h4>
+<p><strong>文件</strong>: <code>scripts/abu_parse_gemini_output.py</code> (新建)</p>
+<p><strong>功能</strong>:</p>
+<ul>
+<li>解析Gemini返回的JSON（可能不完整或格式不一致）</li>
+<li>从text_notes提取交易参数（概率、价格等）</li>
+<li>补全缺失字段</li>
+<li>标准化格式</li>
+<li>验证解析结果</li>
+</ul>
+<p><strong>输入</strong>: <code>outputs/abu_gemini_annotations_enhanced.jsonl</code> (Gemini分析结果)</p>
+<p><strong>输出</strong>: <code>outputs/abu_gemini_parsed.jsonl</code> (解析后的标准化结果)</p>
+<p><strong>执行</strong>:</p>
+<pre><code class="language-bash"><span class="hljs-comment"># 解析Gemini输出</span>
+python scripts/abu_parse_gemini_output.py \
+    --input outputs/abu_gemini_annotations_enhanced.jsonl \
+    --output outputs/abu_gemini_parsed.jsonl \
+    --verify  <span class="hljs-comment"># 验证解析结果，报告错误</span>
+
+<span class="hljs-comment"># 输出格式: 标准化的parsed字段 + 原始结果 + 解析错误</span>
+</code></pre>
+<p><strong>解析能力</strong>:</p>
+<ul>
+<li>支持多种JSON格式（列表/单一对象/嵌套结构）</li>
+<li>从文本自动提取：概率、方向、价格、目标</li>
+<li>智能补全：缺失字段从其他字段推断</li>
+<li>错误记录：记录所有解析错误，便于排查</li>
+</ul>
+<h4 id="03-更新模式库数据独立模块的一部分">0.3 更新模式库数据（独立模块的一部分）</h4>
+<p><strong>文件</strong>: <code>scripts/abu_update_pattern_library_from_gemini.py</code> (新建)</p>
+<p><strong>功能</strong>:</p>
+<ul>
+<li>读取解析后的Gemini结果</li>
+<li>匹配pattern_library记录（通过image_path或page_number）</li>
+<li>更新gemini_annotation_json字段</li>
+<li>提取并更新pattern_type, direction, key_features等字段</li>
+<li>支持预览模式（--dry-run）</li>
+</ul>
+<p><strong>执行</strong>:</p>
+<pre><code class="language-bash"><span class="hljs-comment"># 预览模式（不实际更新，先检查）</span>
+python scripts/abu_update_pattern_library_from_gemini.py \
+    --input outputs/abu_gemini_parsed.jsonl \
+    --dry-run
+
+<span class="hljs-comment"># 实际更新（确认无误后执行）</span>
+python scripts/abu_update_pattern_library_from_gemini.py \
+    --input outputs/abu_gemini_parsed.jsonl \
+    --skip-existing  <span class="hljs-comment"># 跳过已有gemini_annotation_json的记录（默认）</span>
+</code></pre>
+<p><strong>更新内容</strong>:</p>
+<ul>
+<li><code>gemini_annotation_json</code>: 完整的解析结果（JSON格式）</li>
+<li><code>pattern_type</code>: 从patterns提取（支持多模式，取第一个）</li>
+<li><code>direction</code>: 从trading_signals提取</li>
+<li><code>key_features</code>: 从price_action_behavior提取（K线特征）</li>
+<li><code>confidence</code>: 从解析结果提取</li>
+<li><code>updated_at</code>: 更新时间戳</li>
+</ul>
+<h4 id="04-验证gemini分析结果">0.4 验证Gemini分析结果</h4>
+<p><strong>文件</strong>: <code>scripts/abu_verify_gemini_analysis.py</code> (新建)</p>
+<p><strong>功能</strong>:</p>
+<ul>
+<li>检查更新后的数据质量</li>
+<li>统计：
+<ul>
+<li>有多少条记录有gemini_annotation_json（覆盖率）</li>
+<li>模式组合分布（&quot;W底+三角形&quot;有多少条）</li>
+<li>交易参数完整性（有多少条有probability、entry_price等）</li>
+<li>置信度分布</li>
+</ul>
+</li>
+<li>生成质量报告</li>
+</ul>
+<p><strong>执行</strong>:</p>
+<pre><code class="language-bash">python scripts/abu_verify_gemini_analysis.py \
+    --output outputs/abu_gemini_verification_report.md
+</code></pre>
+<p><strong>报告内容</strong>:</p>
+<ul>
+<li>覆盖率统计</li>
+<li>模式类型分布</li>
+<li>交易参数完整性</li>
+<li>置信度分布</li>
+<li>质量评分</li>
+</ul>
+<hr>
+<h3 id="阶段1-数据准备-1-2周">阶段1: 数据准备 (1-2周)</h3>
+<h4 id="11-创建扩展模式匹配历史表">1.1 创建/扩展模式匹配历史表</h4>
+<p><strong>现有表</strong>: <code>pattern_matches</code> 已存在但为空，需要扩展字段</p>
+<pre><code class="language-sql"><span class="hljs-comment">-- 检查现有表结构（已有9个字段）</span>
+<span class="hljs-comment">-- 扩展字段以支持ML训练</span>
+<span class="hljs-keyword">ALTER</span> <span class="hljs-keyword">TABLE</span> pattern_matches <span class="hljs-keyword">ADD</span> <span class="hljs-keyword">COLUMN</span> IF <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">EXISTS</span> pattern_type TEXT;
+<span class="hljs-keyword">ALTER</span> <span class="hljs-keyword">TABLE</span> pattern_matches <span class="hljs-keyword">ADD</span> <span class="hljs-keyword">COLUMN</span> IF <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">EXISTS</span> entry_price <span class="hljs-type">REAL</span>;
+<span class="hljs-keyword">ALTER</span> <span class="hljs-keyword">TABLE</span> pattern_matches <span class="hljs-keyword">ADD</span> <span class="hljs-keyword">COLUMN</span> IF <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">EXISTS</span> stop_loss <span class="hljs-type">REAL</span>;
+<span class="hljs-keyword">ALTER</span> <span class="hljs-keyword">TABLE</span> pattern_matches <span class="hljs-keyword">ADD</span> <span class="hljs-keyword">COLUMN</span> IF <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">EXISTS</span> take_profit_1 <span class="hljs-type">REAL</span>;
+<span class="hljs-keyword">ALTER</span> <span class="hljs-keyword">TABLE</span> pattern_matches <span class="hljs-keyword">ADD</span> <span class="hljs-keyword">COLUMN</span> IF <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">EXISTS</span> take_profit_2 <span class="hljs-type">REAL</span>;
+<span class="hljs-keyword">ALTER</span> <span class="hljs-keyword">TABLE</span> pattern_matches <span class="hljs-keyword">ADD</span> <span class="hljs-keyword">COLUMN</span> IF <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">EXISTS</span> direction TEXT;
+<span class="hljs-keyword">ALTER</span> <span class="hljs-keyword">TABLE</span> pattern_matches <span class="hljs-keyword">ADD</span> <span class="hljs-keyword">COLUMN</span> IF <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">EXISTS</span> klines_context_json TEXT;
+<span class="hljs-keyword">ALTER</span> <span class="hljs-keyword">TABLE</span> pattern_matches <span class="hljs-keyword">ADD</span> <span class="hljs-keyword">COLUMN</span> IF <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">EXISTS</span> market_features_json TEXT;
+<span class="hljs-keyword">ALTER</span> <span class="hljs-keyword">TABLE</span> pattern_matches <span class="hljs-keyword">ADD</span> <span class="hljs-keyword">COLUMN</span> IF <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">EXISTS</span> match_result TEXT;
+<span class="hljs-keyword">ALTER</span> <span class="hljs-keyword">TABLE</span> pattern_matches <span class="hljs-keyword">ADD</span> <span class="hljs-keyword">COLUMN</span> IF <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">EXISTS</span> hit_time TEXT;
+<span class="hljs-keyword">ALTER</span> <span class="hljs-keyword">TABLE</span> pattern_matches <span class="hljs-keyword">ADD</span> <span class="hljs-keyword">COLUMN</span> IF <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">EXISTS</span> profit_pct <span class="hljs-type">REAL</span>;
+<span class="hljs-keyword">ALTER</span> <span class="hljs-keyword">TABLE</span> pattern_matches <span class="hljs-keyword">ADD</span> <span class="hljs-keyword">COLUMN</span> IF <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">EXISTS</span> signal_id <span class="hljs-type">INTEGER</span>;
+
+<span class="hljs-comment">-- 如果表不存在，创建完整表</span>
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> IF <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">EXISTS</span> pattern_match_history (
+    id <span class="hljs-type">INTEGER</span> <span class="hljs-keyword">PRIMARY</span> KEY,
+    pattern_id <span class="hljs-type">INTEGER</span>,              <span class="hljs-comment">-- 模式库中的pattern_id</span>
+    signal_id <span class="hljs-type">INTEGER</span>,               <span class="hljs-comment">-- 关联的trading_signal id</span>
+    pattern_type TEXT,               <span class="hljs-comment">-- Triangle/HeadAndShoulders等</span>
+    match_time TEXT <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,        <span class="hljs-comment">-- 匹配时间</span>
+    symbol TEXT,                     <span class="hljs-comment">-- BTC/USDT等</span>
+    timeframe TEXT,                  <span class="hljs-comment">-- 15m/1h等</span>
+    entry_price <span class="hljs-type">REAL</span>,
+    stop_loss <span class="hljs-type">REAL</span>,
+    take_profit_1 <span class="hljs-type">REAL</span>,
+    take_profit_2 <span class="hljs-type">REAL</span>,
+    direction TEXT,                  <span class="hljs-comment">-- long/short</span>
+    match_confidence <span class="hljs-type">REAL</span>,           <span class="hljs-comment">-- 匹配置信度（已有字段）</span>
+    klines_context_json TEXT,        <span class="hljs-comment">-- 匹配时的K线上下文(JSON)</span>
+    market_features_json TEXT,       <span class="hljs-comment">-- 市场特征(JSON): trend, volatility等</span>
+    match_details_json TEXT,         <span class="hljs-comment">-- 匹配详情（已有字段）</span>
+    match_result TEXT,               <span class="hljs-comment">-- tp/sl/none（待评估后更新）</span>
+    hit_time TEXT,                   <span class="hljs-comment">-- 实际TP/SL触发时间</span>
+    profit_pct <span class="hljs-type">REAL</span>,                 <span class="hljs-comment">-- 实际盈亏百分比</span>
+    created_at TEXT <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,
+    <span class="hljs-keyword">FOREIGN</span> KEY (pattern_id) <span class="hljs-keyword">REFERENCES</span> pattern_library(id),
+    <span class="hljs-keyword">FOREIGN</span> KEY (signal_id) <span class="hljs-keyword">REFERENCES</span> trading_signals(id)
+);
+</code></pre>
+<h4 id="12-记录模式匹配历史">1.2 记录模式匹配历史</h4>
+<p><strong>实现</strong>: <code>scripts/abu_record_match_history.py</code></p>
+<p>在每次生成ABU信号后，记录:</p>
+<ul>
+<li>哪些模式被匹配了</li>
+<li>匹配时的市场状态</li>
+<li>后续的价格表现 (TP/SL结果)</li>
+</ul>
+<p><strong>执行方式</strong>:</p>
+<pre><code class="language-bash"><span class="hljs-comment"># 生成ABU信号时自动记录</span>
+python scripts/pa_scan_15m_top10.py --record-match-history
+
+<span class="hljs-comment"># 或批量回测历史信号</span>
+python scripts/abu_backtest_pattern_matches.py --start-date 2025-01-01
+</code></pre>
+<h4 id="13-信号评估数据收集">1.3 信号评估数据收集</h4>
+<p><strong>数据源</strong>:</p>
+<ul>
+<li><code>trading_signals</code> 表 (system_name='abu')</li>
+<li><code>signal_evaluations</code> 表 (待创建评估记录)</li>
+</ul>
+<p><strong>实施信号评估</strong>:</p>
+<pre><code class="language-python"><span class="hljs-comment"># 评估ABU历史信号的实际表现</span>
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">evaluate_abu_signals</span>():
+    db = TraderDBManager(<span class="hljs-string">&#x27;abu&#x27;</span>)
+    signals = db.get_trading_signals(system_name=<span class="hljs-string">&#x27;abu&#x27;</span>, status=<span class="hljs-string">&#x27;pending&#x27;</span>)
+    
+    <span class="hljs-keyword">for</span> signal <span class="hljs-keyword">in</span> signals:
+        <span class="hljs-comment"># 基于历史K线评估</span>
+        result = price_eval_signal(signal)
+        
+        <span class="hljs-comment"># 更新评估表</span>
+        db.add_signal_evaluation(
+            signal_id=signal[<span class="hljs-string">&#x27;id&#x27;</span>],
+            evaluation_time=datetime.now().strftime(<span class="hljs-string">&#x27;%Y-%m-%d %H:%M:%S&#x27;</span>),
+            result=result[<span class="hljs-string">&#x27;result&#x27;</span>],  <span class="hljs-comment"># tp/sl/none</span>
+            actual_entry_price=signal[<span class="hljs-string">&#x27;entry_price&#x27;</span>],
+            actual_exit_price=result.get(<span class="hljs-string">&#x27;exit_price&#x27;</span>),
+            actual_profit_pct=result.get(<span class="hljs-string">&#x27;profit_pct&#x27;</span>, <span class="hljs-number">0</span>),
+            stop_loss_hit=<span class="hljs-number">1</span> <span class="hljs-keyword">if</span> result[<span class="hljs-string">&#x27;result&#x27;</span>] == <span class="hljs-string">&#x27;sl&#x27;</span> <span class="hljs-keyword">else</span> <span class="hljs-number">0</span>,
+            take_profit_1_hit=<span class="hljs-number">1</span> <span class="hljs-keyword">if</span> result[<span class="hljs-string">&#x27;result&#x27;</span>] == <span class="hljs-string">&#x27;tp&#x27;</span> <span class="hljs-keyword">else</span> <span class="hljs-number">0</span>,
+            notes=<span class="hljs-string">f&quot;自动评估: <span class="hljs-subst">{result.get(<span class="hljs-string">&#x27;hit_time&#x27;</span>, <span class="hljs-string">&#x27;未触发&#x27;</span>)}</span>&quot;</span>
+        )
+        
+        <span class="hljs-comment"># 更新信号状态</span>
+        db.update_signal_status(signal[<span class="hljs-string">&#x27;id&#x27;</span>], result[<span class="hljs-string">&#x27;result&#x27;</span>])
+</code></pre>
+<hr>
+<h3 id="阶段2-ml模型训练-2-3周">阶段2: ML模型训练 (2-3周)</h3>
+<h4 id="20-价格行为特征学习模型最高优先级">2.0 价格行为特征学习模型（最高优先级）⭐</h4>
+<p><strong>文件</strong>: <code>src/ml_dl/abu_price_action_learner.py</code> (新建)</p>
+<p><strong>训练数据准备</strong>:</p>
+<pre><code class="language-python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">prepare_price_action_training_data</span>():
+    <span class="hljs-string">&quot;&quot;&quot;从Gemini分析结果和实际K线数据准备训练数据&quot;&quot;&quot;</span>
+    db = TraderDBManager(<span class="hljs-string">&#x27;abu&#x27;</span>)
+    conn = db._get_connection()
+    
+    <span class="hljs-comment"># 获取所有有Gemini标注的模式</span>
+    patterns = conn.execute(<span class="hljs-string">&#x27;&#x27;&#x27;
+        SELECT id, gemini_annotation_json, image_path
+        FROM pattern_library
+        WHERE gemini_annotation_json IS NOT NULL 
+          AND gemini_annotation_json != &#x27;&#x27;
+    &#x27;&#x27;&#x27;</span>).fetchall()
+    
+    training_data = []
+    <span class="hljs-keyword">for</span> pattern_id, gemini_json, image_path <span class="hljs-keyword">in</span> patterns:
+        <span class="hljs-keyword">try</span>:
+            gemini_ann = json.loads(gemini_json)
+            
+            <span class="hljs-comment"># 提取Gemini识别的特征</span>
+            gemini_features = extract_gemini_features(gemini_ann)
+            
+            <span class="hljs-comment"># 获取实际K线数据（从图像路径推断币种和时间，或从数据库获取）</span>
+            klines = get_klines_for_pattern(pattern_id, image_path)
+            
+            <span class="hljs-keyword">if</span> klines:
+                <span class="hljs-comment"># 提取实际K线特征</span>
+                kline_features = extract_kline_features(klines)
+                
+                <span class="hljs-comment"># 组合特征</span>
+                combined_features = {**gemini_features, **kline_features}
+                
+                <span class="hljs-comment"># 标签：基于后续价格表现推断价格行为</span>
+                <span class="hljs-comment"># 如果后续价格反转 → reversal</span>
+                <span class="hljs-comment"># 如果后续价格延续 → continuation</span>
+                <span class="hljs-comment"># 否则 → indecision</span>
+                label = infer_price_action_label(klines, gemini_ann)
+                
+                training_data.append({
+                    <span class="hljs-string">&#x27;features&#x27;</span>: combined_features,
+                    <span class="hljs-string">&#x27;label&#x27;</span>: label,
+                    <span class="hljs-string">&#x27;pattern_id&#x27;</span>: pattern_id,
+                    <span class="hljs-string">&#x27;gemini_annotation&#x27;</span>: gemini_ann
+                })
+        <span class="hljs-keyword">except</span> Exception <span class="hljs-keyword">as</span> e:
+            <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;处理模式 <span class="hljs-subst">{pattern_id}</span> 失败: <span class="hljs-subst">{e}</span>&quot;</span>)
+            <span class="hljs-keyword">continue</span>
+    
+    <span class="hljs-keyword">return</span> training_data
+</code></pre>
+<p><strong>特征提取函数</strong>:</p>
+<pre><code class="language-python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">extract_gemini_features</span>(<span class="hljs-params">gemini_ann: <span class="hljs-type">Dict</span></span>) -&gt; <span class="hljs-type">Dict</span>:
+    <span class="hljs-string">&quot;&quot;&quot;从Gemini分析结果提取特征&quot;&quot;&quot;</span>
+    <span class="hljs-keyword">return</span> {
+        <span class="hljs-comment"># 模式组合特征</span>
+        <span class="hljs-string">&#x27;pattern_count&#x27;</span>: <span class="hljs-built_in">len</span>(gemini_ann.get(<span class="hljs-string">&#x27;patterns&#x27;</span>, [])),
+        <span class="hljs-string">&#x27;has_reversal_pattern&#x27;</span>: <span class="hljs-built_in">any</span>(p.get(<span class="hljs-string">&#x27;type&#x27;</span>) == <span class="hljs-string">&#x27;reversal&#x27;</span> <span class="hljs-keyword">for</span> p <span class="hljs-keyword">in</span> gemini_ann.get(<span class="hljs-string">&#x27;patterns&#x27;</span>, [])),
+        <span class="hljs-string">&#x27;has_continuation_pattern&#x27;</span>: <span class="hljs-built_in">any</span>(p.get(<span class="hljs-string">&#x27;type&#x27;</span>) == <span class="hljs-string">&#x27;continuation&#x27;</span> <span class="hljs-keyword">for</span> p <span class="hljs-keyword">in</span> gemini_ann.get(<span class="hljs-string">&#x27;patterns&#x27;</span>, [])),
+        <span class="hljs-string">&#x27;pattern_combination&#x27;</span>: gemini_ann.get(<span class="hljs-string">&#x27;pattern_combination&#x27;</span>, <span class="hljs-string">&#x27;&#x27;</span>),
+        
+        <span class="hljs-comment"># K线行为特征</span>
+        <span class="hljs-string">&#x27;kline_features&#x27;</span>: gemini_ann.get(<span class="hljs-string">&#x27;price_action_behavior&#x27;</span>, {}).get(<span class="hljs-string">&#x27;kline_features&#x27;</span>, []),
+        <span class="hljs-string">&#x27;has_engulfing&#x27;</span>: <span class="hljs-string">&#x27;engulfing&#x27;</span> <span class="hljs-keyword">in</span> (gemini_ann.get(<span class="hljs-string">&#x27;price_action_behavior&#x27;</span>, {}).get(<span class="hljs-string">&#x27;kline_features&#x27;</span>, [])),
+        <span class="hljs-string">&#x27;has_pin_bar&#x27;</span>: <span class="hljs-string">&#x27;pin_bar&#x27;</span> <span class="hljs-keyword">in</span> (gemini_ann.get(<span class="hljs-string">&#x27;price_action_behavior&#x27;</span>, {}).get(<span class="hljs-string">&#x27;kline_features&#x27;</span>, [])),
+        <span class="hljs-string">&#x27;has_inside_bar&#x27;</span>: <span class="hljs-string">&#x27;inside_bar&#x27;</span> <span class="hljs-keyword">in</span> (gemini_ann.get(<span class="hljs-string">&#x27;price_action_behavior&#x27;</span>, {}).get(<span class="hljs-string">&#x27;kline_features&#x27;</span>, [])),
+        <span class="hljs-string">&#x27;trend_structure&#x27;</span>: gemini_ann.get(<span class="hljs-string">&#x27;price_action_behavior&#x27;</span>, {}).get(<span class="hljs-string">&#x27;structure&#x27;</span>, <span class="hljs-string">&#x27;&#x27;</span>),
+        
+        <span class="hljs-comment"># 交易参数特征</span>
+        <span class="hljs-string">&#x27;signal_count&#x27;</span>: <span class="hljs-built_in">len</span>(gemini_ann.get(<span class="hljs-string">&#x27;trading_signals&#x27;</span>, [])),
+        <span class="hljs-string">&#x27;avg_probability&#x27;</span>: np.mean([s.get(<span class="hljs-string">&#x27;probability&#x27;</span>, <span class="hljs-number">0</span>) <span class="hljs-keyword">for</span> s <span class="hljs-keyword">in</span> gemini_ann.get(<span class="hljs-string">&#x27;trading_signals&#x27;</span>, [])]),
+        <span class="hljs-string">&#x27;avg_rr_ratio&#x27;</span>: np.mean([s.get(<span class="hljs-string">&#x27;risk_reward_ratio&#x27;</span>, <span class="hljs-number">0</span>) <span class="hljs-keyword">for</span> s <span class="hljs-keyword">in</span> gemini_ann.get(<span class="hljs-string">&#x27;trading_signals&#x27;</span>, [])]),
+        
+        <span class="hljs-comment"># 市场条件特征</span>
+        <span class="hljs-string">&#x27;trend_strength&#x27;</span>: gemini_ann.get(<span class="hljs-string">&#x27;market_conditions&#x27;</span>, {}).get(<span class="hljs-string">&#x27;trend_strength&#x27;</span>, <span class="hljs-string">&#x27;&#x27;</span>),
+        <span class="hljs-string">&#x27;volatility_level&#x27;</span>: gemini_ann.get(<span class="hljs-string">&#x27;market_conditions&#x27;</span>, {}).get(<span class="hljs-string">&#x27;volatility&#x27;</span>, <span class="hljs-string">&#x27;&#x27;</span>),
+    }
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">extract_kline_features</span>(<span class="hljs-params">klines: <span class="hljs-type">List</span>[<span class="hljs-type">Dict</span>]</span>) -&gt; <span class="hljs-type">Dict</span>:
+    <span class="hljs-string">&quot;&quot;&quot;从实际K线数据提取特征&quot;&quot;&quot;</span>
+    closes = [k[<span class="hljs-string">&#x27;close&#x27;</span>] <span class="hljs-keyword">for</span> k <span class="hljs-keyword">in</span> klines]
+    highs = [k[<span class="hljs-string">&#x27;high&#x27;</span>] <span class="hljs-keyword">for</span> k <span class="hljs-keyword">in</span> klines]
+    lows = [k[<span class="hljs-string">&#x27;low&#x27;</span>] <span class="hljs-keyword">for</span> k <span class="hljs-keyword">in</span> klines]
+    volumes = [k.get(<span class="hljs-string">&#x27;volume&#x27;</span>, <span class="hljs-number">0</span>) <span class="hljs-keyword">for</span> k <span class="hljs-keyword">in</span> klines]
+    
+    <span class="hljs-keyword">return</span> {
+        <span class="hljs-comment"># 趋势特征</span>
+        <span class="hljs-string">&#x27;price_trend&#x27;</span>: calculate_trend(closes),
+        <span class="hljs-string">&#x27;trend_strength&#x27;</span>: calculate_trend_strength(closes),
+        
+        <span class="hljs-comment"># 波动特征</span>
+        <span class="hljs-string">&#x27;volatility&#x27;</span>: calculate_volatility(closes),
+        <span class="hljs-string">&#x27;range_expansion&#x27;</span>: calculate_range_expansion(highs, lows),
+        
+        <span class="hljs-comment"># 成交量特征</span>
+        <span class="hljs-string">&#x27;volume_trend&#x27;</span>: calculate_volume_trend(volumes),
+        <span class="hljs-string">&#x27;volume_spike&#x27;</span>: detect_volume_spike(volumes),
+        
+        <span class="hljs-comment"># K线形态特征</span>
+        <span class="hljs-string">&#x27;actual_engulfing&#x27;</span>: detect_engulfing_actual(klines),
+        <span class="hljs-string">&#x27;actual_pin_bar&#x27;</span>: detect_pin_bar_actual(klines),
+        <span class="hljs-string">&#x27;actual_inside_bar&#x27;</span>: detect_inside_bar_actual(klines),
+    }
+</code></pre>
+<p><strong>模型训练</strong>:</p>
+<pre><code class="language-python"><span class="hljs-keyword">class</span> <span class="hljs-title class_">PriceActionLearner</span>:
+    <span class="hljs-string">&quot;&quot;&quot;价格行为特征学习器&quot;&quot;&quot;</span>
+    
+    <span class="hljs-keyword">def</span> <span class="hljs-title function_">train</span>(<span class="hljs-params">self, training_data</span>):
+        <span class="hljs-string">&quot;&quot;&quot;训练价格行为识别模型&quot;&quot;&quot;</span>
+        X = [self.features_to_vector(d[<span class="hljs-string">&#x27;features&#x27;</span>]) <span class="hljs-keyword">for</span> d <span class="hljs-keyword">in</span> training_data]
+        y = [d[<span class="hljs-string">&#x27;label&#x27;</span>] <span class="hljs-keyword">for</span> d <span class="hljs-keyword">in</span> training_data]  <span class="hljs-comment"># reversal/continuation/indecision</span>
+        
+        <span class="hljs-comment"># 数据划分</span>
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=<span class="hljs-number">0.2</span>)
+        
+        <span class="hljs-comment"># 训练模型</span>
+        model = XGBoostClassifier(
+            n_estimators=<span class="hljs-number">100</span>,
+            max_depth=<span class="hljs-number">6</span>,
+            learning_rate=<span class="hljs-number">0.1</span>
+        )
+        model.fit(X_train, y_train)
+        
+        <span class="hljs-comment"># 评估</span>
+        accuracy = model.score(X_test, y_test)
+        feature_importance = <span class="hljs-built_in">dict</span>(<span class="hljs-built_in">zip</span>(self.feature_names, model.feature_importances_))
+        
+        <span class="hljs-keyword">return</span> {
+            <span class="hljs-string">&#x27;model&#x27;</span>: model,
+            <span class="hljs-string">&#x27;accuracy&#x27;</span>: accuracy,
+            <span class="hljs-string">&#x27;feature_importance&#x27;</span>: feature_importance
+        }
+    
+    <span class="hljs-keyword">def</span> <span class="hljs-title function_">predict_price_action</span>(<span class="hljs-params">self, gemini_annotation: <span class="hljs-type">Dict</span>, klines: <span class="hljs-type">List</span>[<span class="hljs-type">Dict</span>]</span>) -&gt; <span class="hljs-type">Dict</span>:
+        <span class="hljs-string">&quot;&quot;&quot;预测当前K线的价格行为&quot;&quot;&quot;</span>
+        gemini_features = extract_gemini_features(gemini_annotation)
+        kline_features = extract_kline_features(klines)
+        combined_features = {**gemini_features, **kline_features}
+        
+        X = [self.features_to_vector(combined_features)]
+        prediction = self.model.predict(X)[<span class="hljs-number">0</span>]
+        probability = self.model.predict_proba(X)[<span class="hljs-number">0</span>]
+        
+        <span class="hljs-keyword">return</span> {
+            <span class="hljs-string">&#x27;price_action&#x27;</span>: prediction,  <span class="hljs-comment"># reversal/continuation/indecision</span>
+            <span class="hljs-string">&#x27;probability&#x27;</span>: <span class="hljs-built_in">dict</span>(<span class="hljs-built_in">zip</span>(self.model.classes_, probability)),
+            <span class="hljs-string">&#x27;features&#x27;</span>: combined_features
+        }
+</code></pre>
+<p><strong>训练命令</strong>:</p>
+<pre><code class="language-bash">python src/ml_dl/abu_price_action_learner.py --train
+</code></pre>
+<h4 id="21-模式匹配成功率预测模型增强版">2.1 模式匹配成功率预测模型（增强版）</h4>
+<p><strong>文件</strong>: <code>src/ml_dl/abu_pattern_match_predictor.py</code></p>
+<pre><code class="language-python"><span class="hljs-keyword">class</span> <span class="hljs-title class_">ABUPatternMatchPredictor</span>:
+    <span class="hljs-string">&quot;&quot;&quot;ABU模式匹配成功率预测器&quot;&quot;&quot;</span>
+    
+    <span class="hljs-keyword">def</span> <span class="hljs-title function_">prepare_features</span>(<span class="hljs-params">self, match_history</span>):
+        <span class="hljs-string">&quot;&quot;&quot;准备训练特征&quot;&quot;&quot;</span>
+        features = []
+        <span class="hljs-keyword">for</span> record <span class="hljs-keyword">in</span> match_history:
+            feat = {
+                <span class="hljs-string">&#x27;pattern_type&#x27;</span>: record[<span class="hljs-string">&#x27;pattern_type&#x27;</span>],
+                <span class="hljs-string">&#x27;pattern_confidence&#x27;</span>: record[<span class="hljs-string">&#x27;pattern_confidence&#x27;</span>],
+                <span class="hljs-string">&#x27;trend_strength&#x27;</span>: record[<span class="hljs-string">&#x27;market_features&#x27;</span>][<span class="hljs-string">&#x27;trend&#x27;</span>],
+                <span class="hljs-string">&#x27;volatility&#x27;</span>: record[<span class="hljs-string">&#x27;market_features&#x27;</span>][<span class="hljs-string">&#x27;volatility&#x27;</span>],
+                <span class="hljs-string">&#x27;risk_reward_ratio&#x27;</span>: record[<span class="hljs-string">&#x27;risk_reward_ratio&#x27;</span>],
+                <span class="hljs-comment"># ... 更多特征</span>
+            }
+            features.append(feat)
+        <span class="hljs-keyword">return</span> features
+    
+    <span class="hljs-keyword">def</span> <span class="hljs-title function_">train</span>(<span class="hljs-params">self, match_history, labels</span>):
+        <span class="hljs-string">&quot;&quot;&quot;训练模型&quot;&quot;&quot;</span>
+        X = self.prepare_features(match_history)
+        y = labels  <span class="hljs-comment"># 1=TP, 0=SL/None</span>
+        
+        <span class="hljs-comment"># 数据划分</span>
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=<span class="hljs-number">0.2</span>)
+        
+        <span class="hljs-comment"># 训练模型</span>
+        model = XGBoostClassifier()
+        model.fit(X_train, y_train)
+        
+        <span class="hljs-comment"># 评估</span>
+        accuracy = model.score(X_test, y_test)
+        <span class="hljs-keyword">return</span> model, accuracy
+</code></pre>
+<p><strong>训练命令</strong>:</p>
+<pre><code class="language-bash">python src/ml_dl/abu_pattern_match_predictor.py --train
+</code></pre>
+<p><strong>使用方式</strong>:</p>
+<pre><code class="language-python">predictor = ABUPatternMatchPredictor()
+predictor.load_model()
+
+<span class="hljs-comment"># 在匹配模式时预测成功率</span>
+<span class="hljs-keyword">for</span> candidate <span class="hljs-keyword">in</span> detected_candidates:
+    success_prob = predictor.predict_success_probability(candidate, market_context)
+    candidate[<span class="hljs-string">&#x27;ml_success_prob&#x27;</span>] = success_prob
+</code></pre>
+<h4 id="22-模式权重优化器">2.2 模式权重优化器</h4>
+<p><strong>文件</strong>: <code>src/ml_dl/abu_pattern_weight_optimizer.py</code></p>
+<pre><code class="language-python"><span class="hljs-keyword">class</span> <span class="hljs-title class_">ABUPatternWeightOptimizer</span>:
+    <span class="hljs-string">&quot;&quot;&quot;模式权重优化器 (强化学习)&quot;&quot;&quot;</span>
+    
+    <span class="hljs-keyword">def</span> <span class="hljs-title function_">optimize_weights</span>(<span class="hljs-params">self, match_history, current_weights</span>):
+        <span class="hljs-string">&quot;&quot;&quot;优化模式权重&quot;&quot;&quot;</span>
+        <span class="hljs-comment"># 使用Thompson Sampling或UCB算法</span>
+        <span class="hljs-comment"># 探索不同权重组合，选择最优</span>
+        
+        best_weights = current_weights
+        best_score = self.evaluate_weights(current_weights, match_history)
+        
+        <span class="hljs-keyword">for</span> iteration <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">100</span>):
+            <span class="hljs-comment"># 生成新权重组合</span>
+            new_weights = self.sample_weights(current_weights)
+            
+            <span class="hljs-comment"># 评估</span>
+            score = self.evaluate_weights(new_weights, match_history)
+            
+            <span class="hljs-keyword">if</span> score &gt; best_score:
+                best_weights = new_weights
+                best_score = score
+        
+        <span class="hljs-keyword">return</span> best_weights
+</code></pre>
+<p><strong>执行方式</strong>:</p>
+<pre><code class="language-bash"><span class="hljs-comment"># 基于历史数据优化权重</span>
+python src/ml_dl/abu_pattern_weight_optimizer.py \
+    --history-table pattern_match_history \
+    --output config/abu_pattern_weights.yaml
+</code></pre>
+<h4 id="23-候选信号评分模型">2.3 候选信号评分模型</h4>
+<p><strong>文件</strong>: <code>src/ml_dl/abu_candidate_scorer.py</code></p>
+<p><strong>训练数据准备</strong>:</p>
+<pre><code class="language-python"><span class="hljs-comment"># 从历史匹配记录构建训练数据</span>
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">prepare_scoring_training_data</span>():
+    <span class="hljs-comment"># 获取历史候选信号 (所有检测到的信号，不只是top10)</span>
+    <span class="hljs-comment"># 获取对应的实际表现 (TP/SL)</span>
+    <span class="hljs-comment"># 提取特征</span>
+    
+    training_data = []
+    <span class="hljs-keyword">for</span> match_record <span class="hljs-keyword">in</span> match_history:
+        candidate = {
+            <span class="hljs-string">&#x27;pattern&#x27;</span>: match_record[<span class="hljs-string">&#x27;pattern_type&#x27;</span>],
+            <span class="hljs-string">&#x27;entry&#x27;</span>: match_record[<span class="hljs-string">&#x27;entry_price&#x27;</span>],
+            <span class="hljs-string">&#x27;stop_loss&#x27;</span>: match_record[<span class="hljs-string">&#x27;stop_loss&#x27;</span>],
+            <span class="hljs-comment"># ... 更多特征</span>
+        }
+        label = <span class="hljs-number">1</span> <span class="hljs-keyword">if</span> match_record[<span class="hljs-string">&#x27;match_result&#x27;</span>] == <span class="hljs-string">&#x27;tp&#x27;</span> <span class="hljs-keyword">else</span> <span class="hljs-number">0</span>
+        training_data.append((candidate, label))
+    
+    <span class="hljs-keyword">return</span> training_data
+</code></pre>
+<p><strong>模型训练</strong>:</p>
+<pre><code class="language-python"><span class="hljs-keyword">class</span> <span class="hljs-title class_">ABUCandidateScorer</span>:
+    <span class="hljs-string">&quot;&quot;&quot;候选信号ML评分器&quot;&quot;&quot;</span>
+    
+    <span class="hljs-keyword">def</span> <span class="hljs-title function_">train</span>(<span class="hljs-params">self, training_data</span>):
+        X, y = <span class="hljs-built_in">zip</span>(*training_data)
+        model = LightGBMRegressor()  <span class="hljs-comment"># 回归，输出评分</span>
+        model.fit(X, y)
+        <span class="hljs-keyword">return</span> model
+    
+    <span class="hljs-keyword">def</span> <span class="hljs-title function_">predict_score</span>(<span class="hljs-params">self, candidate, market_context</span>):
+        <span class="hljs-string">&quot;&quot;&quot;预测候选信号的评分&quot;&quot;&quot;</span>
+        features = self.extract_features(candidate, market_context)
+        score = self.model.predict([features])[<span class="hljs-number">0</span>]
+        <span class="hljs-keyword">return</span> score
+</code></pre>
+<p><strong>集成到现有流程</strong>:</p>
+<pre><code class="language-python"><span class="hljs-comment"># src/abu/ranker.py</span>
+<span class="hljs-keyword">from</span> ml_dl.abu_candidate_scorer <span class="hljs-keyword">import</span> ABUCandidateScorer
+
+_ML_SCORER = <span class="hljs-literal">None</span>
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">get_ml_scorer</span>():
+    <span class="hljs-keyword">global</span> _ML_SCORER
+    <span class="hljs-keyword">if</span> _ML_SCORER <span class="hljs-keyword">is</span> <span class="hljs-literal">None</span>:
+        _ML_SCORER = ABUCandidateScorer()
+        _ML_SCORER.load_model()  <span class="hljs-comment"># 如果模型存在则加载</span>
+    <span class="hljs-keyword">return</span> _ML_SCORER
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">score_candidate</span>(<span class="hljs-params">c: <span class="hljs-type">Dict</span>, k1h: <span class="hljs-type">List</span>[<span class="hljs-type">Dict</span>]</span>) -&gt; <span class="hljs-built_in">float</span>:
+    <span class="hljs-comment"># 优先使用ML评分</span>
+    ml_scorer = get_ml_scorer()
+    <span class="hljs-keyword">if</span> ml_scorer.is_available():
+        <span class="hljs-keyword">try</span>:
+            ml_score = ml_scorer.predict_score(c, k1h)
+            <span class="hljs-keyword">return</span> ml_score
+        <span class="hljs-keyword">except</span> Exception:
+            <span class="hljs-keyword">pass</span>  <span class="hljs-comment"># 回退到规则评分</span>
+    
+    <span class="hljs-comment"># 规则评分 (现有逻辑)</span>
+    base = c.get(<span class="hljs-string">&#x27;score_hint&#x27;</span>) <span class="hljs-keyword">or</span> <span class="hljs-number">0.0</span>
+    <span class="hljs-comment"># ... 现有代码 ...</span>
+</code></pre>
+<h3 id="阶段3-模型集成与优化-1-2周">阶段3: 模型集成与优化 (1-2周)</h3>
+<h4 id="31-集成到现有流程">3.1 集成到现有流程</h4>
+<p><strong>ABU信号生成流程增强</strong>:</p>
+<pre><code class="language-python"><span class="hljs-comment"># scripts/pa_scan_15m_top10.py 或类似的信号生成脚本</span>
+
+<span class="hljs-comment"># 1. 检测候选信号 (现有)</span>
+candidates = detect_all_patterns(klines)
+
+<span class="hljs-comment"># 2. ML预测成功率 (新增)</span>
+<span class="hljs-keyword">if</span> ml_predictor.is_available():
+    <span class="hljs-keyword">for</span> candidate <span class="hljs-keyword">in</span> candidates:
+        candidate[<span class="hljs-string">&#x27;ml_success_prob&#x27;</span>] = ml_predictor.predict(candidate, klines)
+        <span class="hljs-comment"># 更新score_hint，结合ML预测</span>
+        candidate[<span class="hljs-string">&#x27;score_hint&#x27;</span>] = combine_ml_and_rule_score(
+            candidate[<span class="hljs-string">&#x27;score_hint&#x27;</span>], 
+            candidate[<span class="hljs-string">&#x27;ml_success_prob&#x27;</span>]
+        )
+
+<span class="hljs-comment"># 3. 评分排序 (现有，但可能使用ML评分器)</span>
+ranked = rank_and_pick(candidates, klines_1h, topn=<span class="hljs-number">10</span>)
+
+<span class="hljs-comment"># 4. 记录匹配历史 (新增)</span>
+record_match_history(ranked, klines, market_context)
+</code></pre>
+<h4 id="32-模型评估与监控">3.2 模型评估与监控</h4>
+<p><strong>创建评估脚本</strong>: <code>scripts/abu_ml_model_evaluation.py</code></p>
+<pre><code class="language-python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">evaluate_ml_models</span>():
+    <span class="hljs-string">&quot;&quot;&quot;评估所有ML模型的性能&quot;&quot;&quot;</span>
+    results = {}
+    
+    <span class="hljs-comment"># 1. 模式匹配预测模型</span>
+    predictor = ABUPatternMatchPredictor()
+    accuracy = predictor.evaluate_on_test_set()
+    results[<span class="hljs-string">&#x27;pattern_match_predictor&#x27;</span>] = accuracy
+    
+    <span class="hljs-comment"># 2. 候选信号评分模型</span>
+    scorer = ABUCandidateScorer()
+    correlation = scorer.evaluate_correlation_with_actual_performance()
+    results[<span class="hljs-string">&#x27;candidate_scorer&#x27;</span>] = correlation
+    
+    <span class="hljs-keyword">return</span> results
+</code></pre>
+<p><strong>定期重训练</strong>:</p>
+<pre><code class="language-bash"><span class="hljs-comment"># 每周自动重训练模型</span>
+python scripts/abu_retrain_ml_models.py --auto
+</code></pre>
+<h4 id="33-ab测试框架">3.3 A/B测试框架</h4>
+<p><strong>对比ML评分 vs 规则评分</strong>:</p>
+<pre><code class="language-python"><span class="hljs-comment"># 生成两套信号</span>
+rule_based_signals = generate_signals_rule_based()  <span class="hljs-comment"># 现有方法</span>
+ml_based_signals = generate_signals_ml_based()      <span class="hljs-comment"># ML增强方法</span>
+
+<span class="hljs-comment"># 跟踪后续表现</span>
+compare_performance(rule_based_signals, ml_based_signals)
+</code></pre>
+<hr>
+<h2 id="-数据库容量评估">💾 数据库容量评估</h2>
+<h3 id="当前数据库状态">当前数据库状态</h3>
+<p><strong>数据库文件</strong>: <code>src/data/qingniao_abu.duckdb</code></p>
+<ul>
+<li><strong>当前大小</strong>: 10.76 MB</li>
+<li><strong>表数量</strong>: 15个</li>
+<li><strong>主要数据</strong>:
+<ul>
+<li><code>pattern_library</code>: 1,004条记录 (1.64 MB)</li>
+<li><code>trading_signals</code>: 73条记录 (135 KB)</li>
+<li>其他表: 多为空表，待使用</li>
+</ul>
+</li>
+</ul>
+<h3 id="容量估算">容量估算</h3>
+<h4 id="1-pattern_library-表模式库">1. pattern_library 表（模式库）</h4>
+<p><strong>当前状态</strong>:</p>
+<ul>
+<li>记录数: 1,004条</li>
+<li>平均行大小: ~1.7 KB (包含JSON字段)</li>
+<li>总大小: 1.64 MB</li>
+</ul>
+<p><strong>未来增长</strong>:</p>
+<ul>
+<li>模式库相对稳定，预计最多增加至2,000条</li>
+<li>增长空间: 约 1.7 MB</li>
+<li><strong>容量充足</strong> ✅</li>
+</ul>
+<h4 id="2-pattern_match_history-表新增用于ml训练">2. pattern_match_history 表（新增，用于ML训练）</h4>
+<p><strong>表结构</strong>:</p>
+<pre><code class="language-sql"><span class="hljs-operator">-</span> pattern_id (<span class="hljs-type">INTEGER</span>): <span class="hljs-number">8</span> bytes
+<span class="hljs-operator">-</span> signal_id (<span class="hljs-type">INTEGER</span>): <span class="hljs-number">8</span> bytes
+<span class="hljs-operator">-</span> pattern_type (TEXT): <span class="hljs-operator">~</span><span class="hljs-number">20</span> bytes
+<span class="hljs-operator">-</span> match_time (TEXT): <span class="hljs-operator">~</span><span class="hljs-number">20</span> bytes
+<span class="hljs-operator">-</span> symbol (TEXT): <span class="hljs-operator">~</span><span class="hljs-number">10</span> bytes
+<span class="hljs-operator">-</span> timeframe (TEXT): <span class="hljs-operator">~</span><span class="hljs-number">5</span> bytes
+<span class="hljs-operator">-</span> entry_price, stop_loss, take_profit_1, take_profit_2 (<span class="hljs-type">REAL</span>): <span class="hljs-number">32</span> bytes
+<span class="hljs-operator">-</span> direction (TEXT): <span class="hljs-operator">~</span><span class="hljs-number">5</span> bytes
+<span class="hljs-operator">-</span> match_confidence (<span class="hljs-type">REAL</span>): <span class="hljs-number">8</span> bytes
+<span class="hljs-operator">-</span> klines_context_json (TEXT): <span class="hljs-operator">~</span><span class="hljs-number">1</span>,<span class="hljs-number">000</span> bytes (最近<span class="hljs-number">200</span>根K线的简化JSON)
+<span class="hljs-operator">-</span> market_features_json (TEXT): <span class="hljs-operator">~</span><span class="hljs-number">500</span> bytes (市场特征JSON)
+<span class="hljs-operator">-</span> match_details_json (TEXT): <span class="hljs-operator">~</span><span class="hljs-number">200</span> bytes
+<span class="hljs-operator">-</span> match_result, hit_time (TEXT): <span class="hljs-operator">~</span><span class="hljs-number">50</span> bytes
+<span class="hljs-operator">-</span> profit_pct (<span class="hljs-type">REAL</span>): <span class="hljs-number">8</span> bytes
+<span class="hljs-operator">-</span> created_at (TEXT): <span class="hljs-operator">~</span><span class="hljs-number">20</span> bytes
+
+总计: <span class="hljs-operator">~</span><span class="hljs-number">1</span>,<span class="hljs-number">894</span> bytes<span class="hljs-operator">/</span>条（约<span class="hljs-number">1.9</span> KB<span class="hljs-operator">/</span>条）
+</code></pre>
+<p><strong>数据增长估算</strong>:</p>
+<ul>
+<li>假设每天生成 <strong>10个信号</strong></li>
+<li>每个信号平均匹配 <strong>3个模式</strong></li>
+<li>每天匹配记录: 10 × 3 = <strong>30条</strong></li>
+<li>每月匹配记录: 30 × 30 = <strong>900条</strong></li>
+<li>每年匹配记录: 30 × 365 = <strong>10,950条</strong></li>
+</ul>
+<p><strong>容量计算</strong>:</p>
+<ul>
+<li>每天增长: 30条 × 1.9 KB = <strong>57 KB</strong></li>
+<li>每月增长: 900条 × 1.9 KB = <strong>1.71 MB</strong></li>
+<li>每年增长: 10,950条 × 1.9 KB = <strong>20.8 MB</strong></li>
+</ul>
+<p><strong>5年容量估算</strong>:</p>
+<ul>
+<li>5年记录数: 10,950 × 5 = <strong>54,750条</strong></li>
+<li>5年数据量: 20.8 MB × 5 = <strong>104 MB</strong></li>
+<li>加上索引和开销: 约 <strong>115 MB</strong></li>
+</ul>
+<h4 id="3-trading_signals-表">3. trading_signals 表</h4>
+<p><strong>当前状态</strong>:</p>
+<ul>
+<li>记录数: 73条</li>
+<li>平均行大小: ~1.9 KB</li>
+<li>总大小: 135 KB</li>
+</ul>
+<p><strong>未来增长</strong>:</p>
+<ul>
+<li>每天10个信号</li>
+<li>每年: 10 × 365 = <strong>3,650条</strong></li>
+<li>5年: 3,650 × 5 = <strong>18,250条</strong></li>
+<li>5年数据量: 18,250 × 1.9 KB = <strong>34.7 MB</strong></li>
+</ul>
+<h4 id="4-signal_evaluations-表">4. signal_evaluations 表</h4>
+<p><strong>数据增长估算</strong>:</p>
+<ul>
+<li>假设评估所有信号（100%评估率）</li>
+<li>每年评估记录: 3,650条</li>
+<li>5年评估记录: 18,250条</li>
+<li>平均行大小: ~1.4 KB</li>
+<li>5年数据量: 18,250 × 1.4 KB = <strong>25.6 MB</strong></li>
+</ul>
+<h3 id="总容量估算">总容量估算</h3>
+<table>
+<thead>
+<tr>
+<th>表名</th>
+<th>当前大小</th>
+<th>5年后估算</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>pattern_library</td>
+<td>1.64 MB</td>
+<td>3.3 MB</td>
+<td>模式库增长有限</td>
+</tr>
+<tr>
+<td>pattern_match_history</td>
+<td>0 MB</td>
+<td>115 MB</td>
+<td>ML训练数据（主要增长点）</td>
+</tr>
+<tr>
+<td>trading_signals</td>
+<td>135 KB</td>
+<td>34.7 MB</td>
+<td>信号记录</td>
+</tr>
+<tr>
+<td>signal_evaluations</td>
+<td>0 MB</td>
+<td>25.6 MB</td>
+<td>评估记录</td>
+</tr>
+<tr>
+<td>其他表</td>
+<td>9 MB</td>
+<td>15 MB</td>
+<td>索引、开销等</td>
+</tr>
+<tr>
+<td><strong>总计</strong></td>
+<td><strong>10.76 MB</strong></td>
+<td><strong>193.6 MB</strong></td>
+<td><strong>&lt; 200 MB</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="duckdb容量评估结论">DuckDB容量评估结论</h3>
+<p><strong>✅ 容量充足，完全够用</strong></p>
+<p><strong>依据</strong>:</p>
+<ol>
+<li>
+<p><strong>DuckDB理论限制</strong>:</p>
+<ul>
+<li>最大数据库大小: 无硬性限制（取决于磁盘空间）</li>
+<li>单表最大行数: ~2^63 (9.2 quintillion)</li>
+<li>单行最大大小: 建议 &lt; 1MB</li>
+<li>推荐单表行数: &lt; 10亿行（性能最佳）</li>
+</ul>
+</li>
+<li>
+<p><strong>实际需求</strong>:</p>
+<ul>
+<li>5年后数据库大小: <strong>&lt; 200 MB</strong></li>
+<li>最大单表记录数: <strong>54,750条</strong> (pattern_match_history)</li>
+<li>远低于DuckDB性能推荐值（&lt; 10亿行）</li>
+</ul>
+</li>
+<li>
+<p><strong>性能考虑</strong>:</p>
+<ul>
+<li>200 MB数据量对DuckDB来说很小</li>
+<li>查询性能: <strong>毫秒级</strong> (&lt; 10ms)</li>
+<li>索引开销: <strong>&lt; 20 MB</strong> (估算)</li>
+</ul>
+</li>
+<li>
+<p><strong>扩容建议</strong>:</p>
+<ul>
+<li><strong>短期（1-2年）</strong>: 无需扩容，容量充足</li>
+<li><strong>中期（3-5年）</strong>: 可考虑定期归档历史数据（&gt; 1年的数据）</li>
+<li><strong>长期（5年以上）</strong>: 实施数据归档策略，保留最近2年数据用于ML训练</li>
+</ul>
+</li>
+</ol>
+<h3 id="数据归档策略可选5年后实施">数据归档策略（可选，5年后实施）</h3>
+<p><strong>归档方案</strong>:</p>
+<pre><code class="language-sql"><span class="hljs-comment">-- 归档1年以上的匹配历史</span>
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> pattern_match_history_archive_2025 <span class="hljs-keyword">AS</span>
+<span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> pattern_match_history
+<span class="hljs-keyword">WHERE</span> created_at <span class="hljs-operator">&lt;</span> <span class="hljs-string">&#x27;2025-01-01&#x27;</span>;
+
+<span class="hljs-keyword">DELETE</span> <span class="hljs-keyword">FROM</span> pattern_match_history
+<span class="hljs-keyword">WHERE</span> created_at <span class="hljs-operator">&lt;</span> <span class="hljs-string">&#x27;2025-01-01&#x27;</span>;
+</code></pre>
+<p><strong>保留策略</strong>:</p>
+<ul>
+<li>保留最近 <strong>2年</strong> 数据用于ML训练</li>
+<li>归档更早的数据到单独数据库</li>
+<li>ML模型只需最近数据即可，历史数据主要用于回测</li>
+</ul>
+<hr>
+<h2 id="-数据要求">📊 数据要求</h2>
+<h3 id="最小数据量">最小数据量</h3>
+<ol>
+<li>
+<p><strong>模式匹配历史</strong>:</p>
+<ul>
+<li>最少: 100条匹配记录（约3-4天数据）</li>
+<li>推荐: 500+ 条记录（约2-3周数据）</li>
+<li>理想: 2,000+ 条记录（约2-3个月数据）</li>
+</ul>
+</li>
+<li>
+<p><strong>信号评估记录</strong>:</p>
+<ul>
+<li>最少: 50条已评估的信号（约1周数据）</li>
+<li>推荐: 200+ 条记录（约1个月数据）</li>
+<li>理想: 1,000+ 条记录（约3个月数据）</li>
+</ul>
+</li>
+</ol>
+<h3 id="数据质量要求">数据质量要求</h3>
+<ul>
+<li>匹配记录必须包含实际表现 (TP/SL)</li>
+<li>市场特征必须完整</li>
+<li>时间序列数据必须连续</li>
+</ul>
+<hr>
+<h2 id="-快速开始">🚀 快速开始</h2>
+<h3 id="1-安装依赖">1. 安装依赖</h3>
+<pre><code class="language-bash"><span class="hljs-comment"># 基础ML库</span>
+pip install scikit-learn pandas numpy joblib
+
+<span class="hljs-comment"># 提升模型</span>
+pip install xgboost lightgbm
+
+<span class="hljs-comment"># 深度学习 (可选)</span>
+<span class="hljs-comment"># pip install torch tensorflow</span>
+
+<span class="hljs-comment"># 可视化 (可选)</span>
+pip install matplotlib seaborn
+</code></pre>
+<p>或使用 <code>requirements_ml.txt</code>:</p>
+<pre><code class="language-bash">pip install -r requirements_ml.txt
+</code></pre>
+<h3 id="2-准备数据">2. 准备数据</h3>
+<pre><code class="language-bash"><span class="hljs-comment"># 步骤0: Gemini Vision API完整分析1000张图片（必须先完成）</span>
+<span class="hljs-comment"># 使用独立模块，支持断点续传、去重、成本控制</span>
+python -m src.abu.gemini_vision_analyzer \
+    --api-key <span class="hljs-variable">$GEMINI_API_KEY</span> \
+    --model gemini-1.5-flash \
+    --sleep-ms 1000 \
+    --resume  <span class="hljs-comment"># 断点续传</span>
+
+<span class="hljs-comment"># 查看处理状态</span>
+python -m src.abu.gemini_vision_analyzer --status
+
+<span class="hljs-comment"># 步骤0.5: 智能解析并更新模式库</span>
+<span class="hljs-comment"># 解析Gemini输出（标准化格式）</span>
+python scripts/abu_parse_gemini_output.py \
+    --input outputs/abu_gemini_annotations_enhanced.jsonl \
+    --output outputs/abu_gemini_parsed.jsonl
+
+<span class="hljs-comment"># 更新模式库（预览模式，先检查）</span>
+python scripts/abu_update_pattern_library_from_gemini.py \
+    --input outputs/abu_gemini_parsed.jsonl \
+    --dry-run
+
+<span class="hljs-comment"># 实际更新（确认无误后）</span>
+python scripts/abu_update_pattern_library_from_gemini.py \
+    --input outputs/abu_gemini_parsed.jsonl
+
+<span class="hljs-comment"># 验证分析结果</span>
+python scripts/abu_verify_gemini_analysis.py \
+    --output outputs/abu_gemini_verification_report.md
+
+<span class="hljs-comment"># 步骤1: 创建模式匹配历史表</span>
+python scripts/abu_init_ml_tables.py
+
+<span class="hljs-comment"># 步骤2: 回测历史信号，生成匹配记录</span>
+python scripts/abu_backtest_pattern_matches.py --start-date 2025-01-01
+
+<span class="hljs-comment"># 步骤3: 评估ABU历史信号（生成评估数据）</span>
+python scripts/abu_evaluate_signals.py --start-date 2025-01-01
+</code></pre>
+<h3 id="3-训练模型">3. 训练模型</h3>
+<pre><code class="language-bash"><span class="hljs-comment"># 训练价格行为特征学习模型（最高优先级）</span>
+python src/ml_dl/abu_price_action_learner.py --train
+
+<span class="hljs-comment"># 训练模式匹配预测模型</span>
+python src/ml_dl/abu_pattern_match_predictor.py --train
+
+<span class="hljs-comment"># 训练候选信号评分模型</span>
+python src/ml_dl/abu_candidate_scorer.py --train
+
+<span class="hljs-comment"># 优化模式权重（可选，基于历史数据）</span>
+python src/ml_dl/abu_pattern_weight_optimizer.py --optimize
+</code></pre>
+<h3 id="4-使用模型">4. 使用模型</h3>
+<pre><code class="language-bash"><span class="hljs-comment"># 生成ABU信号 (自动使用ML模型)</span>
+python scripts/pa_scan_15m_top10.py --use-ml
+
+<span class="hljs-comment"># 优化模式权重</span>
+python src/ml_dl/abu_pattern_weight_optimizer.py --optimize
+</code></pre>
+<hr>
+<h2 id="-预期效果">📈 预期效果</h2>
+<h3 id="短期-1个月">短期 (1个月)</h3>
+<p><strong>阶段0完成（必须）</strong>:</p>
+<ul>
+<li>✅ Gemini Vision API完整分析1000张图片</li>
+<li>✅ 智能解析Gemini输出，提取多模式组合和交易参数</li>
+<li>✅ 更新pattern_library表，gemini_annotation_json字段填充率 &gt; 80%</li>
+<li>✅ 验证Gemini分析结果质量</li>
+</ul>
+<p><strong>阶段1-2开始</strong>:</p>
+<ul>
+<li>✅ 建立模式匹配历史数据收集机制</li>
+<li>✅ 训练价格行为特征学习模型（基于Gemini分析）</li>
+<li>✅ 训练基础ML模型 (Random Forest/XGBoost)</li>
+<li>✅ ML模型准确率 &gt; 60% (优于随机)</li>
+</ul>
+<h3 id="中期-3个月">中期 (3个月)</h3>
+<ul>
+<li>✅ 模式权重自动优化</li>
+<li>✅ ML评分模型替代部分规则评分</li>
+<li>✅ 模式匹配预测准确率 &gt; 70%</li>
+<li>✅ 信号质量提升 (胜率+5%, 盈亏比+10%)</li>
+</ul>
+<h3 id="长期-6个月">长期 (6个月)</h3>
+<ul>
+<li>✅ 深度学习模型 (LSTM/Transformer)</li>
+<li>✅ 端到端优化 (从模式识别到信号生成)</li>
+<li>✅ 模式匹配预测准确率 &gt; 80%</li>
+<li>✅ 交易信号质量显著提升 (胜率+10%, 盈亏比+20%)</li>
+</ul>
+<hr>
+<h2 id="-注意事项">📝 注意事项</h2>
+<ol>
+<li><strong>数据质量</strong>: 确保模式匹配历史和信号评估数据准确完整</li>
+<li><strong>模型版本管理</strong>: 使用模型版本控制，支持回滚</li>
+<li><strong>过拟合防范</strong>: 使用交叉验证，监控验证集表现</li>
+<li><strong>实时性要求</strong>: ML预测延迟 &lt; 100ms</li>
+<li><strong>可解释性</strong>: 提供特征重要性分析，便于调试</li>
+</ol>
+<hr>
+<h2 id="-相关文件">🔗 相关文件</h2>
+<h3 id="现有文件">现有文件</h3>
+<ul>
+<li><code>src/abu/detectors.py</code> - 模式检测器</li>
+<li><code>src/abu/ranker.py</code> - 评分排序器</li>
+<li><code>scripts/pa_scan_15m_top10.py</code> - ABU信号生成脚本</li>
+<li><code>config/abu_pattern_weights.yaml</code> - 模式权重配置</li>
+<li><code>src/data/qingniao_abu.duckdb</code> - ABU数据库</li>
+</ul>
+<h3 id="新增文件按优先级排序">新增文件（按优先级排序）</h3>
+<h4 id="阶段0-gemini分析相关最高优先级独立模块">阶段0: Gemini分析相关（最高优先级，独立模块）</h4>
+<ul>
+<li><code>src/abu/gemini_vision_analyzer.py</code> - <strong>核心模块</strong>：Gemini Vision图形识别分析器
+<ul>
+<li>✅ 独立模块：只用于图形识别，不做其他用途</li>
+<li>✅ 成本控制：强制使用Flash，禁止Pro</li>
+<li>✅ 去重机制：SHA1检查、输出文件检查、缓存检查</li>
+<li>✅ 断点续传：状态文件保存，支持中断后继续</li>
+<li>✅ 健壮性：完整错误处理、重试机制、详细日志</li>
+</ul>
+</li>
+<li><code>scripts/abu_parse_gemini_output.py</code> - 智能解析Gemini输出（标准化格式）</li>
+<li><code>scripts/abu_update_pattern_library_from_gemini.py</code> - 更新模式库数据</li>
+<li><code>scripts/abu_verify_gemini_analysis.py</code> - 验证Gemini分析结果质量</li>
+</ul>
+<h4 id="阶段1-2-ml模型相关">阶段1-2: ML模型相关</h4>
+<ul>
+<li><code>src/ml_dl/abu_price_action_learner.py</code> - 价格行为特征学习器（最高优先级）</li>
+<li><code>src/ml_dl/abu_pattern_match_predictor.py</code> - 模式匹配预测器</li>
+<li><code>src/ml_dl/abu_pattern_weight_optimizer.py</code> - 权重优化器</li>
+<li><code>src/ml_dl/abu_candidate_scorer.py</code> - ML评分器</li>
+</ul>
+<h4 id="阶段1-数据准备相关">阶段1: 数据准备相关</h4>
+<ul>
+<li><code>scripts/abu_record_match_history.py</code> - 记录匹配历史</li>
+<li><code>scripts/abu_evaluate_signals.py</code> - 评估ABU信号</li>
+<li><code>scripts/abu_backtest_pattern_matches.py</code> - 回测历史匹配</li>
+<li><code>scripts/abu_init_ml_tables.py</code> - 初始化ML相关表</li>
+</ul>
+<h4 id="阶段3-4-模型集成与监控">阶段3-4: 模型集成与监控</h4>
+<ul>
+<li><code>scripts/abu_retrain_ml_models.py</code> - 定期重训练模型</li>
+<li><code>scripts/abu_ml_model_evaluation.py</code> - 模型评估脚本</li>
+<li><code>scripts/check_abu_db_size.py</code> - 数据库容量检查脚本</li>
+</ul>
+<h4 id="现有文件增强">现有文件增强</h4>
+<ul>
+<li><code>src/abu/detectors.py</code> - 需要增强：集成Gemini模式匹配和价格行为学习</li>
+<li><code>src/abu/ranker.py</code> - 需要增强：集成Gemini概率和价格行为预测</li>
+<li><code>scripts/pa_scan_15m_top10.py</code> - 需要增强：使用增强后的检测器和评分器</li>
+</ul>
+<hr>
+<hr>
+<h2 id="-实施优先级总结">📋 实施优先级总结</h2>
+<h3 id="p0立即执行必须完成">P0（立即执行，必须完成）</h3>
+<ol>
+<li>
+<p><strong>Gemini Vision API完整分析1000张图片</strong> ⭐⭐⭐</p>
+<ul>
+<li>使用增强Prompt提取多模式组合、K线行为、交易参数</li>
+<li>智能解析Gemini输出</li>
+<li>更新pattern_library表</li>
+<li><strong>这是所有ML训练的基础，必须首先完成</strong></li>
+</ul>
+</li>
+<li>
+<p><strong>价格行为特征学习模型</strong> ⭐⭐⭐</p>
+<ul>
+<li>基于Gemini分析结果学习价格行为特征</li>
+<li>学习模式组合、K线行为、交易参数的关系</li>
+<li><strong>核心：从Gemini识别的内容中学习，而不仅仅是模式匹配</strong></li>
+</ul>
+</li>
+</ol>
+<h3 id="p11-2周内">P1（1-2周内）</h3>
+<ol start="3">
+<li><strong>模式匹配成功率预测模型</strong></li>
+<li><strong>候选信号评分模型（集成Gemini概率）</strong></li>
+<li><strong>信号生成流程增强（集成Gemini和价格行为学习）</strong></li>
+</ol>
+<h3 id="p21个月内">P2（1个月内）</h3>
+<ol start="6">
+<li><strong>模式权重自动优化</strong></li>
+<li><strong>模型集成与A/B测试</strong></li>
+<li><strong>模型性能监控</strong></li>
+</ol>
+<hr>
+<p><strong>创建时间</strong>: 2026-01-10<br>
+<strong>最后更新</strong>: 2026-01-10（完善Gemini模块：成本控制、断点续传、健壮性）<br>
+<strong>状态</strong>: 方案设计完成，待实施 🔄</p>
+<p><strong>关键变更</strong>:</p>
+<ul>
+<li>✅ 添加Gemini Vision API完整分析1000张图片的流程（阶段0）</li>
+<li>✅ 创建独立模块 <code>src/abu/gemini_vision_analyzer.py</code>（成本可控、断点续传、去重）</li>
+<li>✅ 添加智能解析Gemini输出的系统</li>
+<li>✅ 添加价格行为特征学习模型（最高优先级）</li>
+<li>✅ 增强信号生成流程，集成Gemini匹配和价格行为学习</li>
+<li>✅ 移除Dream系统相关内容</li>
+<li>✅ <strong>完善成本控制机制</strong>：强制Flash、去重、成本估算</li>
+<li>✅ <strong>完善健壮性</strong>：断点续传、错误处理、详细日志</li>
+</ul>
+<p><strong>相关文档</strong>:</p>
+<ul>
+<li><code>docs/design/features/Gemini_Vision_模块使用说明.md</code> - 快速使用指南</li>
+</ul>
+<h2 id="文档-2-stage0_gemini_analysis_status">文档 2: stage0_gemini_analysis_status</h2>
+<p><strong>路径</strong>: <code>docs\stage_reports\stage0_gemini_analysis_status.md</code></p>
+<hr>
+<h1 id="阶段0gemini-vision分析状态报告">阶段0：Gemini Vision分析状态报告</h1>
+<p><strong>时间</strong>: 2026-01-10 19:58<br>
+<strong>状态</strong>: 进行中 🔄<br>
+<strong>模型</strong>: google/gemini-2.5-flash-image (OpenRouter)<br>
+<strong>总图片数</strong>: 1000</p>
+<h2 id="已完成工作">已完成工作</h2>
+<h3 id="1-模块适配openrouter-">1. 模块适配OpenRouter ✅</h3>
+<ul>
+<li>✅ 修改 <code>src/abu/gemini_vision_analyzer.py</code> 以支持OpenRouter API</li>
+<li>✅ 移除对 <code>google-generativeai</code> 的依赖，改用OpenRouter的OpenAI兼容API</li>
+<li>✅ 保留所有成本控制和健壮性功能（去重、断点续传、缓存、错误处理）</li>
+</ul>
+<h3 id="2-模型测试-">2. 模型测试 ✅</h3>
+<ul>
+<li>✅ 测试模型可用性：<code>google/gemini-2.5-flash-image</code> 可用</li>
+<li>✅ 测试3.0预览版：<code>google/gemini-3.0-flash-image-exp</code> 不可用（模型ID无效）</li>
+<li>✅ 最终选择：<code>google/gemini-2.5-flash-image</code>（图像专用，性能好）</li>
+</ul>
+<h3 id="3-数据清理-">3. 数据清理 ✅</h3>
+<ul>
+<li>✅ 清空旧的结果数据：
+<ul>
+<li><code>outputs/abu_gemini_annotations.jsonl</code> (已删除)</li>
+<li><code>outputs/abu_gemini_annotations_enhanced.jsonl</code> (已清空)</li>
+<li><code>outputs/abu_gemini_analysis_state.json</code> (已清空)</li>
+<li><code>outputs/.cache/abu_gemini/</code> (已清空)</li>
+</ul>
+</li>
+</ul>
+<h3 id="4-小批量测试-">4. 小批量测试 ✅</h3>
+<ul>
+<li>✅ 测试10张图片，全部成功</li>
+<li>✅ 失败：0</li>
+<li>✅ 成本：$0.00125（10张），预计1000张约 $0.125</li>
+<li>✅ 平均响应时间：3-50秒/张（取决于图片复杂度）</li>
+</ul>
+<h3 id="5-输出质量检查前10张">5. 输出质量检查（前10张）📊</h3>
+<p><strong>观察结果</strong>:</p>
+<ol>
+<li>✅ JSON格式正确，结构完整</li>
+<li>⚠️ 部分图片的 <code>patterns</code> 和 <code>trading_signals</code> 为空
+<ul>
+<li>可能原因：
+<ul>
+<li>有些图片确实没有明确的patterns（如封面页、文字说明页）</li>
+<li>需要优化prompt以更好地提取复杂模式组合</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>✅ 价格行为识别正常（trend, structure, kline_features）</li>
+<li>✅ 市场条件识别正常（context, trend_strength, key_levels）</li>
+</ol>
+<p><strong>示例输出结构</strong>:</p>
+<pre><code class="language-json"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;patterns&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;pattern_combination&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-keyword">null</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;price_action_behavior&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;trend&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;bearish&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;structure&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;lower_highs_and_lower_lows&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;kline_features&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;volume_behavior&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-keyword">null</span>
+  <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;trading_signals&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;market_conditions&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;context&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;swing trade setups on Emini 5-minute chart&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;trend_strength&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;strong&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;key_levels&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-string">&quot;2,080&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-string">&quot;2,078&quot;</span><span class="hljs-punctuation">,</span> ...<span class="hljs-punctuation">]</span>
+  <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;confidence&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0.7</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<h2 id="当前进度">当前进度</h2>
+<p><strong>全量处理状态</strong>: 🔄 后台运行中</p>
+<ul>
+<li>预计耗时：2-3小时</li>
+<li>预计成本：约 $0.125 USD</li>
+<li>支持断点续传：可随时中断，下次自动继续</li>
+</ul>
+<h2 id="发现的问题和优化建议">发现的问题和优化建议</h2>
+<h3 id="问题1-patterns识别不完整-️">问题1: Patterns识别不完整 ⚠️</h3>
+<ul>
+<li><strong>现象</strong>: 部分图片的 <code>patterns</code> 数组为空</li>
+<li><strong>可能原因</strong>:
+<ul>
+<li>Prompt可能需要更明确的指令来提取模式</li>
+<li>某些复杂模式组合可能被忽略</li>
+</ul>
+</li>
+<li><strong>建议</strong>:
+<ul>
+<li>等待全部1000张处理完成后，统计patterns识别率</li>
+<li>如果识别率低于预期，优化ENHANCED_PROMPT</li>
+</ul>
+</li>
+</ul>
+<h3 id="问题2-trading-signals提取不足-️">问题2: Trading Signals提取不足 ⚠️</h3>
+<ul>
+<li><strong>现象</strong>: 大部分图片的 <code>trading_signals</code> 为空</li>
+<li><strong>可能原因</strong>:
+<ul>
+<li>某些图片可能确实没有明确的交易信号标注</li>
+<li>Prompt可能需要更强调提取交易参数（entry, stop-loss, take-profit, probability）</li>
+</ul>
+</li>
+<li><strong>建议</strong>:
+<ul>
+<li>在阶段0.5（解析阶段）检查是否有遗漏的交易信号</li>
+<li>如果确实需要，优化prompt以更好地提取交易参数</li>
+</ul>
+</li>
+</ul>
+<h2 id="下一步计划">下一步计划</h2>
+<h3 id="阶段0完成后预计2-3小时后">阶段0完成后（预计2-3小时后）</h3>
+<ol>
+<li>
+<p><strong>检查输出质量</strong> 📊</p>
+<ul>
+<li>统计patterns识别率</li>
+<li>统计trading_signals提取率</li>
+<li>分析confidence分布</li>
+<li>检查是否有系统性错误</li>
+</ul>
+</li>
+<li>
+<p><strong>根据结果优化</strong> 🔧</p>
+<ul>
+<li>如果patterns识别率低，优化prompt</li>
+<li>如果trading_signals提取不足，增强prompt</li>
+<li>根据实际输出调整解析脚本</li>
+</ul>
+</li>
+<li>
+<p><strong>阶段0.5: 解析和更新模式库</strong> 🗄️</p>
+<ul>
+<li>运行 <code>scripts/abu_parse_gemini_output.py</code></li>
+<li>运行 <code>scripts/abu_update_pattern_library_from_gemini.py</code></li>
+<li>验证数据库更新结果</li>
+</ul>
+</li>
+</ol>
+<h2 id="成本控制">成本控制</h2>
+<ul>
+<li>✅ 使用Flash模型（而非Pro）</li>
+<li>✅ 去重机制（SHA1检查、输出文件检查、缓存检查）</li>
+<li>✅ API限流（1秒间隔）</li>
+<li>✅ 断点续传（避免重复处理）</li>
+<li>✅ 成本估算和实时监控</li>
+</ul>
+<p><strong>当前成本</strong>:</p>
+<ul>
+<li>测试（10张）: $0.00125</li>
+<li>预计全量（1000张）: $0.125</li>
+<li><strong>成本完全可控</strong> ✅</li>
+</ul>
+<h2 id="文件位置">文件位置</h2>
+<ul>
+<li><strong>输出文件</strong>: <code>outputs/abu_gemini_annotations_enhanced.jsonl</code></li>
+<li><strong>状态文件</strong>: <code>outputs/abu_gemini_analysis_state.json</code></li>
+<li><strong>缓存目录</strong>: <code>outputs/.cache/abu_gemini/</code></li>
+<li><strong>日志文件</strong>: <code>outputs/abu_gemini/gemini_analysis.log</code></li>
+</ul>
+<hr>
+<p><strong>状态更新时间</strong>: 2026-01-10 19:58<br>
+<strong>下次检查时间</strong>: 预计2-3小时后（或手动检查进度）</p>
+<h2 id="文档-3-stage0_optimization_complete">文档 3: stage0_optimization_complete</h2>
+<p><strong>路径</strong>: <code>docs\stage_reports\stage0_optimization_complete.md</code></p>
+<hr>
+<h1 id="阶段0prompt优化完成报告">阶段0：Prompt优化完成报告</h1>
+<p><strong>时间</strong>: 2026-01-10 20:14<br>
+<strong>状态</strong>: 优化完成 ✅<br>
+<strong>模型</strong>: google/gemini-2.5-flash-image (OpenRouter)</p>
+<h2 id="优化总结">优化总结</h2>
+<h3 id="1-prompt优化内容-">1. Prompt优化内容 ✅</h3>
+<p><strong>优化前问题</strong>:</p>
+<ul>
+<li>Patterns识别不完整（部分图片patterns为空）</li>
+<li>Trading Signals提取不足（大部分图片signals为空）</li>
+<li>对复杂模式组合识别不够明确</li>
+</ul>
+<p><strong>优化后改进</strong>:</p>
+<ol>
+<li><strong>明确优先级</strong>: 将Trading Signals设为最高优先级</li>
+<li><strong>强化指令</strong>: 更明确地要求识别所有patterns和signals</li>
+<li><strong>文本提取</strong>: 强调从文本注释中提取交易参数</li>
+<li><strong>模式组合</strong>: 明确要求识别模式组合</li>
+<li><strong>完整性</strong>: 要求宁可多提取也不要遗漏</li>
+</ol>
+<h3 id="2-测试结果对比">2. 测试结果对比</h3>
+<p><strong>测试样本</strong>: 10张图片</p>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>优化前</th>
+<th>优化后</th>
+<th>改善</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Patterns识别率</td>
+<td>~30% (3/10)</td>
+<td>~70% (7/10)</td>
+<td>+40% ✅</td>
+</tr>
+<tr>
+<td>Trading Signals识别率</td>
+<td>~20% (2/10)</td>
+<td>~70% (7/10)</td>
+<td>+50% ✅</td>
+</tr>
+<tr>
+<td>Pattern组合识别</td>
+<td>低</td>
+<td>高</td>
+<td>显著提升 ✅</td>
+</tr>
+<tr>
+<td>K-line特征识别</td>
+<td>低</td>
+<td>高</td>
+<td>显著提升 ✅</td>
+</tr>
+</tbody>
+</table>
+<p><strong>详细统计</strong>:</p>
+<ul>
+<li>总Patterns数: 20+ (平均2+/张)</li>
+<li>总Signals数: 10+ (平均1+/张)</li>
+<li>平均Confidence: 0.90+</li>
+<li>JSON解析错误: 1/10 (10%，可接受)</li>
+</ul>
+<h3 id="3-识别质量提升">3. 识别质量提升</h3>
+<p><strong>优化前典型输出</strong>:</p>
+<pre><code class="language-json"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;patterns&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;trading_signals&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;price_action_behavior&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>...<span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<p><strong>优化后典型输出</strong>:</p>
+<pre><code class="language-json"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;patterns&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+    <span class="hljs-punctuation">{</span><span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Small Pullback Bull Trend&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;continuation&quot;</span><span class="hljs-punctuation">,</span> ...<span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-punctuation">{</span><span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Bear Trap&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;reversal&quot;</span><span class="hljs-punctuation">,</span> ...<span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-punctuation">{</span><span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Measured Move&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;continuation&quot;</span><span class="hljs-punctuation">,</span> ...<span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;pattern_combination&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Small Pullback Bull Trend + Bear Trap + Measured Move&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;trading_signals&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+    <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">&quot;direction&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;long&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;entry_condition&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;20-Gap bar buy in small PB bull trend&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;probability&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">75</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;target&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;test_of_high_of_day&quot;</span>
+    <span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;price_action_behavior&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;kline_features&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-string">&quot;20-Gap bar&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-string">&quot;Minor Bar 38&quot;</span><span class="hljs-punctuation">]</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<h3 id="4-发现的patterns类型">4. 发现的Patterns类型</h3>
+<p>最常见的Patterns（Top 10）:</p>
+<ol>
+<li>Small Pullback Bull Trend</li>
+<li>Bear Trap</li>
+<li>Measured Move (MM)</li>
+<li>Minor Bar 38 Midday Reversal</li>
+<li>Bull Trend From The Open</li>
+<li>Gap bar</li>
+<li>Body gap</li>
+<li>Breakout test</li>
+<li>Minor Wedge</li>
+<li>Minor Reversal</li>
+</ol>
+<h3 id="5-trading-signals质量">5. Trading Signals质量</h3>
+<p><strong>信号方向分布</strong>:</p>
+<ul>
+<li>Long: 主要信号（符合bull trend场景）</li>
+<li>Short: 次要信号（reversal场景）</li>
+</ul>
+<p><strong>信号完整性</strong>:</p>
+<ul>
+<li>✅ Entry condition: 大部分有</li>
+<li>✅ Probability: 部分有（75%等）</li>
+<li>✅ Target: 大部分有（test_of_high_of_day等）</li>
+<li>⚠️ Entry price: 部分缺失（需要从图表中提取）</li>
+<li>⚠️ Stop-loss: 部分缺失</li>
+<li>⚠️ Take-profit: 部分缺失</li>
+</ul>
+<h2 id="优化效果评估">优化效果评估</h2>
+<h3 id="-显著改善的方面">✅ 显著改善的方面</h3>
+<ol>
+<li><strong>Patterns识别率</strong>: 从~30%提升到~70%</li>
+<li><strong>Trading Signals识别率</strong>: 从~20%提升到~70%</li>
+<li><strong>模式组合识别</strong>: 从低到高</li>
+<li><strong>K-line特征提取</strong>: 显著提升</li>
+<li><strong>文本注释提取</strong>: 更完整</li>
+</ol>
+<h3 id="️-仍需改进的方面">⚠️ 仍需改进的方面</h3>
+<ol>
+<li>
+<p><strong>价格精度</strong>: Entry price、Stop-loss、Take-profit部分缺失</p>
+<ul>
+<li>原因：图表中可能没有明确标注</li>
+<li>建议：在解析阶段通过上下文推断</li>
+</ul>
+</li>
+<li>
+<p><strong>JSON解析错误</strong>: 10%的错误率</p>
+<ul>
+<li>原因：Gemini输出格式偶尔不规范</li>
+<li>建议：增强解析脚本的容错性</li>
+</ul>
+</li>
+<li>
+<p><strong>概率提取</strong>: 部分信号缺少probability</p>
+<ul>
+<li>原因：图表中可能没有明确标注</li>
+<li>建议：从文本注释中智能提取</li>
+</ul>
+</li>
+</ol>
+<h2 id="下一步行动">下一步行动</h2>
+<h3 id="立即执行-">立即执行 ✅</h3>
+<ol>
+<li>
+<p><strong>处理全部1000张图片</strong></p>
+<ul>
+<li>使用优化后的Prompt</li>
+<li>预计耗时：2-3小时</li>
+<li>预计成本：约 $0.125 USD</li>
+</ul>
+</li>
+<li>
+<p><strong>增强解析脚本</strong></p>
+<ul>
+<li>处理JSON解析错误</li>
+<li>从raw数据中提取patterns和signals</li>
+<li>智能提取价格和概率</li>
+</ul>
+</li>
+<li>
+<p><strong>更新模式库</strong></p>
+<ul>
+<li>解析Gemini输出</li>
+<li>更新pattern_library表</li>
+<li>验证数据质量</li>
+</ul>
+</li>
+</ol>
+<h3 id="后续优化">后续优化</h3>
+<ol>
+<li>
+<p><strong>Prompt微调</strong>（如果需要）</p>
+<ul>
+<li>基于1000张完整数据统计</li>
+<li>针对识别率低的场景优化</li>
+</ul>
+</li>
+<li>
+<p><strong>解析增强</strong></p>
+<ul>
+<li>价格推断算法</li>
+<li>概率提取算法</li>
+<li>上下文关联</li>
+</ul>
+</li>
+</ol>
+<h2 id="成本控制-1">成本控制</h2>
+<ul>
+<li>✅ 使用Flash模型（成本可控）</li>
+<li>✅ 去重机制（避免重复处理）</li>
+<li>✅ 断点续传（支持中断恢复）</li>
+<li>✅ 成本估算准确</li>
+</ul>
+<p><strong>实际成本</strong>:</p>
+<ul>
+<li>测试（10张）: $0.00125</li>
+<li>预计全量（1000张）: $0.125</li>
+<li><strong>完全在预算内</strong> ✅</li>
+</ul>
+<h2 id="技术记录">技术记录</h2>
+<h3 id="prompt优化要点">Prompt优化要点</h3>
+<ol>
+<li><strong>优先级明确</strong>: Trading Signals &gt; Patterns &gt; Price Action &gt; Market Conditions</li>
+<li><strong>指令强化</strong>: 使用&quot;MUST&quot;、&quot;CRITICAL&quot;等强调词</li>
+<li><strong>示例丰富</strong>: 提供详细的JSON结构示例</li>
+<li><strong>容错性</strong>: 允许&quot;not_specified&quot;和近似值</li>
+</ol>
+<h3 id="解析改进建议">解析改进建议</h3>
+<ol>
+<li><strong>JSON容错</strong>: 处理不完整的JSON（如第5张图片）</li>
+<li><strong>价格提取</strong>: 从文本中提取价格（正则表达式）</li>
+<li><strong>概率提取</strong>: 从文本中提取百分比（&quot;75%&quot;, &quot;80% chance&quot;）</li>
+<li><strong>上下文关联</strong>: 关联前后页的上下文信息</li>
+</ol>
+<hr>
+<p><strong>结论</strong>: Prompt优化效果显著，可以继续处理全部1000张图片。预计识别率会进一步提升，因为更多图片包含实际的交易图表。</p>
+<p><strong>状态</strong>: ✅ 优化完成，准备处理全量数据</p>
+<h2 id="文档-4-技术偏好与优化要求">文档 4: 技术偏好与优化要求</h2>
+<p><strong>路径</strong>: <code>docs\design\requirements\技术偏好与优化要求.md</code></p>
+<hr>
+<h1 id="技术偏好与优化要求">技术偏好与优化要求</h1>
+<p><strong>创建时间</strong>: 2026-01-10<br>
+<strong>最后更新</strong>: 2026-01-10<br>
+<strong>状态</strong>: 活跃规范 ✅</p>
+<h2 id="执行效率优化">执行效率优化</h2>
+<h3 id="go语言替代原则">Go语言替代原则</h3>
+<p><strong>规则</strong>: 任何能用Go替代的可以用Go替代，以提高执行效率。</p>
+<p><strong>适用范围</strong>:</p>
+<ul>
+<li>高频操作（如K线数据采集、实时价格监控）</li>
+<li>性能敏感的计算（如技术指标计算、模式匹配）</li>
+<li>并发处理任务（如多交易所数据同步）</li>
+<li>系统服务/后台任务（如定时任务、API服务）</li>
+</ul>
+<p><strong>保留Python的场景</strong>:</p>
+<ul>
+<li>数据分析和机器学习（scikit-learn, pandas, numpy生态）</li>
+<li>快速原型开发和脚本</li>
+<li>与现有Python代码库集成紧密的部分</li>
+<li>Gemini Vision API调用（已有Python实现，暂时保留）</li>
+</ul>
+<p><strong>迁移优先级</strong>:</p>
+<ol>
+<li><strong>P0（高优先级）</strong>: K线数据采集模块、实时价格同步</li>
+<li><strong>P1（中优先级）</strong>: 技术指标计算、模式匹配算法</li>
+<li><strong>P2（低优先级）</strong>: 辅助工具、批处理脚本</li>
+</ol>
+<h2 id="交易所选择优先级">交易所选择优先级</h2>
+<h3 id="交易数据获取优先级">交易数据获取优先级</h3>
+<p><strong>规则</strong>: <a href="http://Gate.io">Gate.io</a> 首选，Bitget 次之，币安（Binance）最后。</p>
+<p><strong>优先级顺序</strong>:</p>
+<ol>
+<li><strong><a href="http://Gate.io">Gate.io</a></strong> (首选)
+<ul>
+<li>API稳定性好</li>
+<li>数据质量高</li>
+<li>响应速度快</li>
+</ul>
+</li>
+<li><strong>Bitget</strong> (次选)
+<ul>
+<li>作为Gate.io的备选</li>
+<li>API兼容性好</li>
+</ul>
+</li>
+<li><strong>Binance</strong> (最后)
+<ul>
+<li>作为兜底方案</li>
+<li>仅在Gate和Bitget都不可用时使用</li>
+</ul>
+</li>
+</ol>
+<p><strong>实现要求</strong>:</p>
+<ul>
+<li>所有交易所数据获取函数应遵循此优先级</li>
+<li>实现fallback机制：Gate → Bitget → Binance</li>
+<li>记录使用的交易所，便于监控和调试</li>
+</ul>
+<p><strong>现有代码位置</strong>:</p>
+<ul>
+<li><code>scripts/sherlock_scan_strong_coins.py</code>: 已实现优先级（Gate → Binance → Bitget），需要调整为 Gate → Bitget → Binance</li>
+<li><code>scripts/falcon.py</code>: 已实现优先级，需要确认顺序</li>
+<li><code>scripts/generate_style_filtered_signals.py</code>: 已实现优先级，需要确认顺序</li>
+</ul>
+<h2 id="代码规范更新">代码规范更新</h2>
+<h3 id="交易所选择函数模板">交易所选择函数模板</h3>
+<pre><code class="language-python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">get_market_data</span>(<span class="hljs-params">symbol: <span class="hljs-built_in">str</span>, exchange: <span class="hljs-built_in">str</span> = <span class="hljs-literal">None</span></span>):
+    <span class="hljs-string">&quot;&quot;&quot;
+    获取市场数据，按优先级：Gate → Bitget → Binance
+    
+    Args:
+        symbol: 交易对符号
+        exchange: 指定交易所（可选），如果为None则按优先级自动选择
+    &quot;&quot;&quot;</span>
+    providers = []
+    <span class="hljs-keyword">if</span> exchange == <span class="hljs-string">&#x27;gate&#x27;</span>:
+        providers = [_get_gate, _get_bitget, _get_binance]
+    <span class="hljs-keyword">elif</span> exchange == <span class="hljs-string">&#x27;bitget&#x27;</span>:
+        providers = [_get_bitget, _get_gate, _get_binance]
+    <span class="hljs-keyword">else</span>:
+        <span class="hljs-comment"># 默认优先级：Gate → Bitget → Binance</span>
+        providers = [_get_gate, _get_bitget, _get_binance]
+    
+    <span class="hljs-keyword">for</span> provider <span class="hljs-keyword">in</span> providers:
+        <span class="hljs-keyword">try</span>:
+            data = provider(symbol)
+            <span class="hljs-keyword">if</span> data:
+                <span class="hljs-keyword">return</span> data
+        <span class="hljs-keyword">except</span> Exception:
+            <span class="hljs-keyword">continue</span>
+    <span class="hljs-keyword">return</span> <span class="hljs-literal">None</span>
+</code></pre>
+<h3 id="go模块迁移指南">Go模块迁移指南</h3>
+<ol>
+<li>
+<p><strong>识别可迁移模块</strong>:</p>
+<ul>
+<li>性能瓶颈分析</li>
+<li>并发需求评估</li>
+<li>依赖关系检查</li>
+</ul>
+</li>
+<li>
+<p><strong>迁移步骤</strong>:</p>
+<ul>
+<li>保持API接口兼容</li>
+<li>逐步替换，保留Python接口作为fallback</li>
+<li>充分测试性能提升</li>
+</ul>
+</li>
+<li>
+<p><strong>目录结构</strong>:</p>
+<pre><code>external/
+  go_modules/
+    market_data/     # K线数据采集
+    indicators/      # 技术指标计算
+    pattern_match/   # 模式匹配
+</code></pre>
+</li>
+</ol>
+<h2 id="文档更新要求">文档更新要求</h2>
+<ul>
+<li>所有涉及交易所选择的代码需要更新文档说明优先级</li>
+<li>Go模块迁移需要记录在架构文档中</li>
+<li>性能对比数据需要定期更新</li>
+</ul>
+<hr>
+<p><strong>维护者</strong>: 开发团队<br>
+<strong>审核</strong>: 待审核<br>
+<strong>实施状态</strong>: 待实施</p>
+<h2 id="文档-5-gemini_vision_模块使用说明">文档 5: Gemini_Vision_模块使用说明</h2>
+<p><strong>路径</strong>: <code>docs\design\features\Gemini_Vision_模块使用说明.md</code></p>
+<hr>
+<h1 id="gemini-vision-图形识别模块使用说明">Gemini Vision 图形识别模块使用说明</h1>
+<h2 id="-模块定位">🎯 模块定位</h2>
+<p><strong>独立模块</strong>：只用于图形识别，不做其他用途<br>
+<strong>成本控制</strong>：强制使用 <code>gemini-1.5-flash</code>，禁止Pro模型<br>
+<strong>成本估算</strong>：1000张图片约 $0.125 USD</p>
+<h2 id="-文件结构">📁 文件结构</h2>
+<pre><code>src/abu/gemini_vision_analyzer.py  # 核心分析模块（独立）
+scripts/abu_parse_gemini_output.py  # 解析输出
+scripts/abu_update_pattern_library_from_gemini.py  # 更新数据库
+scripts/abu_verify_gemini_analysis.py  # 验证结果
+</code></pre>
+<h2 id="-快速开始-1">🚀 快速开始</h2>
+<h3 id="1-设置api-key">1. 设置API Key</h3>
+<pre><code class="language-bash"><span class="hljs-built_in">export</span> GEMINI_API_KEY=<span class="hljs-string">&quot;your_api_key&quot;</span>
+</code></pre>
+<h3 id="2-执行分析自动断点续传">2. 执行分析（自动断点续传）</h3>
+<pre><code class="language-bash"><span class="hljs-comment"># 完整分析1000张图片</span>
+python -m src.abu.gemini_vision_analyzer \
+    --api-key <span class="hljs-variable">$GEMINI_API_KEY</span> \
+    --model gemini-1.5-flash \
+    --sleep-ms 1000 \
+    --resume  <span class="hljs-comment"># 默认开启，支持断点续传</span>
+</code></pre>
+<h3 id="3-查看状态">3. 查看状态</h3>
+<pre><code class="language-bash"><span class="hljs-comment"># 查看处理进度（不执行分析）</span>
+python -m src.abu.gemini_vision_analyzer --status
+</code></pre>
+<h3 id="4-解析并更新数据库">4. 解析并更新数据库</h3>
+<pre><code class="language-bash"><span class="hljs-comment"># 解析Gemini输出</span>
+python scripts/abu_parse_gemini_output.py \
+    --input outputs/abu_gemini_annotations_enhanced.jsonl
+
+<span class="hljs-comment"># 更新模式库（先预览）</span>
+python scripts/abu_update_pattern_library_from_gemini.py \
+    --input outputs/abu_gemini_parsed.jsonl \
+    --dry-run
+
+<span class="hljs-comment"># 实际更新</span>
+python scripts/abu_update_pattern_library_from_gemini.py \
+    --input outputs/abu_gemini_parsed.jsonl
+</code></pre>
+<h2 id="-成本控制机制">🔒 成本控制机制</h2>
+<ol>
+<li><strong>模型强制</strong>：自动检测并禁止使用Pro模型</li>
+<li><strong>去重机制</strong>：SHA1检查、输出文件检查、缓存检查</li>
+<li><strong>成本估算</strong>：实时显示每次调用成本和总成本</li>
+<li><strong>API限流</strong>：默认1秒间隔（可配置）</li>
+</ol>
+<h2 id="-输出文件">📊 输出文件</h2>
+<ul>
+<li><code>outputs/abu_gemini_annotations_enhanced.jsonl</code> - Gemini分析结果</li>
+<li><code>outputs/abu_gemini_analysis_state.json</code> - 处理状态（断点续传）</li>
+<li><code>outputs/.cache/abu_gemini/{sha1}.json</code> - 单图缓存</li>
+<li><code>outputs/abu_gemini/gemini_analysis.log</code> - 详细日志</li>
+</ul>
+<h2 id="️-注意事项">⚠️ 注意事项</h2>
+<ol>
+<li><strong>不要重复分析</strong>：模块会自动跳过已处理的图片</li>
+<li><strong>支持中断</strong>：可以随时中断，下次运行自动继续</li>
+<li><strong>查看日志</strong>：如有问题，查看 <code>gemini_analysis.log</code></li>
+<li><strong>成本监控</strong>：每次运行显示总成本和剩余成本</li>
+</ol>
+
+            <script async src="https://cdn.jsdelivr.net/npm/katex-copytex@latest/dist/katex-copytex.min.js"></script>
+            
+        </body>
+        </html>

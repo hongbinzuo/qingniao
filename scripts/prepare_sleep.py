@@ -43,9 +43,8 @@ def _snapshot_status() -> dict:
 
 def main():
     # Only snapshot + write TODOs; don't execute heavy jobs.
-    ss_dir = ROOT/'trading_signals'/'/.sleep_snapshots'.replace('//','/')
-    td_dir = ROOT/'trading_signals'/'/.todos'.replace('//','/')
-    ss_dir = Path(ss_dir); td_dir = Path(td_dir)
+    ss_dir = ROOT / 'outputs' / 'trading_signals' / '.sleep_snapshots'
+    td_dir = ROOT / 'outputs' / 'trading_signals' / '.todos'
     ss_dir.mkdir(parents=True, exist_ok=True)
     td_dir.mkdir(parents=True, exist_ok=True)
 

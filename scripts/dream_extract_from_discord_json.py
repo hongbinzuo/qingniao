@@ -73,28 +73,49 @@ def norm_symbol(s: str) -> Optional[str]:
 
 
 EXCLUDE_TOKENS = set(['MIN','MINS','M','H','HR','HRS','D','DAY','W','WK','WEEK',
-    'TP','SL','MA','EMA','SMA','MACD','RSI','VWAP','TVEM','DCA','AVG','PRICE','USDT','USDC','USD'])
+    'TP','SL','MA','EMA','SMA','MACD','RSI','VWAP','TVEM','DCA','AVG','PRICE','USDT','USDC','USD',
+    'FVG','GAP','POC','VALUE','AREA','HIGH','LOW','OPEN','CLOSE','VOLUME','VOL','BUY','SELL',
+    'ENTRY','EXIT','STOP','LOSS','TAKE','PROFIT','TARGET','LIMIT','MARKET','ORDER'])
 
 def _is_valid_base(base: str) -> bool:
     b = (base or '').upper()
     if not b:
+        return False
+    # Length check: valid crypto symbols are typically 2-15 chars
+    if len(b) < 2 or len(b) > 15:
+        return False
+    # Must contain at least one letter (not pure numbers)
+    if not re.search(r'[A-Z]', b):
         return False
     if b in EXCLUDE_TOKENS:
         return False
     # pure number or number with trailing dot
     if re.fullmatch(r'\d+(?:\.\d+)?', b) or b.endswith('.'):
         return False
-    # timeframe-like tokens: 15MIN, 1H, 1W, 1D
-    if re.fullmatch(r'\d+(MIN|M|H|HR|HRS|D|DAY|W|WK|WEEK)', b):
+    # timeframe-like tokens: 15MIN, 1H, 1W, 1D, 5M, 1HRS
+    if re.fullmatch(r'\d+(MIN|MINS?|H|HR|HRS?|D|DAY|DAYS?|W|WK|WEEK|WEEKS?)', b):
         return False
-    # units or leverage-like: 10U, 20X
-    if re.fullmatch(r'\d+(U|USDT|USD|X)', b):
+    # units or leverage-like: 10U, 20X, 100USDT, 50USD
+    if re.fullmatch(r'\d+(U|USDT|USD|X|倍)', b):
         return False
-    # indicators: MA89, EMA12, SMA50, RSI, MACD
+    # indicators: MA89, EMA12, SMA50, RSI, MACD, EMA200, EMA144, EMA169
     if re.fullmatch(r'(MA|EMA|SMA)\d+', b) or re.fullmatch(r'(RSI|MACD)\d*', b):
         return False
-    # ranges or mixed numeric-hyphen
-    if '-' in b:
+    # TP/SL with numbers: TP1, TP2, TP3, SL1, SL2
+    if re.fullmatch(r'(TP|SL)\d+', b):
+        return False
+    # ranges or mixed numeric-hyphen (but allow valid symbols with hyphen like USDC-BTC)
+    if '-' in b and not re.fullmatch(r'[A-Z]+-[A-Z]+', b):
+        return False
+    # weird patterns like 9W5, 1D2, 5H3 (number + letter + number)
+    if re.fullmatch(r'\d+[WDHM]\d+', b):
+        return False
+    # patterns starting with number and ending with letter (like 10X, but already caught above)
+    # Additional: single letter + number (like M1, H1) - likely timeframe
+    if re.fullmatch(r'[A-Z]\d+', b) and len(b) <= 3:
+        return False
+    # patterns ending with common suffixes that are not coins
+    if b.endswith(('MIN', 'HRS', 'DAYS', 'WKS', 'WEEKS')):
         return False
     return True
 
@@ -130,16 +151,40 @@ def has_kw(text: str, kws: Tuple[str,...]) -> bool:
     return any(kw in text for kw in kws)
 
 
-def pick_first(label_kws: Tuple[str,...], t: str) -> Optional[float]:
-    # prioritize numbers near keywords; ignore percent
+def pick_first(label_kws: Tuple[str,...], t: str, base_price: Optional[float] = None) -> Optional[float]:
+    """提取价格：支持绝对价格、百分比价格（如+5%）、价格范围（如100-105取平均值）"""
     for kw in label_kws:
+        # 1. 尝试百分比价格（如 "入场+5%" 或 "止损-2%"）
+        pct_pattern = re.escape(kw) + r'.{0,20}?([+-]?\d+\.?\d*)\s*%'
+        m_pct = re.search(pct_pattern, t, re.IGNORECASE)
+        if m_pct and base_price:
+            try:
+                pct = float(m_pct.group(1))
+                return base_price * (1 + pct / 100.0)
+            except Exception:
+                pass
+        
+        # 2. 尝试价格范围（如 "入场 100-105" 或 "止损 50-55"）
+        range_pattern = re.escape(kw) + r'.{0,20}?(\d+\.?\d*)\s*[-~]\s*(\d+\.?\d*)'
+        m_range = re.search(range_pattern, t, re.IGNORECASE)
+        if m_range:
+            try:
+                low = float(m_range.group(1))
+                high = float(m_range.group(2))
+                # 返回范围的平均值
+                return (low + high) / 2.0
+            except Exception:
+                pass
+        
+        # 3. 标准绝对价格提取
         m = re.search(re.escape(kw) + r'.{0,16}?(\d+\.\d+|\d+)', t, re.IGNORECASE)
         if m:
             num = m.group(1)
-            # discard if explicitly percent nearby
+            # 如果附近有%，且不是百分比模式（已处理），则跳过
             span_s, span_e = m.span(1)
             window = t[max(0, span_s-3):min(len(t), span_e+3)]
-            if '%' in window:
+            # 只有在不是百分比计算的情况下才跳过
+            if '%' in window and not (base_price and re.search(r'[+-]\s*\d+\.?\d*\s*%', window)):
                 continue
             try:
                 return float(num)
@@ -149,9 +194,12 @@ def pick_first(label_kws: Tuple[str,...], t: str) -> Optional[float]:
 
 
 def extract_from_messages(msgs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    # context: remember last symbol within 10 minutes
+    # context: remember last symbol and side within 60 minutes (统一时间窗口)
+    CONTEXT_WINDOW_SECS = 3600  # 60 minutes
     last_sym: Optional[str] = None
     last_sym_ts: Optional[datetime] = None
+    last_side: Optional[str] = None
+    last_side_ts: Optional[datetime] = None
     results: List[Dict[str, Any]] = []
 
     for m in msgs:
@@ -175,16 +223,27 @@ def extract_from_messages(msgs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         if mlev:
             try: lev = int(mlev.group(1))
             except: lev = None
-        # context symbol borrowing
+        # context symbol borrowing (60分钟窗口)
         symbol = syms[0] if syms else None
-        if not symbol and last_sym and last_sym_ts and abs((dt - last_sym_ts).total_seconds()) <= 600:
-            # message references direction or prices but no symbol
-            if side or entry or sl or tp:
-                symbol = last_sym
+        if not symbol and last_sym and last_sym_ts:
+            time_diff = abs((dt - last_sym_ts).total_seconds())
+            if time_diff <= CONTEXT_WINDOW_SECS:
+                # message references direction or prices but no symbol
+                if side or entry or sl or tp:
+                    symbol = last_sym
+        # context side borrowing (如果当前消息有价格信息但无方向，尝试借用上下文方向)
+        if not side and (entry or sl or tp) and last_side and last_side_ts:
+            time_diff = abs((dt - last_side_ts).total_seconds())
+            if time_diff <= CONTEXT_WINDOW_SECS:
+                side = last_side
         # update context if current has explicit symbol
         if syms:
             last_sym = syms[0]
             last_sym_ts = dt
+        # update context if current has explicit side
+        if side:
+            last_side = side
+            last_side_ts = dt
         # 只在存在方向或价格要素时才输出，避免纯提及symbol导致噪音
         if not (side or entry or sl or tp or lev):
             continue

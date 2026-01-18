@@ -1,0 +1,147 @@
+你是专业的交易图表分析专家。请详细分析这张价格行为图表图片，并按照以下格式输出识别结果：
+
+## 输出要求
+
+### 1. 文本描述（保持原有格式）
+- 图表概览
+- 关键概念
+- 完整价格路径
+- 模式识别
+- 交易信号
+- 价格行为分析
+- 市场条件
+- 完整叙述
+
+### 2. 结构化JSON特征（新增 - 必须输出）
+
+在识别结果末尾，必须包含一个有效的JSON对象，格式如下：
+
+```json
+{
+  "pattern_type": "模式类型，如bull_breakout",
+  "pattern_subtype": "子类型，如above_trading_range_mm_up",
+  "direction": "long/short/neutral",
+  "confidence": 0.85,
+  
+  "kline_features": {
+    "consecutive_bull_bars": 2,
+    "bull_bars_closing_near_high": {
+      "count": 2,
+      "min_ratio": 0.90,
+      "bar_indices": [19, 20]
+    },
+    "bars_above_ema": 2,
+    "second_body_above_ema": true,
+    "ema_relationship": "above_price/below_price/at_price"
+  },
+  
+  "price_levels": {
+    "breakout_level": 87500.0,
+    "trading_range": {
+      "high": 87400.0,
+      "low": 87200.0
+    },
+    "support_levels": [87200.0, 87000.0],
+    "resistance_levels": [87500.0, 88000.0]
+  },
+  
+  "pattern_structure": {
+    "phases": [
+      {
+        "phase": "trading_range",
+        "start_bar": 0,
+        "end_bar": 18,
+        "duration": 18,
+        "characteristics": ["sideways", "consolidation"]
+      },
+      {
+        "phase": "bull_breakout",
+        "start_bar": 19,
+        "end_bar": 22,
+        "duration": 3,
+        "characteristics": ["consecutive_bull_bars", "above_ema", "breakout"]
+      }
+    ],
+    "total_bars": 22
+  },
+  
+  "trading_signals": {
+    "entry": {
+      "type": "buy_the_close",
+      "bar_index": 20,
+      "condition": "2nd_body_completely_above_ema",
+      "price_calculation": "close_of_breakout_bar"
+    },
+    "stop_loss": {
+      "type": "below_trading_range_low",
+      "price": 87200.0,
+      "distance_pct": 0.46,
+      "reason": "below_range_low"
+    },
+    "take_profit": {
+      "type": "measured_move",
+      "method": "body_size_projection",
+      "target_price": 87750.0,
+      "distance_pct": 1.71,
+      "calculation": "breakout_level + (avg_body_size * 2)"
+    }
+  },
+  
+  "quantified_indicators": {
+    "ema_position": "above_price/below_price/at_price",
+    "measured_move": {
+      "enabled": true,
+      "method": "body_size/range_height/fibonacci",
+      "target_distance": 250.0,
+      "units": "ticks/points/percentage"
+    },
+    "rally_requirements": {
+      "min_ticks": 82,
+      "target_points": 20
+    }
+  },
+  
+  "market_conditions": {
+    "trend": "bullish/bearish/sideways",
+    "volatility": "low/medium/high",
+    "context": "trading_range_breakout/climax/reversal",
+    "time_of_day": "open/midday/close"
+  }
+}
+```
+
+## 特征提取规则
+
+### 1. 数值提取
+- 从文本中提取所有数值（如"20 points", "82 tick"）
+- 保持原始单位和数值
+- 如果无法确定，使用null或描述性标记
+
+### 2. K线特征量化
+- consecutive_bull_bars: 连续阳线数量
+- close_to_high_ratio: 收盘价接近最高价的比例（0-1）
+- bars_above_ema: 在EMA上方的K线数量
+
+### 3. 价格级别
+- 从图表中识别具体的价格数值（如果可见）
+- 如果无法精确识别，使用相对描述
+
+### 4. 模式阶段
+- 按照时间顺序划分模式的不同阶段
+- 记录每个阶段的起始和结束K线索引（从0开始）
+
+### 5. 交易信号
+- 入场：具体的K线位置和条件
+- 止损：具体的价格或计算方式
+- 止盈：目标价格或计算方法
+
+## 注意事项
+
+1. JSON必须有效，可以解析
+2. 如果无法确定具体数值，使用null或描述性值
+3. bar_index从0开始计数
+4. 数值单位要明确（ticks, points, percentage）
+5. 确保JSON格式正确，不要包含注释
+
+现在请分析这张图表，输出完整的识别结果，包括文本描述和结构化JSON特征。
+

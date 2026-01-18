@@ -58,13 +58,16 @@ def get_kline_gateio(symbol='BTC', timeframe='15m', limit=200):
                     })
                 return klines
     except Exception as e:
-        pass
+        print(f"[DEBUG] get_kline_gateio 异常 ({symbol}): {e}", file=sys.stderr)
+        import traceback
+        traceback.print_exc(file=sys.stderr)
     return None
 
 def get_kline_binance(symbol='BTC', timeframe='15m', limit=200):
-    """从Binance获取K线数据（备用）"""
+    """从Binance合约获取K线数据（使用fapi.binance.com）"""
     try:
         tf_map = {
+            '5m': '5m',
             '15m': '15m',
             '1h': '1h',
             '4h': '4h',
@@ -78,7 +81,8 @@ def get_kline_binance(symbol='BTC', timeframe='15m', limit=200):
         }
         symbol_str = symbol_map.get(symbol, f'{symbol}USDT')
         
-        url = "https://api.binance.com/api/v3/klines"
+        # 使用币安合约API（fapi.binance.com）
+        url = "https://fapi.binance.com/fapi/v1/klines"
         params = {
             'symbol': symbol_str,
             'interval': interval,
@@ -91,7 +95,7 @@ def get_kline_binance(symbol='BTC', timeframe='15m', limit=200):
                 klines = []
                 for k in data:
                     klines.append({
-                        'timestamp': int(k[0]),
+                        'timestamp': int(k[0]) // 1000,  # 合约API返回毫秒，转换为秒
                         'open': float(k[1]),
                         'high': float(k[2]),
                         'low': float(k[3]),

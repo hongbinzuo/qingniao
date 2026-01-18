@@ -1,7 +1,0 @@
-{
-  "hosts": ["http://localhost:9200"],
-  "index_prefix": "qingniao_conversations",
-  "retention_days": 90,
-  "description": "Elasticsearch日志系统配置，至少保留3个月（90天）的对话记录。开发环境已禁用SSL，使用HTTP连接"
-}
-

@@ -3,9 +3,9 @@
 ## 项目结构与模块组织
 - `src/`：核心脚本（数据库 `db_manager_*`、价格同步 `sync_btc_prices_daily.py`、日志 `system_logger.py`、对话录入 `add_de_conversation.py` 等）。
 - `rules_engine/`：交易规则引擎与配置；入口 `setup_rules_engine.py`，配置 `strategy_registry.yaml`。
-- `scripts/`：Elasticsearch 安装/维护与启动脚本。
-- `config/elasticsearch_config.json`：ES 索引前缀与保留周期（90 天）。
-- `data/`、`outputs/`、`trading_signals/`：生成物，已被 Git 忽略，勿提交。
+- `scripts/`：日常运行、批处理与维护脚本集合。
+- `data/`、`outputs/`：生成物/临时文件目录，已被 Git 忽略，勿提交；信号报告放 `outputs/trading_signals/`。
+- `logs/`：运行日志专用目录（不要放到 `data/`）。
 - `docs/design/`：架构、数据库与功能文档。
 
 ## 构建、测试与开发命令
@@ -16,7 +16,6 @@ source .venv/bin/activate
 pip install -U pip
 # 可选：规则引擎与 ES 日志
 pip install pyyaml experta                 # 使用 rules_engine 时
-pip install -r requirements_elasticsearch.txt   # 使用 Elasticsearch 日志时
 ```
 
 ### 环境初始化（Windows）
@@ -25,7 +24,6 @@ py -3 -m venv .venv
 .\.venv\Scripts\activate
 pip install -U pip
 pip install pyyaml experta                 # 可选：规则引擎
-pip install -r requirements_elasticsearch.txt   # 可选：ES 日志
 ```
 
 ### 常用运行命令
@@ -69,7 +67,13 @@ experta  # 规则引擎（仅当需要）
 
 ## 安全与配置
 - 勿提交密钥/环境与数据库文件：`.env`、`*.duckdb`、`*.db` 等（已在 `.gitignore`）。
-- ES 开发环境使用 HTTP；配置见 `config/elasticsearch_config.json`（保留 90 天）；不要硬编码地址，使用配置/环境变量。
+
+## 临时文件与清理规则
+- 仅允许在 `data/` 与 `outputs/` 生成临时文件；根目录禁止生成临时文件（必要时先创建子目录）。
+- 日志一律写入 `logs/`（不要放到 `data/`）。
+- 删除前统一移动到 `deleting/YYYYMMDD_HHMMSS/`（默认保留 7 天，确认无误后再清理）。
+- 临时文件中需要保留或可回溯的内容，清理前必须备份（如放入 `deleting/` 或 `backups/`）。
+- 若不确定有用内容的归档位置，可新建专用目录后再清理。
 
 ## 架构概览
 - 数据流：价格采集与同步 → 规则引擎判定 → 信号/日志输出 → 学习与评估。

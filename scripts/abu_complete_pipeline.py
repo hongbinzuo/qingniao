@@ -22,6 +22,7 @@ ABU PDF处理完整流程
 
 import sys
 import os
+import subprocess
 from pathlib import Path
 from typing import Optional
 
@@ -41,6 +42,17 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from detailed_logger import get_detailed_logger
+
+def _run_step_script(script_path: Path, args: list, logger, step_name: str) -> int:
+    """运行流程步骤脚本，失败则抛出异常"""
+    if not script_path.exists():
+        raise FileNotFoundError(f"{step_name}脚本不存在: {script_path}")
+    cmd = [sys.executable, str(script_path)] + args
+    logger.info(f"执行命令: {' '.join(cmd)}")
+    result = subprocess.run(cmd, cwd=str(ROOT))
+    if result.returncode != 0:
+        raise RuntimeError(f"{step_name}执行失败，退出码: {result.returncode}")
+    return result.returncode
 
 def step1_ingest_pdf(pdf_path: str, max_pages: Optional[int] = None) -> int:
     """步骤1: PDF提取"""
@@ -81,9 +93,8 @@ def step2_build_library() -> int:
     logger.info("步骤2: 构建模式库 - 从raw_pages.jsonl提取图表模式")
     
     try:
-        # 这里需要调用构建模式库的脚本
-        # 可能需要导入或调用 abu_build_library.py 或相关脚本
-        logger.warning("步骤2需要确认具体的构建脚本")
+        script_path = ROOT / 'scripts' / 'abu_build_library.py'
+        _run_step_script(script_path, [], logger, "步骤2构建模式库")
         logger.log_shutdown(exit_code=0)
         return 0
         
@@ -93,7 +104,7 @@ def step2_build_library() -> int:
         raise
 
 
-def step3_classify_patterns(model: str = 'llava', limit: Optional[int] = None) -> int:
+def step3_classify_patterns(model: str = 'gemini', limit: Optional[int] = None) -> int:
     """步骤3: 模式分类（llava/gemini）"""
     logger = get_detailed_logger('pdf_pipeline_step3')
     logger.log_startup({'model': model, 'limit': limit})
@@ -101,9 +112,21 @@ def step3_classify_patterns(model: str = 'llava', limit: Optional[int] = None) -
     logger.info(f"步骤3: 模式分类 - 使用 {model} 分类图表模式")
     
     try:
-        # 这里需要调用分类脚本
-        # 例如: abu_llava_classify_patterns.py 或 abu_gemini_annotate.py
-        logger.warning("步骤3需要确认具体的分类脚本")
+        model_lower = (model or '').lower()
+        if model_lower.startswith('gemini') or model_lower.startswith('google/'):
+            script_path = ROOT / 'scripts' / 'abu_gemini_annotate.py'
+            args = []
+            if limit:
+                args.extend(['--limit', str(limit)])
+            if model and model_lower not in ('gemini',):
+                args.extend(['--model', model])
+            _run_step_script(script_path, args, logger, "步骤3 Gemini模式分类")
+        else:
+            script_path = ROOT / 'scripts' / 'abu_llava_classify_patterns.py'
+            args = []
+            if limit:
+                args.extend(['--limit', str(limit)])
+            _run_step_script(script_path, args, logger, "步骤3 LLaVA模式分类")
         logger.log_shutdown(exit_code=0)
         return 0
         

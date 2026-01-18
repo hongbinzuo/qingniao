@@ -16,6 +16,7 @@ TRADERS = {
     'de': 'De.',
     'meng': '梦',
     'sherlock': 'Sherlock',
+    'abu': 'Abu',  # 新增 Abu 子系统（15m 价格行为）
     # 未来可以添加更多交易员
 }
 
@@ -93,6 +94,7 @@ class DatabaseDesignV2:
                 id INTEGER PRIMARY KEY,
                 signal_time TEXT NOT NULL,
                 timeframe TEXT,
+                symbol TEXT,              -- 可选：用于多币种系统（如 Abu）
                 signal_type TEXT,
                 entry_price REAL,
                 stop_loss REAL,
@@ -103,9 +105,22 @@ class DatabaseDesignV2:
                 risk_reward_ratio REAL,
                 volatility_level TEXT,
                 system_name TEXT,
+                score REAL,               -- 新增：评分（Abu 排序用）
+                notes TEXT,               -- 新增：自由文本（理由/注释）
                 status TEXT DEFAULT 'pending',
                 created_at TEXT NOT NULL,
-                updated_at TEXT
+                updated_at TEXT,
+                -- 信号反馈相关字段
+                entry_time TEXT,          -- 实际入场时间
+                exit_time TEXT,           -- 退出时间
+                exit_price REAL,          -- 退出价格
+                exit_reason TEXT,         -- 退出原因
+                pnl_pct REAL,             -- 盈亏百分比
+                breakeven_stop_set INTEGER DEFAULT 0,  -- 是否已设置保本止损
+                quick_tp_reached INTEGER DEFAULT 0,   -- 是否达到0.5%快速止盈
+                last_check_time TEXT,     -- 最后检查时间
+                check_count INTEGER DEFAULT 0,  -- 检查次数
+                entry_price_actual REAL   -- 实际入场价格
             )
         ''')
         
@@ -232,6 +247,27 @@ class DatabaseDesignV2:
             )
         ''')
         
+        # 9. 机器学习优化结果表
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS ml_optimization_results (
+                id INTEGER PRIMARY KEY,
+                optimization_type TEXT NOT NULL,  -- 'incremental_learning', 'ml_training', 'full_retrain', 'parameter_optimization', 'pattern_weight_optimization'
+                optimization_time TEXT NOT NULL,
+                status TEXT DEFAULT 'completed',  -- 'completed', 'failed', 'in_progress'
+                data_count INTEGER,  -- 使用的数据量（已完成信号数、评估数据数等）
+                time_span_days INTEGER,  -- 数据时间跨度（天）
+                metrics_json TEXT,  -- JSON格式的性能指标（胜率、收益率、准确率等）
+                parameters_before TEXT,  -- JSON格式的优化前参数
+                parameters_after TEXT,  -- JSON格式的优化后参数
+                improvements_json TEXT,  -- JSON格式的改进建议
+                model_file_path TEXT,  -- 模型文件路径（如果有）
+                report_file_path TEXT,  -- 报告文件路径（如果有）
+                notes TEXT,  -- 备注
+                created_at TEXT NOT NULL,
+                updated_at TEXT
+            )
+        ''')
+        
         # 创建索引
         conn.execute('CREATE INDEX IF NOT EXISTS idx_conversations_timestamp ON conversations(timestamp)')
         conn.execute('CREATE INDEX IF NOT EXISTS idx_trade_records_timestamp ON trade_records(timestamp)')
@@ -245,6 +281,8 @@ class DatabaseDesignV2:
         conn.execute('CREATE INDEX IF NOT EXISTS idx_indicator_snapshots_ts ON indicator_snapshots(timestamp)')
         conn.execute('CREATE INDEX IF NOT EXISTS idx_hits_time ON sherlock_hits(computed_at)')
         conn.execute('CREATE INDEX IF NOT EXISTS idx_hits_symbol ON sherlock_hits(symbol)')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_ml_optimization_type ON ml_optimization_results(optimization_type)')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_ml_optimization_time ON ml_optimization_results(optimization_time)')
         
         conn.commit()
         conn.close()

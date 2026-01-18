@@ -59,7 +59,8 @@ class GeminiPatternMatcher:
         
         try:
             db = TraderDBManager('abu')
-            conn = db._get_connection()
+            # 使用只读连接，允许多进程同时读取
+            conn = db._get_connection(read_only=True)
             
             query = '''
                 SELECT id, gemini_annotation_json, pattern_type, pattern_name

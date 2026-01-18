@@ -12,7 +12,8 @@
   </style>
   <script>
   async function load() {
-    const r = await fetch('/api/de/status');
+    const sys = document.getElementById('sys').value;
+    const r = await fetch('/api/de/status?system='+encodeURIComponent(sys));
     const j = await r.json();
     document.getElementById('ts').innerText = j.latest || 'N/A';
     const box = document.getElementById('list');
@@ -32,8 +33,14 @@
   </head>
   <body>
     <h1>De. 最新信号</h1>
+    <div>
+      来源系统：
+      <select id="sys" onchange="load()">
+        <option value="de">定时生成（falcon）</option>
+        <option value="de_watcher">实时候选（watcher）</option>
+      </select>
+    </div>
     <div>最新时间：<span id="ts">加载中...</span></div>
     <div id="list"></div>
   </body>
   </html>
-

@@ -1,0 +1,29 @@
+# TA-Lib 技术分析库依赖
+# 
+# 注意：TA-Lib需要先安装C库，然后才能安装Python包
+#
+# Windows安装步骤：
+# 1. 下载TA-Lib C库：https://ta-lib.org/install/
+# 2. 或使用预编译包：https://www.lfd.uci.edu/~gohlke/pythonlibs/#ta-lib
+# 3. pip install TA-Lib
+#
+# macOS安装步骤：
+# 1. brew install ta-lib
+# 2. pip install TA-Lib
+#
+# Linux (Ubuntu/Debian)安装步骤：
+# 1. sudo apt-get install libta-lib0-dev
+# 2. pip install TA-Lib
+#
+# Linux (CentOS/RHEL)安装步骤：
+# 1. sudo yum install ta-lib-devel
+# 2. pip install TA-Lib
+
+# TA-Lib Python绑定
+TA-Lib>=0.4.28
+
+# 基础依赖（如果还没有）
+numpy>=1.21.0
+
+
+

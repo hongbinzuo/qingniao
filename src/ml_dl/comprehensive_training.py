@@ -23,7 +23,7 @@ if str(current_dir) not in sys.path:
 
 from db_manager_trader import TraderDBManager
 from ml_signal_predictor import MLSignalPredictor
-from prepare_training_data import TrainingDataPreparer
+from ml_dl.prepare_training_data import TrainingDataPreparer
 
 # 尝试导入深度学习库
 try:

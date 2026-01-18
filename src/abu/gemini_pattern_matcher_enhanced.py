@@ -99,10 +99,14 @@ class EnhancedGeminiPatternMatcher:
         'outside bar': 'outside_bar',
         'outside bars': 'outside_bar',
     }
+
+    _SIGNAL_COMPLETENESS_LEVELS = {'none', 'basic', 'trade_ready'}
+    _DIRECTION_KEYWORDS = ('long', 'short', 'buy', 'sell', 'bull', 'bear', 'bullish', 'bearish', '做多', '做空')
     
     def __init__(self, use_dl: bool = False, min_confidence: float = 0.0, 
                  exclude_other: bool = True, use_ml: bool = True, use_ebook: bool = True,
-                 require_trading_signals: bool = False, exclude_unmarked: bool = True):
+                 require_trading_signals: bool = False, exclude_unmarked: bool = True,
+                 signal_completeness: str = 'basic'):
         """
         初始化匹配器
         
@@ -112,6 +116,9 @@ class EnhancedGeminiPatternMatcher:
             exclude_other: 是否排除pattern_type='other'的模式（默认True，排除教学页面）
             use_ml: 是否使用ML模型增强（默认True）
             use_ebook: 是否使用电子书知识验证（默认True）
+            require_trading_signals: 是否要求Gemini标注包含交易信号
+            exclude_unmarked: 是否排除无标注/教学页
+            signal_completeness: 交易信号完整性等级（none/basic/trade_ready）
         """
         self.pattern_library: List[Dict] = []
         self.learner = PriceActionLearner() if (ML_AVAILABLE and use_ml) else None
@@ -144,8 +151,106 @@ class EnhancedGeminiPatternMatcher:
         
         self.require_trading_signals = require_trading_signals
         self.exclude_unmarked = exclude_unmarked
+        self.signal_completeness = self._normalize_signal_completeness(signal_completeness)
 
         self._load_pattern_library(min_confidence=min_confidence, exclude_other=exclude_other)
+
+    def _normalize_signal_completeness(self, level: str) -> str:
+        normalized = (level or 'none').strip().lower()
+        if normalized not in self._SIGNAL_COMPLETENESS_LEVELS:
+            return 'none'
+        return normalized
+
+    def _has_value(self, value: object) -> bool:
+        if value is None:
+            return False
+        if isinstance(value, str):
+            return bool(value.strip())
+        if isinstance(value, (list, tuple, set, dict)):
+            return bool(value)
+        if isinstance(value, (int, float)):
+            return value != 0
+        return True
+
+    def _signal_has_direction(self, signal: object) -> bool:
+        if isinstance(signal, dict):
+            direction = (signal.get('direction') or signal.get('side') or signal.get('bias') or '').lower()
+            return direction in self._DIRECTION_KEYWORDS
+        if isinstance(signal, str):
+            lowered = signal.lower()
+            return any(key in lowered for key in self._DIRECTION_KEYWORDS)
+        return False
+
+    def _signal_has_entry(self, signal: object) -> bool:
+        if isinstance(signal, dict):
+            for key in ('entry', 'entry_price', 'entry_price_hint', 'entry_price_range',
+                        'entry_condition', 'entry_trigger'):
+                if self._has_value(signal.get(key)):
+                    return True
+            return False
+        if isinstance(signal, str):
+            lowered = signal.lower()
+            return any(key in lowered for key in ('entry', 'enter', '入场', '进场', '开仓'))
+        return False
+
+    def _signal_has_stop(self, signal: object) -> bool:
+        if isinstance(signal, dict):
+            for key in ('stop_loss', 'stop_loss_hint', 'stop_loss_price',
+                        'stop_loss_pct', 'stop_loss_distance_pct', 'stop_loss_range'):
+                if self._has_value(signal.get(key)):
+                    return True
+            return False
+        if isinstance(signal, str):
+            lowered = signal.lower()
+            return any(key in lowered for key in ('stop', '止损', 'sl'))
+        return False
+
+    def _signal_has_take_profit_1(self, signal: object) -> bool:
+        if isinstance(signal, dict):
+            for key in ('take_profit_1', 'take_profit_1_hint', 'take_profit_1_price',
+                        'take_profit_1_pct', 'take_profit_distance_pct'):
+                if self._has_value(signal.get(key)):
+                    return True
+            return False
+        if isinstance(signal, str):
+            lowered = signal.lower()
+            return any(key in lowered for key in ('take profit', 'tp', 'target', '止盈', '目标'))
+        return False
+
+    def _signal_has_take_profit_2_or_rr(self, signal: object) -> bool:
+        if isinstance(signal, dict):
+            tp2_keys = ('take_profit_2', 'take_profit_2_hint', 'take_profit_2_price', 'take_profit_2_pct')
+            rr_keys = ('risk_reward_ratio', 'reward_risk_ratio', 'rr')
+            return any(self._has_value(signal.get(key)) for key in tp2_keys + rr_keys)
+        if isinstance(signal, str):
+            lowered = signal.lower()
+            return any(key in lowered for key in ('tp2', 'second target', '盈亏比', 'risk reward'))
+        return False
+
+    def _signal_has_timeframe(self, signal: object) -> bool:
+        if isinstance(signal, dict):
+            return any(self._has_value(signal.get(key)) for key in ('timeframe', 'timeframe_hint', 'tf'))
+        if isinstance(signal, str):
+            lowered = signal.lower()
+            return any(key in lowered for key in ('5m', '15m', '1h', '4h', '5分钟', '15分钟', '1小时', '4小时'))
+        return False
+
+    def _is_signal_actionable(self, signal: object) -> bool:
+        if not self._signal_has_direction(signal):
+            return False
+        if self.signal_completeness == 'none':
+            return True
+
+        if not (self._signal_has_entry(signal) and self._signal_has_stop(signal) and self._signal_has_take_profit_1(signal)):
+            return False
+
+        if self.signal_completeness == 'trade_ready':
+            if not self._signal_has_timeframe(signal):
+                return False
+            if not self._signal_has_take_profit_2_or_rr(signal):
+                return False
+
+        return True
 
     def _is_actionable_pattern(self, gemini_annotation: Dict, raw_json: str) -> bool:
         if self.exclude_unmarked and raw_json:
@@ -159,16 +264,7 @@ class EnhancedGeminiPatternMatcher:
             signals = parsed.get('trading_signals')
             if not isinstance(signals, list) or not signals:
                 return False
-
-            has_direction = False
-            for sig in signals:
-                if not isinstance(sig, dict):
-                    continue
-                direction = (sig.get('direction') or '').lower()
-                if direction in ('long', 'short', 'buy', 'sell', '做多', '做空'):
-                    has_direction = True
-                    break
-            if not has_direction:
+            if not any(self._is_signal_actionable(sig) for sig in signals):
                 return False
 
         # 过滤无图表内容的占位/标题页面

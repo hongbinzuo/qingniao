@@ -266,10 +266,12 @@ def save_signals_to_file(signals: List[Dict], output_dir: Path = None):
         direction_cn = '做多' if direction == 'long' else '做空'
         pattern_name = sig.get('pattern_name', sig.get('reason', 'Unknown'))
         
+        tp2 = sig.get('take_profit_2')
+        tp2_str = f"{tp2:.4f}" if tp2 else 'N/A'
         lines.append(
             f"| {i} | {sig.get('symbol', 'N/A')} | {direction_cn} | "
             f"{sig.get('entry_price', 0):.4f} | {sig.get('stop_loss', 0):.4f} | "
-            f"{sig.get('take_profit_1', 0):.4f} | {sig.get('take_profit_2', 0):.4f if sig.get('take_profit_2') else 'N/A'} | "
+            f"{sig.get('take_profit_1', 0):.4f} | {tp2_str} | "
             f"{sig.get('score', 0):.2f} | {pattern_name} |"
         )
     

@@ -23,6 +23,14 @@ if sys.platform == 'win32':
     sys.stdout.reconfigure(encoding='utf-8')
     sys.stderr.reconfigure(encoding='utf-8')
 
+# 尝试导入优化结果记录器
+try:
+    from ml_dl.optimization_result_recorder import OptimizationResultRecorder
+    RECORDER_AVAILABLE = True
+except ImportError:
+    RECORDER_AVAILABLE = False
+    OptimizationResultRecorder = None
+
 
 class OnlineLearner:
     """在线学习模块 - 从实际执行结果学习"""
@@ -33,6 +41,12 @@ class OnlineLearner:
         self.learning_data_path = Path(__file__).parent.parent.parent / "trading_signals" / ".ml_models"
         self.learning_data_path.mkdir(parents=True, exist_ok=True)
         self.params_file = self.learning_data_path / "system_parameters.json"
+        
+        # 初始化优化结果记录器
+        if RECORDER_AVAILABLE:
+            self.recorder = OptimizationResultRecorder(trader_id)
+        else:
+            self.recorder = None
     
     def analyze_execution_results(self, signals_data: List[Dict]) -> Dict:
         """
@@ -235,6 +249,52 @@ class OnlineLearner:
         # 更新参数
         params = self.update_parameters(analysis)
         
+        # 记录优化结果到数据库
+        if self.recorder:
+            try:
+                # 计算数据量
+                data_count = analysis.get('total_signals', 0)
+                
+                # 计算时间跨度（如果有信号数据）
+                time_span_days = None
+                if signals_data:
+                    try:
+                        from datetime import datetime
+                        times = [s.get('signal_time') for s in signals_data if s.get('signal_time')]
+                        if len(times) >= 2:
+                            earliest = min(times)
+                            latest = max(times)
+                            if earliest and latest:
+                                earliest_dt = datetime.fromisoformat(earliest.replace('Z', '+00:00'))
+                                latest_dt = datetime.fromisoformat(latest.replace('Z', '+00:00'))
+                                time_span_days = (latest_dt - earliest_dt).days
+                    except:
+                        pass
+                
+                # 准备性能指标
+                metrics = {
+                    'total_signals': analysis.get('total_signals', 0),
+                    'stopped_count': analysis.get('stopped_count', 0),
+                    'missed_count': analysis.get('missed_count', 0),
+                    'completed_count': analysis.get('completed_count', 0)
+                }
+                
+                # 获取当前参数作为优化前参数
+                current_params = self.get_current_parameters()
+                
+                # 记录结果
+                self.recorder.record_incremental_learning(
+                    data_count=data_count,
+                    time_span_days=time_span_days or 0,
+                    metrics=metrics,
+                    parameters_before=current_params,
+                    parameters_after=params,
+                    improvements=[rec.get('reason', rec.get('suggestion', '')) for rec in analysis.get('recommendations', [])],
+                    notes=f"在线学习：分析了{data_count}个信号"
+                )
+            except Exception as e:
+                print(f"  [WARN] 记录优化结果失败: {e}", file=sys.stderr)
+        
         return {
             'analysis': analysis,
             'parameters': params
@@ -261,6 +321,8 @@ class OnlineLearner:
     
     def close(self):
         """关闭连接"""
+        if self.recorder:
+            self.recorder.close()
         self.db.close()
 
 

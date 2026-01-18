@@ -48,6 +48,8 @@ class AlBrooksEnhancedGeminiPatternMatcher(TalibEnhancedGeminiPatternMatcher):
     
     def __init__(self, use_dl: bool = False, min_confidence: float = 0.0, 
                  exclude_other: bool = True, use_ml: bool = True,
+                 require_trading_signals: bool = False, exclude_unmarked: bool = True,
+                 signal_completeness: str = 'basic',
                  use_talib: bool = True, talib_validation: bool = True,
                  use_al_brooks_patterns: bool = True):
         """
@@ -65,6 +67,9 @@ class AlBrooksEnhancedGeminiPatternMatcher(TalibEnhancedGeminiPatternMatcher):
                 min_confidence=min_confidence,
                 exclude_other=exclude_other,
                 use_ml=use_ml,
+                require_trading_signals=require_trading_signals,
+                exclude_unmarked=exclude_unmarked,
+                signal_completeness=signal_completeness,
                 use_talib=use_talib,
                 talib_validation=talib_validation
             )
@@ -74,7 +79,10 @@ class AlBrooksEnhancedGeminiPatternMatcher(TalibEnhancedGeminiPatternMatcher):
                 use_dl=use_dl,
                 min_confidence=min_confidence,
                 exclude_other=exclude_other,
-                use_ml=use_ml
+                use_ml=use_ml,
+                require_trading_signals=require_trading_signals,
+                exclude_unmarked=exclude_unmarked,
+                signal_completeness=signal_completeness
             )
         
         self.use_al_brooks_patterns = use_al_brooks_patterns and AL_BROOKS_DETECTOR_AVAILABLE

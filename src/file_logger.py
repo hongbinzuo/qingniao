@@ -5,10 +5,14 @@
 - 按日期分文件，便于管理和清理
 - 零外部依赖，只使用Python标准库
 - 高效追加写入
+- 支持详细日志配置（从 config/logging_config.json 读取）
 """
 
 import sys
 import json
+import os
+import gzip
+import shutil
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, Optional, List
@@ -19,24 +23,78 @@ if sys.platform == 'win32':
     sys.stdout.reconfigure(encoding='utf-8')
     sys.stderr.reconfigure(encoding='utf-8')
 
+# 读取日志配置
+_logging_config = None
+
+def _load_logging_config() -> Dict:
+    """加载日志配置文件"""
+    global _logging_config
+    if _logging_config is not None:
+        return _logging_config
+    
+    config_file = Path(__file__).parent.parent / "config" / "logging_config.json"
+    default_config = {
+        "log_level": "DEBUG",
+        "log_dir": "data/logs",
+        "retention_days": 90,
+        "enable_file_logging": True,
+        "enable_console_logging": True,
+        "enable_detailed_progress": True,
+        "enable_timing": True,
+        "enable_performance_metrics": True,
+        "console_format": "detailed",
+        "file_format": "jsonl",
+        "log_process_info": True,
+        "log_command_line": True,
+        "log_environment": False,
+        "log_stderr": True,
+    }
+    
+    if config_file.exists():
+        try:
+            with open(config_file, 'r', encoding='utf-8') as f:
+                _logging_config = json.load(f)
+                # 合并默认配置，确保所有字段都存在
+                for key, value in default_config.items():
+                    if key not in _logging_config:
+                        _logging_config[key] = value
+        except Exception as e:
+            print(f"⚠️ 读取日志配置失败: {e}，使用默认配置", file=sys.stderr)
+            _logging_config = default_config
+    else:
+        _logging_config = default_config
+    
+    return _logging_config
+
+def _get_logging_config() -> Dict:
+    """获取日志配置"""
+    return _load_logging_config()
+
 
 class FileLogger:
     """基于文件的日志记录器"""
     
     def __init__(self, 
-                 log_dir: str = "data/logs",
-                 retention_days: int = 90):
+                 log_dir: str = None,
+                 retention_days: int = None):
         """
         初始化文件日志记录器
         
         Args:
-            log_dir: 日志目录，默认'data/logs'
-            retention_days: 保留天数，默认90天（3个月）
+            log_dir: 日志目录，默认从配置文件读取
+            retention_days: 保留天数，默认从配置文件读取
         """
-        self.log_dir = Path(log_dir)
-        self.retention_days = retention_days
+        config = _get_logging_config()
+        self.log_dir = Path(log_dir or config.get('log_dir', 'data/logs'))
+        self.retention_days = retention_days or config.get('retention_days', 90)
+        self.config = config
         self.log_dir.mkdir(parents=True, exist_ok=True)
         self.available = True  # 文件系统总是可用的
+        self.enable_detailed = config.get('enable_detailed_progress', True)
+        self.enable_timing = config.get('enable_timing', True)
+        self.enable_performance = config.get('enable_performance_metrics', True)
+        self.log_process_info = config.get('log_process_info', True)
+        self.log_command_line = config.get('log_command_line', True)
     
     def _get_log_file_path(self, date: datetime = None) -> Path:
         """获取指定日期的日志文件路径"""
@@ -57,23 +115,72 @@ class FileLogger:
             日志ID（UUID字符串）
         """
         log_file = self._get_log_file_path()
+        now = datetime.now()
         
         # 添加元数据
         log_entry = {
             'id': str(uuid.uuid4()),
-            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'timestamp': now.strftime('%Y-%m-%d %H:%M:%S'),
             'log_type': log_type,
             **data
         }
+        
+        # 如果启用详细日志，添加进程信息
+        if self.log_process_info:
+            try:
+                import psutil
+                process = psutil.Process()
+                log_entry['process_info'] = {
+                    'pid': process.pid,
+                    'cpu_percent': process.cpu_percent(interval=0.1),
+                    'memory_mb': process.memory_info().rss / 1024 / 1024,
+                }
+            except (ImportError, Exception):
+                pass  # psutil 不可用时跳过
+        
+        # 如果启用命令行记录
+        if self.log_command_line:
+            try:
+                import sys
+                log_entry['command_line'] = ' '.join(sys.argv)
+            except Exception:
+                pass
         
         # 追加写入JSON Lines格式（每行一个JSON对象）
         try:
             with open(log_file, 'a', encoding='utf-8') as f:
                 f.write(json.dumps(log_entry, ensure_ascii=False) + '\n')
+            
+            # 同时输出到控制台（如果启用）
+            if self.config.get('enable_console_logging', True):
+                self._console_log(log_entry)
+            
             return log_entry['id']
         except Exception as e:
             print(f"⚠️ 写入日志失败: {e}", file=sys.stderr)
             return None
+    
+    def _console_log(self, log_entry: Dict):
+        """输出到控制台（格式化输出）"""
+        if not self.config.get('enable_console_logging', True):
+            return
+        
+        format_type = self.config.get('console_format', 'simple')
+        timestamp = log_entry.get('timestamp', '')
+        log_type = log_entry.get('log_type', '')
+        
+        if format_type == 'detailed':
+            level = log_entry.get('log_level', 'INFO').upper()
+            operation_type = log_entry.get('operation_type', '')
+            message = log_entry.get('operation_details', {}).get('message', '')
+            if not message:
+                message = json.dumps(log_entry.get('operation_details', {}), ensure_ascii=False)
+            print(f"[{timestamp}] [{level}] [{log_type}] {operation_type}: {message}", flush=True)
+        else:
+            # 简单格式
+            operation_type = log_entry.get('operation_type', '')
+            message = log_entry.get('operation_details', {}).get('message', '')
+            print(f"[{timestamp}] [{log_type}] {operation_type}: {message}", flush=True)
     
     def log_conversation(self,
                         user_message: str,
@@ -160,7 +267,9 @@ class FileLogger:
                      log_level: str = 'info',
                      timestamp: str = None,
                      btc_price: Optional[float] = None,
-                     raw_data: Optional[Dict] = None) -> Optional[str]:
+                     raw_data: Optional[Dict] = None,
+                     timing: Optional[Dict] = None,
+                     progress: Optional[Dict] = None) -> Optional[str]:
         """
         记录系统操作日志
         
@@ -171,6 +280,8 @@ class FileLogger:
             timestamp: 时间戳
             btc_price: BTC价格
             raw_data: 原始数据
+            timing: 时间统计 {'start_time': ..., 'end_time': ..., 'duration': ...}
+            progress: 进度信息 {'current': ..., 'total': ..., 'percent': ...}
         
         Returns:
             日志ID
@@ -186,6 +297,14 @@ class FileLogger:
             data['timestamp'] = timestamp
         if raw_data:
             data['raw_data'] = raw_data
+        
+        # 添加时间统计
+        if self.enable_timing and timing:
+            data['timing'] = timing
+        
+        # 添加进度信息
+        if self.enable_detailed and progress:
+            data['progress'] = progress
         
         return self._write_log('operation', data)
     
@@ -464,6 +583,90 @@ class FileLogger:
                 stats['newest_date'] = max(dates).strftime('%Y-%m-%d')
         
         return stats
+    
+    def log_progress(self,
+                    operation_type: str,
+                    current: int,
+                    total: int,
+                    message: str = None,
+                    details: Dict = None) -> Optional[str]:
+        """
+        记录进度信息（详细日志）
+        
+        Args:
+            operation_type: 操作类型
+            current: 当前进度
+            total: 总数
+            message: 进度消息
+            details: 额外详情
+        
+        Returns:
+            日志ID
+        """
+        percent = (current / total * 100) if total > 0 else 0
+        progress_info = {
+            'current': current,
+            'total': total,
+            'percent': round(percent, 2),
+        }
+        if message:
+            progress_info['message'] = message
+        
+        operation_details = {
+            'message': message or f"进度: {current}/{total} ({percent:.1f}%)",
+            **(details or {})
+        }
+        
+        return self.log_operation(
+            operation_type=operation_type,
+            operation_details=operation_details,
+            log_level='info',
+            progress=progress_info
+        )
+    
+    def log_timing(self,
+                  operation_type: str,
+                  start_time: datetime,
+                  end_time: datetime = None,
+                  duration_seconds: float = None,
+                  message: str = None,
+                  details: Dict = None) -> Optional[str]:
+        """
+        记录时间统计（详细日志）
+        
+        Args:
+            operation_type: 操作类型
+            start_time: 开始时间
+            end_time: 结束时间（可选）
+            duration_seconds: 持续时间（秒，可选）
+            message: 消息
+            details: 额外详情
+        
+        Returns:
+            日志ID
+        """
+        if end_time is None:
+            end_time = datetime.now()
+        if duration_seconds is None:
+            duration_seconds = (end_time - start_time).total_seconds()
+        
+        timing_info = {
+            'start_time': start_time.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
+            'end_time': end_time.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
+            'duration_seconds': round(duration_seconds, 3),
+        }
+        
+        operation_details = {
+            'message': message or f"耗时: {duration_seconds:.3f}秒",
+            **(details or {})
+        }
+        
+        return self.log_operation(
+            operation_type=operation_type,
+            operation_details=operation_details,
+            log_level='info',
+            timing=timing_info
+        )
 
 
 # 全局实例

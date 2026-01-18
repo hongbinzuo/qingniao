@@ -1,28 +1,16 @@
 {
   "status": {
-    "timestamp": "2026-01-10 09:20:23",
+    "timestamp": "2026-01-18 03:08:26",
     "version": "1.0",
     "system": {
       "abu": {
-        "signals_count": 73,
-        "latest_signal": "2026-01-09 12:18:10",
-        "pattern_count": 1004,
-        "pattern_classified": 850,
-        "pattern_ocr_extracted": 5
+        "error": ""
       },
       "de": {
-        "signals_count": 105,
-        "latest_signal": "2026-01-05 21:28:59",
-        "pattern_count": null,
-        "pattern_classified": null,
-        "pattern_ocr_extracted": null
+        "error": ""
       },
       "dream": {
-        "signals_count": 0,
-        "latest_signal": null,
-        "pattern_count": null,
-        "pattern_classified": null,
-        "pattern_ocr_extracted": null
+        "error": ""
       }
     },
     "files": {
@@ -72,5 +60,5 @@
       "模式库实时匹配方案已设计"
     ]
   },
-  "last_updated": "2026-01-10 09:20:23"
+  "last_updated": "2026-01-18 03:08:26"
 }

@@ -222,7 +222,7 @@ def main():
         print(f"✓ 已写入 {written_count} 个信号到数据库")
     
     # 生成Markdown文件
-    out_file = ROOT / 'trading_signals' / f"ABU_Gemini_top{args.top}_{datetime.now().strftime('%Y%m%d_%H%M')}.md"
+    out_file = ROOT / 'outputs' / 'trading_signals' / f"ABU_Gemini_top{args.top}_{datetime.now().strftime('%Y%m%d_%H%M')}.md"
     out_file.parent.mkdir(parents=True, exist_ok=True)
     
     lines = [
@@ -252,4 +252,6 @@ def main():
 
 if __name__ == '__main__':
     sys.exit(main())
+
+
 

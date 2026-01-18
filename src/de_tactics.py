@@ -133,3 +133,59 @@ def build_confirm_long(current_price: float,
         'stop_distance_points': float(entry - stop_loss),
     }
 
+
+def build_confirm_short(current_price: float,
+                        k15: List[Dict], k5: List[Dict],
+                        default_stop_pts: float = 400.0) -> Optional[Dict]:
+    """构建一条“确认空”信号：
+    - 15m 近段 swing OTE 回抽区间（用于空头：价格向上回抽至 0.618–0.786）
+    - 5m 确认（上影明显/吞没 + 放量）
+    - 入场=当前价；止损=当前价+default_stop_pts；TP1/TP2=1R/2R
+    - RR>=1.2
+    """
+    if not k15 or not k5:
+        return None
+    last = k15[-50:]
+    hi = max(c['high'] for c in last)
+    lo = min(c['low'] for c in last)
+    fib = _calc_fib_ote(lo, hi)
+    f618, f786 = fib['fib_618'], fib['fib_786']
+    loz, hiz = min(f618, f786), max(f618, f786)
+    in_zone = (loz * 0.998) <= current_price <= (hiz * 1.002)
+    # 5m 确认：上影针或看跌吞没 + 放量
+    vol = [c.get('volume', 0) or 0 for c in k5[-20:]] or [0]
+    avgv = mean(vol) if vol else 0
+    recent = k5[-3:]
+    confirm = False
+    for c in recent:
+        body = abs(c['close'] - c['open'])
+        upper_wick = c['high'] - (c['open'] if c['open'] >= c['close'] else c['close'])
+        engulf = False
+        if len(k5) >= 2:
+            p = k5[-2]
+            engulf = (c['close'] < p['open'] and c['open'] > p['close'])
+        if (upper_wick > body * 1.5 or engulf) and c.get('volume', 0) >= (avgv * 1.05):
+            confirm = True
+            break
+    if not (in_zone and confirm):
+        return None
+    entry = float(current_price)
+    stop_loss = float(entry + default_stop_pts)
+    take_profit_1 = float(entry - default_stop_pts)
+    take_profit_2 = float(entry - 2 * default_stop_pts)
+    rr = (entry - take_profit_1) / (stop_loss - entry) if (stop_loss - entry) > 0 else 0
+    if rr < 1.2:
+        return None
+    return {
+        'type': 'short',
+        'strength': 'medium',
+        'entry': entry,
+        'stop_loss': stop_loss,
+        'take_profit_1': take_profit_1,
+        'take_profit_2': take_profit_2,
+        'entry_model': 'DeConfirmShort',
+        'reason': '15m OTE 回抽 + 5m 拒绝确认（上影/吞没+放量）',
+        'stop_rule': 'fixed_pts_persona',
+        'tp_rule': '1R/2R',
+        'stop_distance_points': float(stop_loss - entry),
+    }

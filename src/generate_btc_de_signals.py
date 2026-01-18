@@ -48,16 +48,11 @@ try:
         calculate_atr_percent,
         assess_volatility_level,
         calculate_risk_reward_ratio,
-        analyze_signal_with_volatility,
-        calculate_dynamic_atr,
-        calculate_adaptive_volatility,
-        get_enhanced_volatility_analysis,
-        get_options_implied_volatility
+        analyze_signal_with_volatility
     )
     VOLATILITY_ANALYZER_AVAILABLE = True
-except ImportError as e:
+except ImportError:
     VOLATILITY_ANALYZER_AVAILABLE = False
-    print(f"警告: 无法导入波动率分析模块 ({e})，将跳过波动率和盈亏比分析", file=sys.stderr)
 
 def get_btc_kline_gateio(timeframe='5m', limit=200):
     """从Gate.io获取BTC K线数据"""
