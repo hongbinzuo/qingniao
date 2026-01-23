@@ -12,6 +12,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
+from collections import defaultdict
+
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "src"
 SCRIPTS = ROOT / "scripts"
@@ -22,6 +24,7 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 from db_manager_trader import TraderDBManager
+from vision_taxonomy import load_taxonomy_mapping, map_value_lenient
 
 try:
     from clean_vision_schema import clean_record
@@ -97,31 +100,39 @@ def _extract_primary_pattern(record: Dict[str, Any]) -> Optional[Dict[str, Any]]
     return None
 
 
-def _pick_pattern_name(pattern: Optional[Dict[str, Any]]) -> Optional[str]:
+def _pick_pattern_name(
+    pattern: Optional[Dict[str, Any]],
+    taxonomy: Dict[str, Dict[str, str]],
+) -> Optional[str]:
     if not pattern:
         return None
     name = pattern.get("pattern_name")
     if name:
-        return name
+        mapped = map_value_lenient(name, taxonomy.get("pattern_name", {}))
+        return mapped
     raw = pattern.get("raw")
     if isinstance(raw, dict):
         raw_name = raw.get("pattern_name")
         if raw_name:
-            return raw_name
+            mapped = map_value_lenient(raw_name, taxonomy.get("pattern_name_raw", {}))
+            return mapped
     return None
 
 
-def _pick_pattern_type(pattern: Optional[Dict[str, Any]]) -> Optional[str]:
+def _pick_pattern_type(
+    pattern: Optional[Dict[str, Any]],
+    taxonomy: Dict[str, Dict[str, str]],
+) -> Optional[str]:
     if not pattern:
         return None
     value = pattern.get("pattern_type") or pattern.get("pattern_family")
     if value:
-        return value
+        return map_value_lenient(value, taxonomy.get("pattern_type", {}))
     raw = pattern.get("raw")
     if isinstance(raw, dict):
         raw_value = raw.get("pattern_type") or raw.get("pattern_family")
         if raw_value:
-            return raw_value
+            return map_value_lenient(raw_value, taxonomy.get("pattern_type", {}))
     return None
 
 
@@ -178,15 +189,110 @@ def _parse_page(page_val: Any) -> Optional[int]:
     return None
 
 
+def _is_missing(value: Any) -> bool:
+    if value is None:
+        return True
+    if isinstance(value, str):
+        trimmed = value.strip()
+        if not trimmed:
+            return True
+        if trimmed.lower() in {"null", "none", "unknown"}:
+            return True
+    return False
+
+
+def _collect_duplicates(values: List[Any]) -> List[Dict[str, Any]]:
+    seen: Dict[Any, List[int]] = defaultdict(list)
+    for idx, val in enumerate(values):
+        if _is_missing(val):
+            continue
+        seen[val].append(idx)
+    duplicates = []
+    for val, indices in seen.items():
+        if len(indices) > 1:
+            duplicates.append({"value": val, "count": len(indices), "indices": indices})
+    return duplicates
+
+
+def _validate_records(
+    records: List[Dict[str, Any]],
+    expected_count: Optional[int],
+    required_fields: Optional[List[str]],
+) -> Dict[str, Any]:
+    required_fields = required_fields or []
+    missing_required = []
+    image_ids = []
+    pages = []
+
+    for idx, record in enumerate(records):
+        missing = []
+        for field in required_fields:
+            if _is_missing(record.get(field)):
+                missing.append(field)
+        if missing:
+            missing_required.append(
+                {
+                    "index": idx,
+                    "image_id": record.get("image_id") or record.get("image"),
+                    "page": record.get("page"),
+                    "missing_fields": missing,
+                }
+            )
+        image_ids.append(record.get("image_id") or record.get("image"))
+        pages.append(_parse_page(record.get("page")) or record.get("page"))
+
+    duplicates = {
+        "image_id": _collect_duplicates(image_ids),
+        "page": _collect_duplicates(pages),
+    }
+    count_mismatch = expected_count is not None and len(records) != expected_count
+    has_issues = bool(missing_required or duplicates["image_id"] or duplicates["page"] or count_mismatch)
+
+    return {
+        "expected_count": expected_count,
+        "actual_count": len(records),
+        "count_mismatch": count_mismatch,
+        "missing_required_fields": missing_required,
+        "duplicate_image_ids": duplicates["image_id"],
+        "duplicate_pages": duplicates["page"],
+        "has_issues": has_issues,
+    }
+
+
+def _write_validation_report(path: Path, report: Dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=2)
+
+
 def ingest_batch(
     input_path: Path,
     raw_dir: Optional[Path],
     clean_dir: Optional[Path],
     skip_existing: bool,
     dry_run: bool,
+    taxonomy_map: Optional[Path] = None,
+    expected_count: Optional[int] = None,
+    required_fields: Optional[List[str]] = None,
+    validation_dir: Optional[Path] = None,
+    strict_validation: bool = False,
 ) -> int:
     db = TraderDBManager("abu")
     conn = db._get_connection()
+
+    records = list(_iter_records(input_path))
+    taxonomy = load_taxonomy_mapping(taxonomy_map)
+    validation = _validate_records(records, expected_count, required_fields)
+    validation["source_file"] = input_path.name
+    validation["checked_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    if validation_dir:
+        stem = input_path.stem if input_path.suffix else input_path.name
+        _write_validation_report(validation_dir / f"{stem}_validation.json", validation)
+    if validation["has_issues"]:
+        print("Validation issues detected:")
+        print(json.dumps(validation, ensure_ascii=False, indent=2))
+        if strict_validation:
+            raise ValueError("Batch validation failed")
 
     total = 0
     matched = 0
@@ -195,7 +301,7 @@ def ingest_batch(
     errors = 0
     cleaned = 0
 
-    for record in _iter_records(input_path):
+    for record in records:
         total += 1
         image_id = record.get("image_id") or record.get("image")
         page_num = _parse_page(record.get("page"))
@@ -229,8 +335,8 @@ def ingest_batch(
                 continue
 
         pattern = _extract_primary_pattern(record)
-        pattern_name = _pick_pattern_name(pattern)
-        pattern_type = _pick_pattern_type(pattern)
+        pattern_name = _pick_pattern_name(pattern, taxonomy)
+        pattern_type = _pick_pattern_type(pattern, taxonomy)
         direction = _pick_direction(record, pattern)
         confidence = _pick_confidence(record, pattern)
         timeframe_hint = record.get("timeframe_hint")
@@ -298,6 +404,19 @@ def main() -> int:
     parser.add_argument("--skip-existing", action="store_true", default=True)
     parser.add_argument("--no-skip-existing", dest="skip_existing", action="store_false")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--expected-count", type=int, default=None)
+    parser.add_argument("--required-fields", default="image_id,page")
+    parser.add_argument(
+        "--taxonomy-map",
+        default=str(ROOT / "outputs" / "abu_deep_analysis" / "reports" / "taxonomy_mapping.json"),
+        help="Taxonomy mapping JSON for pattern normalization.",
+    )
+    parser.add_argument(
+        "--validation-dir",
+        default=str(ROOT / "outputs" / "abu_deep_analysis" / "validation_reports"),
+        help="Directory to store validation reports.",
+    )
+    parser.add_argument("--strict-validation", action="store_true")
     args = parser.parse_args()
 
     input_path = Path(args.input)
@@ -311,12 +430,20 @@ def main() -> int:
         print("clean_vision_schema not available; skip cleaning.", file=sys.stderr)
         clean_dir = None
 
+    required_fields = [field.strip() for field in args.required_fields.split(",") if field.strip()]
+    validation_dir = Path(args.validation_dir) if args.validation_dir else None
+
     return ingest_batch(
         input_path=input_path,
         raw_dir=raw_dir,
         clean_dir=clean_dir,
         skip_existing=args.skip_existing,
         dry_run=args.dry_run,
+        taxonomy_map=Path(args.taxonomy_map) if args.taxonomy_map else None,
+        expected_count=args.expected_count,
+        required_fields=required_fields,
+        validation_dir=validation_dir,
+        strict_validation=args.strict_validation,
     )
 
 

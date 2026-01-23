@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Qingniao-Abu Detectors (15m)
+Qingniao-Abu Detectors (15m/1h)
 
 Lightweight price-action detectors designed for 15m scan:
 - inside_bar: last candle's range inside previous candle.
@@ -146,12 +146,12 @@ def detect_pin_bar(kl: List[Dict], wick_ratio: float = 1.5, body_max_frac: float
     return out
 
 
-def detect_key_levels(kl: List[Dict], tol_pct: float = 0.003) -> List[Dict]:
+def detect_key_levels(kl: List[Dict], tol_pct: float = 0.003, lookback: int = 20) -> List[Dict]:
     if not kl:
         return []
     c = kl[-1]
     price = c['close']
-    hh, ll = _recent_hh_ll(kl, 20)
+    hh, ll = _recent_hh_ll(kl, lookback)
     round_lv = _nearest_round(price)
     out: List[Dict] = []
     def _near(a: float, b: float) -> bool:
@@ -195,3 +195,17 @@ def detect_all_15m(kl: List[Dict]) -> List[Dict]:
             dedup[key] = s
     return list(dedup.values())
 
+
+def detect_all_1h(kl: List[Dict]) -> List[Dict]:
+    """Stricter detectors for 1h timeframe to reduce noise."""
+    out: List[Dict] = []
+    out.extend(detect_inside_bar(kl))
+    out.extend(detect_engulfing(kl))
+    out.extend(detect_pin_bar(kl, wick_ratio=2.0, body_max_frac=0.35))
+    out.extend(detect_key_levels(kl, tol_pct=0.004, lookback=30))
+    dedup = {}
+    for s in out:
+        key = (s['type'], round(s['entry'] / 0.001))
+        if key not in dedup or dedup[key]['score_hint'] < s['score_hint']:
+            dedup[key] = s
+    return list(dedup.values())

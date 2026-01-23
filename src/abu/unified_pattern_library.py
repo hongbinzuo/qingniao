@@ -226,7 +226,6 @@ class UnifiedPatternLibrary:
             FROM pattern_library
             WHERE gemini_annotation_json IS NOT NULL 
               AND gemini_annotation_json != ''
-              AND (pattern_type IS NULL OR pattern_type != 'other' OR pattern_type = '')
             ORDER BY id
         '''
         

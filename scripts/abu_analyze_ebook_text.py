@@ -32,6 +32,13 @@ ENTRY_KEYWORDS = ['enter', 'buy', 'sell', 'go long', 'go short', 'take', 'trade'
 STOP_LOSS_KEYWORDS = ['stop loss', 'stop', 'risk', 'protect', 'below', 'above']
 TAKE_PROFIT_KEYWORDS = ['take profit', 'target', 'exit', 'profit', 'reward']
 
+def infer_author(book_title: str) -> str:
+    """Infer author name from book title for Brooks ebooks."""
+    title = (book_title or '').lower()
+    if 'brooks' in title or 'price action' in title:
+        return 'Al Brooks'
+    return 'Al Brooks'
+
 def extract_patterns_from_text(text: str) -> List[str]:
     """从文本中提取模式名称"""
     patterns_found = []
@@ -195,7 +202,14 @@ def main():
     # 连接数据库
     db = TraderDBManager('abu')
     conn = db._get_connection()
-    
+
+    # 确保author字段存在（兼容旧表结构）
+    try:
+        conn.execute('ALTER TABLE ebook_knowledge_base ADD COLUMN IF NOT EXISTS author TEXT')
+        conn.commit()
+    except Exception:
+        pass
+
     # 清空旧数据（如果存在同名书籍，先删除）
     # 可以手动控制，这里默认不清空，只追加
     # conn.execute('DELETE FROM ebook_knowledge_base')
@@ -210,6 +224,7 @@ def main():
             book_data = json.load(f)
         
         book_title = book_data.get('book_title', json_file.stem.replace('_extracted', ''))
+        author = infer_author(book_title)
         
         # 分析书籍
         knowledge_items = analyze_book(book_data, book_title)
@@ -223,13 +238,14 @@ def main():
             
             conn.execute('''
                 INSERT INTO ebook_knowledge_base 
-                (id, book_title, chapter_number, chapter_title, section_title, 
-                 content_type, content_text, extracted_patterns, trading_rules_json, 
+                (id, book_title, author, chapter_number, chapter_title, section_title,
+                 content_type, content_text, extracted_patterns, trading_rules_json,
                  key_concepts, related_image_path, page_number, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 next_id,
                 item['book_title'],
+                author,
                 item['chapter_number'],
                 item['chapter_title'],
                 item['section_title'],
@@ -274,4 +290,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

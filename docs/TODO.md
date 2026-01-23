@@ -13,9 +13,12 @@ Template
 - [ ] YYYY-MM-DD scope: short description (owner?)
 
 Inbox (today/next)
+- [ ] 2026-01-19 Klines: backfill POL 15m (Gate) + XMR 15m (Binance) for range 1760343319-1768119593; prior attempts timed out; store into Postgres `klines` (exchange=gate/binance)
 - [ ] 2026-01-08 Abu: First PDF sampling run (set `PDF_IN`, `PDF_PAGES=1000`; run `scripts\abu_upgrade_and_run.bat`); expect `data/abu/raw_pages.jsonl` and `config/abu_patterns.yaml`
 - [ ] 2026-01-08 Abu: Tune detectors/ranker using `config/abu_patterns.yaml`; adjust scoring weights
 - [ ] 2026-01-08 API/UI: Add `/api/abu/history` + multi-chart (ECharts), dynamic top symbols + stablecoin-filter config
+- [ ] 2026-01-19 Vision (Phase-2, do first): after 1000 images, align slides to market data (timestamp/bar mapping) and build a backtest-ready dataset
+- [ ] 2026-01-19 Vision (Phase-1, do after Phase-2): build offline signal generator using cleaned annotations; emit trial signals to `outputs/trading_signals/`
 
 In Progress
 - [ ] 

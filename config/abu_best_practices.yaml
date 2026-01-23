@@ -1,0 +1,14 @@
+# ABU best-practice rulebook (ebook + pattern guidance)
+enabled: true
+rules:
+  require_pattern_match: false
+  min_pattern_score: 0.2
+  min_brooks_score: 0.2
+  allowed_brooks_status: ["pass", "warn"]
+  allow_against_trend: false
+  strong_trend_threshold: 0.02
+  range_mode_only_patterns: ["trading_range", "range"]
+  trend_mode_avoid_patterns: ["trading_range"]
+  require_breakout_confirmation: true
+  max_stop_pct: 0.02
+  min_rr: 1.0

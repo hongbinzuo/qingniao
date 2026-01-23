@@ -13,6 +13,12 @@ import re
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
+try:
+    from vision_taxonomy import load_taxonomy_mapping, map_value_strict
+except Exception:
+    load_taxonomy_mapping = None
+    map_value_strict = None
+
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_INPUT = ROOT / "outputs" / "abu_deep_analysis" / "json"
 DEFAULT_OUTPUT = ROOT / "outputs" / "abu_deep_analysis" / "clean_json"
@@ -47,13 +53,49 @@ ALLOWED_PATTERN_NAME = {
     "Nested Expanding Triangle",
     "Expanding Triangle",
     "Wedge Top",
+    "Wedge Bottom",
+    "Wedge",
+    "Parabolic Wedge",
+    "Parabolic Wedge Top",
+    "Parabolic Wedge Bottom",
+    "Nested Wedge",
+    "Nested Wedge Top",
+    "Nested Wedge Bottom",
+    "Late Wedge Bottom",
     "Truncated Wedge Bottom",
+    "Wedge Reversal",
     "Bull Measuring Gap",
+    "Bear Measuring Gap",
     "Exhaustion Gap",
+    "20-Gap Bar Buy",
     "Small Pullback Bull Trend",
+    "Small Pullback Bear Trend",
     "Bull Trend",
+    "Bear Trend",
+    "Bull Trend From Open",
+    "Bear Trend From Open",
+    "Bull Micro Channel",
+    "Bear Micro Channel",
+    "Spike and Channel Bear Trend",
+    "Broad Bear Channel",
+    "Trading Range",
+    "Trading Range Day",
+    "Trading Range Open",
+    "Breakout Test",
+    "Failed Bull Breakout",
+    "Bull Trap",
+    "Bear Surprise",
+    "Trend Resumption",
+    "Ledge Top",
     "Double Bottom",
     "Double Top",
+    "Higher Low Double Bottom",
+    "Lower Low Double Bottom",
+    "Higher High Double Top",
+    "Lower High Double Top",
+    "Higher Low Major Trend Reversal",
+    "Head and Shoulders",
+    "Swing Up",
 }
 ALLOWED_PATTERN_STATUS = {"confirmed", "suspected", "failed", "invalidated"}
 
@@ -89,15 +131,68 @@ SHORT_PHRASE_MAP = {
     "mm": "measured move",
 }
 
+PERCENT_RE = re.compile(r"(\\d+(?:\\.\\d+)?)\\s*%")
+BAR_NUMBER_RE = re.compile(r"\\bbar\\s*(\\d+)\\b", re.IGNORECASE)
+LEG_RE = re.compile(r"\\b(\\d+)(?:st|nd|rd|th)?\\s+leg\\b", re.IGNORECASE)
+HL_LABEL_RE = re.compile(r"\\b([HL][12])\\b")
+SWING_LABEL_RE = re.compile(r"\\b(HH|LH|HL|LL)\\b")
+
 PATTERN_NAME_ALIASES = {
     "nested expanding triangle": "Nested Expanding Triangle",
     "expanding triangle": "Expanding Triangle",
     "wedge top": "Wedge Top",
+    "wedge bottom": "Wedge Bottom",
+    "parabolic wedge top": "Parabolic Wedge Top",
+    "parabolic wedge bottom": "Parabolic Wedge Bottom",
+    "parabolic wedge": "Parabolic Wedge",
+    "nested wedge top": "Nested Wedge Top",
+    "nested wedge bottom": "Nested Wedge Bottom",
+    "nested wedge": "Nested Wedge",
+    "late wedge bottom": "Late Wedge Bottom",
     "truncated wedge bottom": "Truncated Wedge Bottom",
+    "wedge reversal": "Wedge Reversal",
+    "wedge": "Wedge",
     "bull measuring gap": "Bull Measuring Gap",
+    "bear measuring gap": "Bear Measuring Gap",
     "exhaustion gap": "Exhaustion Gap",
+    "20-gap bar buy": "20-Gap Bar Buy",
+    "20 gap bar buy": "20-Gap Bar Buy",
     "small pullback bull trend": "Small Pullback Bull Trend",
+    "small pullback bear trend": "Small Pullback Bear Trend",
+    "small pb bear trend": "Small Pullback Bear Trend",
+    "bull trend from open": "Bull Trend From Open",
+    "bear trend from open": "Bear Trend From Open",
     "bull trend": "Bull Trend",
+    "bear trend": "Bear Trend",
+    "bull micro channel": "Bull Micro Channel",
+    "bear micro channel": "Bear Micro Channel",
+    "spike and channel bear trend": "Spike and Channel Bear Trend",
+    "broad bear channel": "Broad Bear Channel",
+    "trading range day": "Trading Range Day",
+    "trading range open": "Trading Range Open",
+    "trading range": "Trading Range",
+    "breakout test": "Breakout Test",
+    "failed bull breakout": "Failed Bull Breakout",
+    "bull trap": "Bull Trap",
+    "bear surprise": "Bear Surprise",
+    "trend resumption": "Trend Resumption",
+    "ledge top": "Ledge Top",
+    "higher low double bottom": "Higher Low Double Bottom",
+    "lower low double bottom": "Lower Low Double Bottom",
+    "lower high double top": "Lower High Double Top",
+    "higher high double top": "Higher High Double Top",
+    "hl db": "Higher Low Double Bottom",
+    "ll db": "Lower Low Double Bottom",
+    "lh dt": "Lower High Double Top",
+    "hh dt": "Higher High Double Top",
+    "dt lh mtr": "Lower High Double Top",
+    "lh dt mtr": "Lower High Double Top",
+    "hl mtr": "Higher Low Major Trend Reversal",
+    "higher low major trend reversal": "Higher Low Major Trend Reversal",
+    "head and shoulders": "Head and Shoulders",
+    "swing up": "Swing Up",
+    "double bottom bull flag": "Double Bottom",
+    "db bull flag": "Double Bottom",
     "double bottom": "Double Bottom",
     "double top": "Double Top",
 }
@@ -106,14 +201,52 @@ PATTERN_NAME_TO_TYPE = {
     "Nested Expanding Triangle": ("triangle", "triangle"),
     "Expanding Triangle": ("triangle", "triangle"),
     "Wedge Top": ("wedge", "wedge"),
+    "Wedge Bottom": ("wedge", "wedge"),
+    "Wedge": ("wedge", "wedge"),
+    "Parabolic Wedge": ("wedge", "wedge"),
+    "Parabolic Wedge Top": ("wedge", "wedge"),
+    "Parabolic Wedge Bottom": ("wedge", "wedge"),
+    "Nested Wedge": ("wedge", "wedge"),
+    "Nested Wedge Top": ("wedge", "wedge"),
+    "Nested Wedge Bottom": ("wedge", "wedge"),
+    "Late Wedge Bottom": ("wedge", "wedge"),
     "Truncated Wedge Bottom": ("wedge", "wedge"),
+    "Wedge Reversal": ("wedge", "wedge"),
     "Bull Measuring Gap": ("gap", "gap"),
+    "Bear Measuring Gap": ("gap", "gap"),
     "Exhaustion Gap": ("gap", "gap"),
+    "20-Gap Bar Buy": ("gap", "gap"),
     "Small Pullback Bull Trend": ("trend", "trend"),
+    "Small Pullback Bear Trend": ("trend", "trend"),
     "Bull Trend": ("trend", "trend"),
+    "Bear Trend": ("trend", "trend"),
+    "Bull Trend From Open": ("trend", "trend"),
+    "Bear Trend From Open": ("trend", "trend"),
+    "Bull Micro Channel": ("trend", "trend"),
+    "Bear Micro Channel": ("trend", "trend"),
+    "Spike and Channel Bear Trend": ("trend", "trend"),
+    "Broad Bear Channel": ("trend", "trend"),
+    "Trading Range": ("range", "range"),
+    "Trading Range Day": ("range", "range"),
+    "Trading Range Open": ("range", "range"),
+    "Breakout Test": ("breakout", "breakout"),
+    "Failed Bull Breakout": ("breakout", "breakout"),
+    "Bull Trap": ("breakout", "breakout"),
+    "Bear Surprise": ("reversal", "reversal"),
+    "Trend Resumption": ("trend", "trend"),
+    "Ledge Top": ("range", "range"),
     "Double Bottom": ("double_top_bottom", "reversal"),
     "Double Top": ("double_top_bottom", "reversal"),
+    "Higher Low Double Bottom": ("double_top_bottom", "reversal"),
+    "Lower Low Double Bottom": ("double_top_bottom", "reversal"),
+    "Higher High Double Top": ("double_top_bottom", "reversal"),
+    "Lower High Double Top": ("double_top_bottom", "reversal"),
+    "Higher Low Major Trend Reversal": ("reversal", "reversal"),
+    "Head and Shoulders": ("reversal", "reversal"),
+    "Swing Up": ("trend", "trend"),
 }
+
+TAXONOMY_MAPPING = load_taxonomy_mapping() if load_taxonomy_mapping else {}
 
 
 def _normalize_null(value: Any) -> Any:
@@ -265,6 +398,13 @@ def _normalize_pattern_name(value: Any) -> Optional[str]:
     value = _normalize_null(value)
     if value is None or not isinstance(value, str):
         return None
+    if TAXONOMY_MAPPING and map_value_strict:
+        mapped = map_value_strict(value, TAXONOMY_MAPPING.get("pattern_name", {}))
+        if mapped in ALLOWED_PATTERN_NAME:
+            return mapped
+        mapped = map_value_strict(value, TAXONOMY_MAPPING.get("pattern_name_raw", {}))
+        if mapped in ALLOWED_PATTERN_NAME:
+            return mapped
     lowered = value.lower()
     for key, canonical in PATTERN_NAME_ALIASES.items():
         if key in lowered:
@@ -299,6 +439,225 @@ def _normalize_feature(value: Any) -> Optional[str]:
     return None
 
 
+def _extract_probabilities(texts: List[str]) -> List[Dict[str, Any]]:
+    results: List[Dict[str, Any]] = []
+    for text in texts:
+        if not text:
+            continue
+        for match in PERCENT_RE.finditer(text):
+            try:
+                pct = float(match.group(1))
+            except (TypeError, ValueError):
+                continue
+            prob = round(pct / 100.0, 4)
+            tail = text[match.end():].strip()
+            tail = tail.lstrip(" .,:;-")
+            tail = re.sub(r"^(chance|probability)\\s*(of|for)?\\s*", "", tail, flags=re.IGNORECASE)
+            tail = re.sub(r"^of\\s+", "", tail, flags=re.IGNORECASE)
+            target = tail.strip() or text.strip()
+            results.append({"target": target, "probability": prob})
+    return results
+
+
+def _extract_targets(texts: List[str]) -> List[Dict[str, Any]]:
+    results: List[Dict[str, Any]] = []
+    for text in texts:
+        if not text:
+            continue
+        lowered = text.lower()
+        if "measured move" in lowered or re.search(r"\\bmm\\b", lowered):
+            results.append({"target": "measured move", "probability": None})
+        if "test of" in lowered:
+            results.append({"target": text.strip(), "probability": None})
+    return results
+
+
+def _merge_targets(
+    existing: List[Dict[str, Any]],
+    extra: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    merged = list(existing)
+    seen = set()
+    for item in merged:
+        target = item.get("target")
+        prob = item.get("probability")
+        key = (str(target).lower() if target else "", prob)
+        seen.add(key)
+    for item in extra:
+        target = item.get("target")
+        prob = item.get("probability")
+        key = (str(target).lower() if target else "", prob)
+        if key in seen:
+            continue
+        seen.add(key)
+        merged.append(item)
+    return merged
+
+
+def _extract_bar_number(texts: List[str]) -> Optional[int]:
+    for text in texts:
+        if not text:
+            continue
+        match = BAR_NUMBER_RE.search(text)
+        if match:
+            return int(match.group(1))
+    return None
+
+
+def _extract_leg_count(texts: List[str]) -> Optional[int]:
+    leg_count = None
+    for text in texts:
+        if not text:
+            continue
+        for match in LEG_RE.finditer(text):
+            try:
+                value = int(match.group(1))
+            except (TypeError, ValueError):
+                continue
+            leg_count = max(leg_count or 0, value)
+    return leg_count
+
+
+def _extract_sequence_labels(texts: List[str]) -> List[str]:
+    labels = set()
+    for text in texts:
+        if not text:
+            continue
+        for match in HL_LABEL_RE.findall(text):
+            labels.add(match.upper())
+        for match in SWING_LABEL_RE.findall(text):
+            labels.add(match.upper())
+    return sorted(labels)
+
+
+def _extract_ema_interaction(texts: List[str]) -> Dict[str, Any]:
+    gap_bar = None
+    touch_test = None
+    distance_desc = None
+    for text in texts:
+        if not text:
+            continue
+        lowered = text.lower()
+        if "20-gap" in lowered or "gap bar" in lowered:
+            gap_bar = True
+        if "ema" in lowered:
+            if any(token in lowered for token in ("touch", "test", "retest", "probe")):
+                touch_test = True
+            if "far above ema" in lowered:
+                distance_desc = "far_above"
+            elif "far below ema" in lowered:
+                distance_desc = "far_below"
+            elif "near ema" in lowered or "close to ema" in lowered:
+                distance_desc = "near"
+            elif "above ema" in lowered:
+                distance_desc = "above"
+            elif "below ema" in lowered:
+                distance_desc = "below"
+            elif "at ema" in lowered:
+                distance_desc = "at"
+    confidence = 0.6 if any([gap_bar, touch_test, distance_desc]) else 0.0
+    return {
+        "gap_bar": gap_bar,
+        "touch_test": touch_test,
+        "distance_desc": distance_desc,
+        "confidence": confidence,
+    }
+
+
+def _extract_bar_geometry(texts: List[str]) -> Dict[str, Any]:
+    size_desc = None
+    tail_desc = None
+    consecutive_bull = None
+    consecutive_bear = None
+    for text in texts:
+        if not text:
+            continue
+        lowered = text.lower()
+        if size_desc is None and ("biggest" in lowered or "big " in lowered or "large" in lowered):
+            if "bar" in lowered or "bars" in lowered:
+                size_desc = "large"
+        if size_desc is None and ("small body" in lowered or "small bodies" in lowered or "small bar" in lowered):
+            size_desc = "small"
+        if tail_desc is None and ("long tail" in lowered or "big tail" in lowered or "big tails" in lowered):
+            if "upper" in lowered:
+                tail_desc = "long_upper"
+            elif "lower" in lowered:
+                tail_desc = "long_lower"
+            else:
+                tail_desc = "long"
+        for match in re.finditer(r"(\d+)\s+bull bars", lowered):
+            try:
+                count = int(match.group(1))
+            except (TypeError, ValueError):
+                continue
+            consecutive_bull = max(consecutive_bull or 0, count)
+        for match in re.finditer(r"(\d+)\s+bear bars", lowered):
+            try:
+                count = int(match.group(1))
+            except (TypeError, ValueError):
+                continue
+            consecutive_bear = max(consecutive_bear or 0, count)
+    confidence = 0.6 if any([size_desc, tail_desc, consecutive_bull, consecutive_bear]) else 0.0
+    return {
+        "size_desc": size_desc,
+        "tail_desc": tail_desc,
+        "consecutive_bull": consecutive_bull,
+        "consecutive_bear": consecutive_bear,
+        "confidence": confidence,
+    }
+
+
+def _infer_bar_by_bar(
+    texts: List[str],
+    body_gap: Optional[str],
+    overlap: Optional[str],
+    follow: Optional[str],
+    setup: Optional[str],
+) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
+    for text in texts:
+        if not text:
+            continue
+        lowered = text.lower()
+        if body_gap is None and "body gap" in lowered:
+            body_gap = "yes"
+        if overlap is None and "overlap" in lowered:
+            if "high" in lowered:
+                overlap = "high"
+            elif "low" in lowered:
+                overlap = "low"
+            elif "medium" in lowered:
+                overlap = "medium"
+        if follow is None and ("follow-through" in lowered or "follow through" in lowered):
+            if "strong" in lowered:
+                follow = "strong"
+            elif "weak" in lowered:
+                follow = "weak"
+        if setup is None:
+            if "entry" in lowered:
+                setup = "entry"
+            elif "signal" in lowered:
+                setup = "signal"
+            elif "setup" in lowered:
+                setup = "setup"
+    return body_gap, overlap, follow, setup
+
+
+def _structure_annotations(texts: List[str]) -> List[Dict[str, str]]:
+    structured: List[Dict[str, str]] = []
+    for text in texts:
+        if not text:
+            continue
+        lowered = text.lower()
+        if "%" in text or "chance" in lowered or "probability" in lowered or "expect" in lowered:
+            label_type = "outcome"
+        elif any(token in lowered for token in ("since", "because", "therefore", "so ", "but ")):
+            label_type = "logic"
+        else:
+            label_type = "condition"
+        structured.append({"label_type": label_type, "content": text})
+    return structured
+
+
 def _coerce_number_list(value: Any) -> List[float]:
     if not isinstance(value, list):
         return []
@@ -319,13 +678,16 @@ def _clean_pattern_item(
     raw_info = copy.deepcopy(item.get("raw")) if isinstance(item.get("raw"), dict) else {}
     raw_name = _normalize_null(item.get("pattern_name"))
     pattern_name = _normalize_pattern_name(raw_name)
-    _record_raw_unknown(raw_info, ["pattern_name"], raw_name, pattern_name)
+    raw_fallback_name = _normalize_null(raw_info.get("pattern_name")) if raw_info else None
+    if pattern_name is None and raw_fallback_name:
+        pattern_name = _normalize_pattern_name(raw_fallback_name)
+    _record_raw_unknown(raw_info, ["pattern_name"], raw_name or raw_fallback_name, pattern_name)
 
-    raw_type = item.get("pattern_type")
+    raw_type = item.get("pattern_type") or (raw_info.get("pattern_type") if raw_info else None)
     pattern_type = _normalize_enum(raw_type, ALLOWED_PATTERN_TYPE)
     _record_raw_unknown(raw_info, ["pattern_type"], raw_type, pattern_type)
 
-    raw_family = item.get("pattern_family")
+    raw_family = item.get("pattern_family") or (raw_info.get("pattern_family") if raw_info else None)
     pattern_family = _normalize_enum(raw_family, ALLOWED_PATTERN_FAMILY)
     _record_raw_unknown(raw_info, ["pattern_family"], raw_family, pattern_family)
 
@@ -407,7 +769,10 @@ def _make_separator_record(
         "confirmations": None,
         "invalidations": None,
         "annotations_text": annotations,
+        "annotations_structured": None,
         "summary": summary,
+        "ema_interaction": None,
+        "bar_geometry": None,
         "quality": None,
         "raw": raw_info or None,
     }
@@ -420,6 +785,9 @@ def clean_record(raw: Dict[str, Any]) -> Dict[str, Any]:
     page = _normalize_null(raw.get("page"))
     summary = _normalize_null(raw.get("summary"))
     annotations = _clean_text_list(raw.get("annotations_text"))
+    text_context = list(annotations)
+    if summary:
+        text_context.append(summary)
     raw_out = copy.deepcopy(raw.get("raw")) if isinstance(raw.get("raw"), dict) else {}
 
     slide_type_raw = raw.get("slide_type")
@@ -442,18 +810,29 @@ def clean_record(raw: Dict[str, Any]) -> Dict[str, Any]:
         market = None
     _record_raw_unknown(raw_out, ["market"], market_raw, market)
 
+    chart_raw = raw.get("chart") if isinstance(raw.get("chart"), dict) else {}
     context = raw.get("context") if isinstance(raw.get("context"), dict) else {}
-    market_cycle_raw = context.get("market_cycle")
+    if not context and chart_raw:
+        context = chart_raw
+    market_cycle_raw = context.get("market_cycle") if context else None
+    if market_cycle_raw is None and chart_raw:
+        market_cycle_raw = chart_raw.get("market_cycle")
     market_cycle = _normalize_enum(market_cycle_raw, ALLOWED_MARKET_CYCLE)
     _record_raw_unknown(raw_out, ["chart", "market_cycle"], market_cycle_raw, market_cycle)
-    trend_maturity_raw = context.get("trend_maturity")
+    trend_maturity_raw = context.get("trend_maturity") if context else None
+    if trend_maturity_raw is None and chart_raw:
+        trend_maturity_raw = chart_raw.get("trend_maturity")
     trend_maturity = _normalize_enum(trend_maturity_raw, ALLOWED_TREND_MATURITY)
     _record_raw_unknown(raw_out, ["chart", "trend_maturity"], trend_maturity_raw, trend_maturity)
 
     direction_raw = raw.get("direction_bias")
+    if direction_raw is None and chart_raw:
+        direction_raw = chart_raw.get("direction_bias")
     direction_bias = _normalize_direction(direction_raw)
     _record_raw_unknown(raw_out, ["chart", "direction_bias"], direction_raw, direction_bias)
     ema_raw = raw.get("ema_20") if isinstance(raw.get("ema_20"), dict) else {}
+    if not ema_raw and isinstance(chart_raw.get("ema_20"), dict):
+        ema_raw = chart_raw.get("ema_20")
     ema_exists = ema_raw.get("exists")
     if isinstance(ema_exists, str):
         ema_exists = True if ema_exists.strip().lower() == "true" else False if ema_exists.strip().lower() == "false" else None
@@ -550,6 +929,29 @@ def clean_record(raw: Dict[str, Any]) -> Dict[str, Any]:
 
     confirmations = _clean_text_list(raw.get("confirmations"))
     invalidations = _clean_text_list(raw.get("invalidations"))
+    analysis_texts = text_context + confirmations + invalidations
+
+    bar_body_gap, bar_overlap, bar_follow, bar_setup = _infer_bar_by_bar(
+        analysis_texts, bar_body_gap, bar_overlap, bar_follow, bar_setup
+    )
+    if bar_conf == 0.0 and any([bar_body_gap, bar_overlap, bar_follow, bar_setup]):
+        bar_conf = 0.6
+
+    if bar_number is None:
+        bar_number = _extract_bar_number(analysis_texts)
+    if leg_count is None:
+        leg_count = _extract_leg_count(analysis_texts)
+    sequence_labels = _extract_sequence_labels(analysis_texts)
+    if count_conf == 0.0 and any([leg_count, hl_count, bar_number, sequence_labels]):
+        count_conf = 0.6
+
+    extracted_probs = _extract_probabilities(analysis_texts)
+    extracted_targets = _extract_targets(analysis_texts)
+    targets = _merge_targets(targets, extracted_probs + extracted_targets)
+
+    ema_interaction = _extract_ema_interaction(analysis_texts)
+    bar_geometry = _extract_bar_geometry(analysis_texts)
+    annotations_structured = _structure_annotations(annotations)
 
     patterns: List[Dict[str, Any]] = []
     raw_patterns = raw.get("patterns")
@@ -622,6 +1024,7 @@ def clean_record(raw: Dict[str, Any]) -> Dict[str, Any]:
             "leg_count": leg_count,
             "hl_count": hl_count,
             "bar_number": bar_number,
+            "labels": sequence_labels,
             "confidence": count_conf,
         },
         "kline_features": kline_features,
@@ -634,7 +1037,10 @@ def clean_record(raw: Dict[str, Any]) -> Dict[str, Any]:
         "confirmations": confirmations,
         "invalidations": invalidations,
         "annotations_text": annotations,
+        "annotations_structured": annotations_structured,
         "summary": summary_clean,
+        "ema_interaction": ema_interaction,
+        "bar_geometry": bar_geometry,
         "quality": {
             "ocr_quality": ocr_quality,
             "chart_visibility": visibility,

@@ -39,9 +39,15 @@ def _setup_logger(log_file: Path | None) -> logging.Logger:
 
 def _eligible_files(watch_dir: Path, min_age: int) -> List[Path]:
     now = time.time()
-    files = list(watch_dir.glob("*.json")) + list(watch_dir.glob("*.jsonl"))
+    files = list(watch_dir.glob("*"))
     candidates = []
     for path in sorted(files):
+        if not path.is_file():
+            continue
+        if path.name.startswith("."):
+            continue
+        if path.suffix.lower() not in {".json", ".jsonl", ""}:
+            continue
         try:
             if now - path.stat().st_mtime < min_age:
                 continue
@@ -93,6 +99,19 @@ def main() -> int:
     parser.add_argument("--once", action="store_true", help="Process existing files once and exit.")
     parser.add_argument("--no-skip-existing", dest="skip_existing", action="store_false", default=True)
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--expected-count", type=int, default=10)
+    parser.add_argument("--required-fields", default="image_id,page")
+    parser.add_argument(
+        "--taxonomy-map",
+        default=str(ROOT / "outputs" / "abu_deep_analysis" / "reports" / "taxonomy_mapping.json"),
+        help="Taxonomy mapping JSON for pattern normalization.",
+    )
+    parser.add_argument(
+        "--validation-dir",
+        default=str(ROOT / "outputs" / "abu_deep_analysis" / "validation_reports"),
+        help="Directory to store validation reports.",
+    )
+    parser.add_argument("--strict-validation", action="store_true")
     parser.add_argument(
         "--log-file",
         default=str(ROOT / "logs" / "vision_ingest_watcher.log"),
@@ -105,6 +124,8 @@ def main() -> int:
     failed_dir = Path(args.failed_dir)
     raw_dir = Path(args.raw_dir) if args.raw_dir else None
     clean_dir = Path(args.clean_dir) if args.clean_dir else None
+    validation_dir = Path(args.validation_dir) if args.validation_dir else None
+    required_fields = [field.strip() for field in args.required_fields.split(",") if field.strip()]
 
     watch_dir.mkdir(parents=True, exist_ok=True)
     logger = _setup_logger(Path(args.log_file) if args.log_file else None)
@@ -128,6 +149,11 @@ def main() -> int:
                     clean_dir=clean_dir,
                     skip_existing=args.skip_existing,
                     dry_run=args.dry_run,
+                    taxonomy_map=Path(args.taxonomy_map) if args.taxonomy_map else None,
+                    expected_count=args.expected_count,
+                    required_fields=required_fields,
+                    validation_dir=validation_dir,
+                    strict_validation=args.strict_validation,
                 )
                 dest = _move_file(path, processed_dir)
                 logger.info("Processed -> %s", dest)
