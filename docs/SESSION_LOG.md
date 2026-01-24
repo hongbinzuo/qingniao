@@ -10,9 +10,10 @@
 - 批量导入脚本支持 `--gemini-model`，写入 `_meta.gemini_model` 以标记模型来源。
 - 扫描仅使用 `gemini_pro3` 模式源（不启用 Brooks / Cursor）。
 - 扫描报告新增 Gemini 模式库统计（pro3/pro/flash/total）。
+- 新增每小时信号跟踪脚本，按北京时间起点记录状态变化到本地文档。
 
 ### TODO
 - 重新运行 `abu_realtime_monitor.py --once`，确认新输出包含溯源字段和 Pro3 统计行。
 - 复核 BCH 的 `Source/PatternId/ImagePath/Page` 是否指向 Pro3 识别结果。
 - 如仍无信号或匹配异常，检查 `pattern_library` 中是否已写入 Pro3 标记。
-
+- 运行每小时跟踪脚本并确认 `ABU_signal_hourly_tracking.md` 持续追加。
