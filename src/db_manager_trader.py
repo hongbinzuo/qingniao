@@ -323,6 +323,7 @@ class PostgresDBManager:
                            timeframe: Optional[str] = None,
                            symbol: Optional[str] = None,
                            status: Optional[str] = None,
+                           system_name: Optional[str] = None,
                            limit: int = 100,
                            days: int = 7) -> List[Dict]:
         """查询交易信号"""
@@ -349,6 +350,10 @@ class PostgresDBManager:
             if status:
                 conditions.append('status = %s')
                 values.append(status)
+            
+            if system_name:
+                conditions.append('system_name = %s')
+                values.append(system_name)
             
             where_clause = ' AND '.join(conditions) if conditions else '1=1'
             values.append(limit)

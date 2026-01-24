@@ -11,6 +11,7 @@
 - 扫描仅使用 `gemini_pro3` 模式源（不启用 Brooks / Cursor）。
 - 扫描报告新增 Gemini 模式库统计（pro3/pro/flash/total）。
 - 新增每小时信号跟踪脚本，按北京时间起点记录状态变化到本地文档。
+- 修复信号跟踪在 `system_name` 过滤时的数据库查询参数缺失问题。
 
 ### TODO
 - 重新运行 `abu_realtime_monitor.py --once`，确认新输出包含溯源字段和 Pro3 统计行。
