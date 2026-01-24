@@ -1264,27 +1264,24 @@ def main() -> None:
                     notes = f"{notes} Match:{r.get('_pattern_match')}".strip()
 
                 db.add_trading_signal(
-                    signal_time=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                    timeframe=args.timeframe,
-                    signal_type=r['type'],
-                    symbol=r['symbol'],
-                    entry_price=r['entry'],
-                    stop_loss=r['stop_loss'],
-                    take_profit_1=r.get('take_profit_1'),
-                    take_profit_2=r.get('take_profit_2'),
-                    entry_model=f"PA/{r.get('pattern')}",
-                    strength='medium',
-                    risk_reward_ratio=None,
-                    volatility_level=None,
-                    system_name='abu',
-                    score=float(r.get('_score') or 0.0),
-                    notes=notes,
-                    entry_lower=None,
-                    entry_upper=None,
-                    stop_distance_points=None,
-                    tp_rule=None,
-                    stop_rule=None,
-                    bracket_note=None
+                    {
+                        "signal_time": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                        "timeframe": args.timeframe,
+                        "signal_type": r['type'],
+                        "symbol": r['symbol'],
+                        "entry_price": r['entry'],
+                        "stop_loss": r['stop_loss'],
+                        "take_profit_1": r.get('take_profit_1'),
+                        "take_profit_2": r.get('take_profit_2'),
+                        "entry_model": f"PA/{r.get('pattern')}",
+                        "strength": "medium",
+                        "risk_reward_ratio": None,
+                        "volatility_level": None,
+                        "system_name": "abu",
+                        "score": float(r.get('_score') or 0.0),
+                        "notes": notes,
+                        "status": "pending",
+                    }
                 )
             except Exception:
                 pass

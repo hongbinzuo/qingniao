@@ -12,6 +12,7 @@
 - 扫描报告新增 Gemini 模式库统计（pro3/pro/flash/total）。
 - 新增每小时信号跟踪脚本，按北京时间起点记录状态变化到本地文档。
 - 修复信号跟踪在 `system_name` 过滤时的数据库查询参数缺失问题。
+- 修复扫描写库调用，确保 `pa_scan_15m_top10.py` 能正确写入 `trading_signals`。
 
 ### TODO
 - 重新运行 `abu_realtime_monitor.py --once`，确认新输出包含溯源字段和 Pro3 统计行。
