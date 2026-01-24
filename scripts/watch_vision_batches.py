@@ -101,6 +101,7 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--expected-count", type=int, default=10)
     parser.add_argument("--required-fields", default="image_id,page")
+    parser.add_argument("--gemini-model", type=str, default=None, help="记录Gemini模型名称")
     parser.add_argument(
         "--taxonomy-map",
         default=str(ROOT / "outputs" / "abu_deep_analysis" / "reports" / "taxonomy_mapping.json"),
@@ -149,6 +150,7 @@ def main() -> int:
                     clean_dir=clean_dir,
                     skip_existing=args.skip_existing,
                     dry_run=args.dry_run,
+                    gemini_model=args.gemini_model,
                     taxonomy_map=Path(args.taxonomy_map) if args.taxonomy_map else None,
                     expected_count=args.expected_count,
                     required_fields=required_fields,

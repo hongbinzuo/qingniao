@@ -41,7 +41,9 @@ except ImportError:
 SOURCE_WEIGHTS = {
     'cursor_ai': 0.5,
     'brooks_rule': 0.3,
-    'gemini_flash': 0.2
+    'gemini_flash': 0.2,
+    'gemini_pro': 0.2,
+    'gemini_pro3': 0.2,
 }
 
 
@@ -49,7 +51,7 @@ SOURCE_WEIGHTS = {
 class UnifiedPattern:
     """统一模式数据结构"""
     pattern_id: str  # 统一ID：{source}_{original_id}
-    source: str  # 'gemini_flash' | 'cursor_ai' | 'brooks_rule'
+    source: str  # 'gemini_flash' | 'gemini_pro' | 'gemini_pro3' | 'cursor_ai' | 'brooks_rule'
     original_id: Any  # 原始ID（可能是int或str）
     
     # 基本信息
@@ -101,6 +103,8 @@ class UnifiedPatternLibrary:
         self.patterns: Dict[str, UnifiedPattern] = {}  # {pattern_id: UnifiedPattern}
         self.source_map: Dict[str, List[str]] = {  # {source: [pattern_ids]}
             'gemini_flash': [],
+            'gemini_pro': [],
+            'gemini_pro3': [],
             'cursor_ai': [],
             'brooks_rule': []
         }
@@ -119,6 +123,8 @@ class UnifiedPatternLibrary:
         self.stats = {
             'total': 0,
             'gemini_flash': 0,
+            'gemini_pro': 0,
+            'gemini_pro3': 0,
             'cursor_ai': 0,
             'brooks_rule': 0,
             'loaded_at': None
@@ -154,10 +160,20 @@ class UnifiedPatternLibrary:
         print()
         
         if load_gemini:
-            print("1. 加载Gemini Flash模式...")
-            count = self._load_gemini_flash_patterns()
-            self.stats['gemini_flash'] = count
-            print(f"   [OK] 加载了 {count} 个Gemini Flash模式")
+            print("1. 加载Gemini模式...")
+            self._load_gemini_flash_patterns()
+            gemini_total = (
+                self.stats.get('gemini_flash', 0)
+                + self.stats.get('gemini_pro', 0)
+                + self.stats.get('gemini_pro3', 0)
+            )
+            print(f"   [OK] 加载了 {gemini_total} 个Gemini模式")
+            if self.stats.get('gemini_pro3'):
+                print(f"      - Gemini Pro3: {self.stats.get('gemini_pro3')}")
+            if self.stats.get('gemini_pro'):
+                print(f"      - Gemini Pro: {self.stats.get('gemini_pro')}")
+            if self.stats.get('gemini_flash'):
+                print(f"      - Gemini Flash: {self.stats.get('gemini_flash')}")
             print()
         
         if load_cursor_ai:
@@ -179,7 +195,9 @@ class UnifiedPatternLibrary:
         
         print("=" * 80)
         print(f"加载完成: 总计 {self.stats['total']} 个模式")
-        print(f"  - Gemini Flash: {self.stats['gemini_flash']}")
+        print(f"  - Gemini Flash: {self.stats.get('gemini_flash', 0)}")
+        print(f"  - Gemini Pro: {self.stats.get('gemini_pro', 0)}")
+        print(f"  - Gemini Pro3: {self.stats.get('gemini_pro3', 0)}")
         print(f"  - Cursor AI: {self.stats['cursor_ai']}")
         print(f"  - Brooks规则: {self.stats['brooks_rule']}")
         print("=" * 80)
@@ -231,6 +249,9 @@ class UnifiedPatternLibrary:
         
         results = conn.execute(query).fetchall()
         count = 0
+        self.stats['gemini_flash'] = 0
+        self.stats['gemini_pro'] = 0
+        self.stats['gemini_pro3'] = 0
         
         for row in results:
             pattern_id, pattern_name, pattern_type, gemini_json, \
@@ -238,9 +259,24 @@ class UnifiedPatternLibrary:
             
             try:
                 gemini_annotation = json.loads(gemini_json) if gemini_json else {}
+                meta = gemini_annotation.get('_meta') or gemini_annotation.get('meta')
+                model = None
+                if isinstance(meta, dict):
+                    model = meta.get('gemini_model') or meta.get('model')
+                if not model:
+                    model = gemini_annotation.get('gemini_model') or gemini_annotation.get('model')
+                source = 'gemini_flash'
+                if model:
+                    model_lower = str(model).lower()
+                    if 'pro' in model_lower and ('3.0' in model_lower or '3' in model_lower):
+                        source = 'gemini_pro3'
+                    elif 'pro' in model_lower:
+                        source = 'gemini_pro'
+                    elif 'flash' in model_lower:
+                        source = 'gemini_flash'
                 
                 # 生成统一ID
-                unified_id = f"gemini_flash_{pattern_id}"
+                unified_id = f"{source}_{pattern_id}"
                 
                 # 标准化特征
                 structured_features = self._standardize_gemini_features(
@@ -251,7 +287,7 @@ class UnifiedPatternLibrary:
                 norm_type = structured_features.get('pattern_type', pattern_type) or 'unknown'
                 pattern = UnifiedPattern(
                     pattern_id=unified_id,
-                    source='gemini_flash',
+                    source=source,
                     original_id=pattern_id,
                     pattern_name=pattern_name or f"Pattern_{pattern_id}",
                     pattern_type=norm_type,
@@ -273,8 +309,9 @@ class UnifiedPatternLibrary:
                 
                 # 添加到索引
                 self.patterns[unified_id] = pattern
-                self.source_map['gemini_flash'].append(unified_id)
+                self.source_map.setdefault(source, []).append(unified_id)
                 count += 1
+                self.stats[source] = self.stats.get(source, 0) + 1
                 
             except Exception as e:
                 print(f"   [WARN] 解析模式 {pattern_id} 失败: {e}", file=sys.stderr)
@@ -637,7 +674,7 @@ class UnifiedPatternLibrary:
         
         # 否则使用线性搜索
         if sources is None:
-            sources = ['gemini_flash', 'cursor_ai', 'brooks_rule']
+            sources = ['gemini_flash', 'gemini_pro', 'gemini_pro3', 'cursor_ai', 'brooks_rule']
         
         matches = []
         

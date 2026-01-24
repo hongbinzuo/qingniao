@@ -80,7 +80,19 @@ def fetch_gate_tickers() -> Dict[str, float]:
     return prices
 
 
-def run_scan(timeframe: str, top: int, write_db: int, rank_by: str, logger: logging.Logger) -> Optional[float]:
+def run_scan(
+    timeframe: str,
+    top: int,
+    write_db: int,
+    rank_by: str,
+    exchange_mode: str,
+    audit_period_hours: int,
+    audit_since_days: int,
+    audit_min_confidence: float,
+    audit_max_duplicates: int,
+    audit_max_unused: int,
+    logger: logging.Logger,
+) -> Optional[float]:
     start_ts = time.time()
     cmd = [
         sys.executable,
@@ -93,11 +105,41 @@ def run_scan(timeframe: str, top: int, write_db: int, rank_by: str, logger: logg
         rank_by,
         "--write-db",
         str(write_db),
+        "--exchange-mode",
+        exchange_mode,
     ]
+    if audit_period_hours and audit_period_hours > 0:
+        cmd.extend(
+            [
+                "--audit-period-hours",
+                str(audit_period_hours),
+                "--audit-since-days",
+                str(audit_since_days),
+                "--audit-min-confidence",
+                str(audit_min_confidence),
+                "--audit-max-duplicates",
+                str(audit_max_duplicates),
+                "--audit-max-unused",
+                str(audit_max_unused),
+            ]
+        )
     logger.info("Scan start: %s", " ".join(cmd))
-    result = subprocess.run(cmd, cwd=str(ROOT))
+    result = subprocess.run(
+        cmd,
+        cwd=str(ROOT),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
     if result.returncode != 0:
         logger.error("Scan failed (timeframe=%s), code=%s", timeframe, result.returncode)
+        stdout = (result.stdout or "").strip()
+        stderr = (result.stderr or "").strip()
+        if stdout:
+            logger.error("Scan stdout:\n%s", stdout[-4000:])
+        if stderr:
+            logger.error("Scan stderr:\n%s", stderr[-4000:])
         return None
     return start_ts
 
@@ -156,7 +198,7 @@ def parse_scan_file(path: Path) -> List[Dict]:
                         "pattern_score": float(parts[11]),
                         "brooks": parts[12],
                         "match": parts[13],
-                        "reason": parts[14],
+                        "reason": parts[-1],
                     }
                 )
             else:
@@ -261,14 +303,35 @@ def run_once(
     top: int,
     write_db: int,
     rank_by: str,
+    exchange_mode: str,
+    audit_period_hours: int,
+    audit_since_days: int,
+    audit_min_confidence: float,
+    audit_max_duplicates: int,
+    audit_max_unused: int,
     md_max_mb: int,
     logger: logging.Logger,
 ) -> None:
     scan_times: Dict[str, float] = {}
     for tf in timeframes:
-        start_ts = run_scan(tf, top, write_db, rank_by, logger)
+        start_ts = run_scan(
+            tf,
+            top,
+            write_db,
+            rank_by,
+            exchange_mode,
+            audit_period_hours,
+            audit_since_days,
+            audit_min_confidence,
+            audit_max_duplicates,
+            audit_max_unused,
+            logger,
+        )
         if start_ts is not None:
             scan_times[tf] = start_ts
+            scan_file = latest_scan_file(tf, top, start_ts)
+            if not scan_file:
+                logger.warning("Scan finished but no output file found (timeframe=%s)", tf)
 
     prices = fetch_gate_tickers()
     payload = {
@@ -279,6 +342,10 @@ def run_once(
     }
     for tf in timeframes:
         scan_file = latest_scan_file(tf, top, scan_times.get(tf))
+        if not scan_file:
+            scan_file = latest_scan_file(tf, top, None)
+            if scan_file:
+                logger.warning("Fallback to previous scan file (timeframe=%s, file=%s)", tf, scan_file.name)
         rows = parse_scan_file(scan_file) if scan_file else []
         enrich_with_prices(rows, prices)
         payload["timeframes"][tf] = rows
@@ -289,10 +356,16 @@ def run_once(
 def main() -> int:
     parser = argparse.ArgumentParser(description="ABU realtime monitor (Gate tickers)")
     parser.add_argument("--top", type=int, default=5)
-    parser.add_argument("--timeframes", type=str, default="5m,15m")
+    parser.add_argument("--timeframes", type=str, default="3m,5m,15m,1h")
     parser.add_argument("--interval", type=int, default=60, help="seconds")
     parser.add_argument("--write-db", type=int, default=1)
     parser.add_argument("--rank-by", type=str, default="marketcap", choices=["volume", "marketcap"])
+    parser.add_argument("--exchange-mode", type=str, default="gate", choices=["gate", "bybit", "bitget", "split"])
+    parser.add_argument("--audit-period-hours", type=int, default=0)
+    parser.add_argument("--audit-since-days", type=int, default=30)
+    parser.add_argument("--audit-min-confidence", type=float, default=0.3)
+    parser.add_argument("--audit-max-duplicates", type=int, default=20)
+    parser.add_argument("--audit-max-unused", type=int, default=50)
     parser.add_argument("--log-max-mb", type=int, default=DEFAULT_LOG_MAX_MB)
     parser.add_argument("--md-max-mb", type=int, default=DEFAULT_MD_MAX_MB)
     parser.add_argument("--once", action="store_true")
@@ -303,19 +376,46 @@ def main() -> int:
     logger = setup_logger(log_file, args.log_max_mb)
 
     logger.info(
-        "Realtime monitor start: timeframes=%s top=%s interval=%s rank_by=%s",
+        "Realtime monitor start: timeframes=%s top=%s interval=%s rank_by=%s exchange_mode=%s",
         timeframes,
         args.top,
         args.interval,
         args.rank_by,
+        args.exchange_mode,
     )
     if args.once:
-        run_once(timeframes, args.top, args.write_db, args.rank_by, args.md_max_mb, logger)
+        run_once(
+            timeframes,
+            args.top,
+            args.write_db,
+            args.rank_by,
+            args.exchange_mode,
+            args.audit_period_hours,
+            args.audit_since_days,
+            args.audit_min_confidence,
+            args.audit_max_duplicates,
+            args.audit_max_unused,
+            args.md_max_mb,
+            logger,
+        )
         return 0
 
     while True:
         start = time.time()
-        run_once(timeframes, args.top, args.write_db, args.rank_by, args.md_max_mb, logger)
+        run_once(
+            timeframes,
+            args.top,
+            args.write_db,
+            args.rank_by,
+            args.exchange_mode,
+            args.audit_period_hours,
+            args.audit_since_days,
+            args.audit_min_confidence,
+            args.audit_max_duplicates,
+            args.audit_max_unused,
+            args.md_max_mb,
+            logger,
+        )
         elapsed = time.time() - start
         sleep_for = max(1, args.interval - int(elapsed))
         time.sleep(sleep_for)

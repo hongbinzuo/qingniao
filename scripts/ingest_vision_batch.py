@@ -271,6 +271,7 @@ def ingest_batch(
     clean_dir: Optional[Path],
     skip_existing: bool,
     dry_run: bool,
+    gemini_model: Optional[str] = None,
     taxonomy_map: Optional[Path] = None,
     expected_count: Optional[int] = None,
     required_fields: Optional[List[str]] = None,
@@ -303,6 +304,13 @@ def ingest_batch(
 
     for record in records:
         total += 1
+        if gemini_model:
+            record = dict(record)
+            meta = record.get("_meta")
+            if not isinstance(meta, dict):
+                meta = {}
+            meta["gemini_model"] = gemini_model
+            record["_meta"] = meta
         image_id = record.get("image_id") or record.get("image")
         page_num = _parse_page(record.get("page"))
         if raw_dir and image_id:
@@ -417,6 +425,7 @@ def main() -> int:
         help="Directory to store validation reports.",
     )
     parser.add_argument("--strict-validation", action="store_true")
+    parser.add_argument("--gemini-model", type=str, default=None, help="记录Gemini模型名称")
     args = parser.parse_args()
 
     input_path = Path(args.input)
@@ -439,6 +448,7 @@ def main() -> int:
         clean_dir=clean_dir,
         skip_existing=args.skip_existing,
         dry_run=args.dry_run,
+        gemini_model=args.gemini_model,
         taxonomy_map=Path(args.taxonomy_map) if args.taxonomy_map else None,
         expected_count=args.expected_count,
         required_fields=required_fields,
