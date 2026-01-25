@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-ABU 信号每小时跟踪器（北京时间）
+ABU 信号定期跟踪器（北京时间）
 
-从指定起始时间起，按小时扫描最新价格，判断止盈/部分止盈/止损状态，
+从指定起始时间起，按固定周期扫描最新价格，判断止盈/部分止盈/止损状态，
 并将结果追加写入本地文档：
   outputs/trading_signals/ABU_signal_hourly_tracking.md
 """
@@ -49,11 +49,9 @@ def _parse_start(value: str) -> datetime:
     raise ValueError(f"start 格式错误: {value}")
 
 
-def _next_hour_boundary(now_bj: datetime) -> datetime:
-    base = now_bj.replace(minute=0, second=0, microsecond=0)
-    if now_bj == base:
-        return base + timedelta(hours=1)
-    return base + timedelta(hours=1)
+def _next_run_time(now_bj: datetime, interval_minutes: int) -> datetime:
+    interval = max(1, int(interval_minutes))
+    return now_bj + timedelta(minutes=interval)
 
 
 def _fetch_active_signals_since(db: TraderDBManager, start_time: datetime) -> List[Dict]:
@@ -199,8 +197,9 @@ def run_once(start_time: datetime, logger: logging.Logger) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="ABU signals hourly tracker (Beijing time)")
+    parser = argparse.ArgumentParser(description="ABU signals interval tracker (Beijing time)")
     parser.add_argument("--start", type=str, default="2026-01-25 00:00:00", help="Beijing start time")
+    parser.add_argument("--interval-minutes", type=int, default=60, help="Run interval in minutes")
     parser.add_argument("--once", action="store_true", help="Run once and exit")
     args = parser.parse_args()
 
@@ -219,7 +218,7 @@ def main() -> int:
 
     while True:
         now_bj = datetime.now(tz=_bj_tz())
-        next_run = _next_hour_boundary(now_bj)
+        next_run = _next_run_time(now_bj, args.interval_minutes)
         sleep_for = max(1, int((next_run - now_bj).total_seconds()))
         logger.info("Next run at %s (sleep %ss)", next_run.strftime("%Y-%m-%d %H:%M:%S"), sleep_for)
         time.sleep(sleep_for)
