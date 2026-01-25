@@ -178,7 +178,7 @@ def _setup_logger(log_file: Path) -> logging.Logger:
 
 
 def run_once(start_time: datetime, logger: logging.Logger) -> None:
-    feedback = SignalResultFeedback(trader_id="abu", use_database=True)
+    feedback = SignalResultFeedback(trader_id="abu", use_database=True, load_on_init=False)
     db = TraderDBManager("abu")
     signals = _fetch_active_signals_since(db, start_time)
     feedback.active_signals = signals

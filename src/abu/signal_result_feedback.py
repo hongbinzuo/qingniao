@@ -49,7 +49,13 @@ class SignalResultFeedback:
     SIGNAL_EXPIRY_5M = timedelta(hours=2)  # 5分钟信号2小时后过期
     SIGNAL_EXPIRY_15M = timedelta(hours=4)  # 15分钟信号4小时后过期
     
-    def __init__(self, storage_dir: Optional[Path] = None, trader_id: str = 'abu', use_database: bool = True):
+    def __init__(
+        self,
+        storage_dir: Optional[Path] = None,
+        trader_id: str = 'abu',
+        use_database: bool = True,
+        load_on_init: bool = True,
+    ):
         """
         初始化信号结果反馈系统
         
@@ -57,6 +63,7 @@ class SignalResultFeedback:
             storage_dir: 信号存储目录（用于JSON备份）
             trader_id: 交易员ID（用于数据库，默认'abu'）
             use_database: 是否使用数据库存储（默认True）
+            load_on_init: 是否在初始化时加载活跃信号
         """
         self.use_database = use_database and DB_AVAILABLE
         
@@ -82,7 +89,7 @@ class SignalResultFeedback:
             print("[INFO] 使用JSON文件存储信号数据", file=sys.stderr)
         
         # 加载活跃信号（从数据库或JSON）
-        self.active_signals = self._load_active_signals()
+        self.active_signals = self._load_active_signals() if load_on_init else []
     
     def _load_active_signals(self) -> List[Dict]:
         """加载活跃信号（从数据库或JSON）"""
@@ -119,8 +126,8 @@ class SignalResultFeedback:
                         signals.append(signal_dict)
                 return signals
             except Exception as e:
-                print(f"[WARN] 从数据库加载信号失败: {e}，尝试JSON文件", file=sys.stderr)
-                self.use_database = False
+                print(f"[WARN] 从数据库加载信号失败: {e}", file=sys.stderr)
+                return []
         
         # 从JSON文件加载（备用方案）
         if not self.signals_file.exists():
