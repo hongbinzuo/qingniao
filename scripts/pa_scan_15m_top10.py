@@ -49,6 +49,7 @@ except Exception:
     AUDIT_AVAILABLE = False
 
 EXCL = set(['USDT', 'USDC', 'DAI', 'BUSD', 'FDUSD', 'TUSD', 'PYUSD', 'USDE', 'GUSD', 'EURT'])
+IGNORE_SYMBOLS = set(['RIDE', 'TRALA', 'RIDE-PERP', 'TRALA-PERP', 'RIDEUSDT', 'TRALAUSDT'])
 KLINES_PER_DAY = {
     '3m': 480,
     '5m': 288,
@@ -157,6 +158,10 @@ def _ema_deviation_penalty(
 
 def _is_excluded_symbol(symbol: str) -> bool:
     sym = symbol.upper()
+    if sym in IGNORE_SYMBOLS:
+        return True
+    if sym.endswith('PERP') and sym.replace('-', '').replace('_', '').replace('PERP', '') in ('RIDE', 'TRALA'):
+        return True
     if sym in EXCL:
         return True
     if sym.startswith(('USD', 'USDT', 'USDC')):
