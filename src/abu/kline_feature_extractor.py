@@ -11,6 +11,16 @@ def _safe_pct(numer: float, denom: float) -> float:
     return numer / denom
 
 
+def _ema(values: List[float], period: int) -> float:
+    if not values:
+        return 0.0
+    k = 2 / (period + 1)
+    ema_val = values[0]
+    for value in values:
+        ema_val = value * k + ema_val * (1 - k)
+    return ema_val
+
+
 def _detect_kline_features(klines: List[Dict]) -> List[str]:
     if not klines:
         return []
@@ -127,6 +137,9 @@ def extract_basic_kline_features(klines: List[Dict], lookback: int = 50) -> Dict
 
     range_mode = range_pct <= 0.03 and abs_strength <= 0.012
 
+    ema_20 = _ema(closes, 20)
+    dist_to_ema_pct = _safe_pct(abs(close_last - ema_20), ema_20)
+
     kline_features = _detect_kline_features(recent)
 
     swing_highs = _find_local_extrema(highs[-30:], window=2, mode='max')
@@ -141,6 +154,8 @@ def extract_basic_kline_features(klines: List[Dict], lookback: int = 50) -> Dict
         'range_high_dist_pct': range_high_dist_pct,
         'range_low_dist_pct': range_low_dist_pct,
         'range_mode': range_mode,
+        'ema_20': ema_20,
+        'dist_to_ema_pct': dist_to_ema_pct,
         'breakout_up': breakout_up,
         'breakout_down': breakout_down,
         'pullback_depth_pct': pullback_depth_pct,

@@ -17,6 +17,8 @@
 - 扫描结果补充 `Context=<label>` 到 reason，用于溯源背景判断。
 - 新增从 `outputs/trading_signals/ABU_top*.md` 回填 Postgres 的脚本，避免信号丢失。
 - 扫描写库失败改为输出告警，便于追踪失败原因。
+- 增加 EMA20 乖离特征（`dist_to_ema_pct`），用于逆势信号降权。
+- 宽幅通道场景下逆势单若 EMA 乖离不足则下调评分，并写入原因说明。
 
 ### TODO
 - 重新运行 `abu_realtime_monitor.py --once`，确认新输出包含溯源字段和 Pro3 统计行。
@@ -25,3 +27,4 @@
 - 运行每小时跟踪脚本并确认 `ABU_signal_hourly_tracking.md` 持续追加。
 - 运行 `pa_scan_15m_top10.py` 并检查 `Context=` 输出与背景不匹配过滤效果。
 - 如数据库仍为空，运行 `abu_backfill_signals_from_md.py` 做回填。
+- 观察 CHZ 等逆势信号是否出现 `EMA乖离不足` 降权提示，并确认分数变化。

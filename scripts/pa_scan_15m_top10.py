@@ -75,6 +75,8 @@ PATTERN_TYPE_MAP = {
 }
 LEVERAGED_SUFFIXES = ('UP', 'DOWN', 'BULL', 'BEAR', '3L', '3S', '5L', '5S', '2L', '2S', '10L', '10S')
 MIN_STOP_PCT = {'3m': 0.004, '5m': 0.005, '15m': 0.008, '1h': 0.01}
+EMA_DEVIATION_MIN = {'3m': 0.004, '5m': 0.006, '15m': 0.01, '1h': 0.015}
+EMA_DEVIATION_PENALTY_MAX = 0.6
 EXCHANGES = ('gate', 'bybit', 'bitget')
 SYMBOL_CACHE_DIR = ROOT / 'data' / 'exchange_symbols'
 SYMBOL_CACHE_TTL_HOURS = 12
@@ -113,7 +115,34 @@ LAST_TOP_META = {
 
 def _normalize_pattern_type(pattern_type: Optional[str]) -> str:
     if not pattern_type:
-        return "unknown"
+    return "unknown"
+
+
+def _ema_deviation_penalty(
+    cand: Dict[str, object],
+    features: Dict[str, object],
+    context_info: Dict[str, object],
+    timeframe: str,
+) -> tuple[float, Optional[str]]:
+    if not context_info or context_info.get('context') != 'broad_channel':
+        return 0.0, None
+    trend_dir = str(features.get('trend_direction') or '')
+    direction = str(cand.get('type') or '')
+    if trend_dir not in ('bullish', 'bearish') or direction not in ('long', 'short'):
+        return 0.0, None
+    countertrend = (trend_dir == 'bullish' and direction == 'short') or (
+        trend_dir == 'bearish' and direction == 'long'
+    )
+    if not countertrend:
+        return 0.0, None
+    min_dev = EMA_DEVIATION_MIN.get(timeframe, 0.01)
+    dist = float(features.get('dist_to_ema_pct') or 0.0)
+    if dist >= min_dev:
+        return 0.0, None
+    ratio = 1.0 - (dist / max(min_dev, 1e-9))
+    penalty = max(0.0, min(EMA_DEVIATION_PENALTY_MAX, ratio * EMA_DEVIATION_PENALTY_MAX))
+    note = f"EMA乖离不足({dist * 100:.2f}%<{min_dev * 100:.2f}%)"
+    return penalty, note
     text = str(pattern_type).lower()
     if "breakout" in text:
         return "breakout"
@@ -1228,7 +1257,11 @@ def main() -> None:
             )
 
             base_score = score_candidate(cand, k1h)
-            final_score = base_score + (pattern_score * 0.6) + constraint.score_adjust
+            ema_penalty, ema_note = _ema_deviation_penalty(cand, features, context_info, args.timeframe)
+            if ema_note:
+                reason = (cand.get('reason') or '').strip()
+                cand['reason'] = f"{reason} | {ema_note}" if reason else ema_note
+            final_score = base_score + (pattern_score * 0.6) + constraint.score_adjust - ema_penalty
 
             enriched = dict(cand)
             enriched['_score'] = final_score
@@ -1237,6 +1270,7 @@ def main() -> None:
             enriched['_brooks_status'] = constraint.status
             enriched['_brooks_rule'] = constraint.rule_name
             enriched['_brooks_reasons'] = ';'.join(constraint.reasons)
+            enriched['_ema_penalty'] = ema_penalty
             enriched['_pattern_match'] = best_match
             enriched['_pattern_match_id'] = best_pattern_id
             enriched['_pattern_match_image'] = best_image_path
