@@ -15,6 +15,7 @@ from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 import requests
+from abu.market_cache import MarketDataCache  # type: ignore
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 SRC = ROOT / 'src'
@@ -48,6 +49,7 @@ class SignalResultFeedback:
     # 信号有效期（超过这个时间未激活，标记为过期）
     SIGNAL_EXPIRY_5M = timedelta(hours=2)  # 5分钟信号2小时后过期
     SIGNAL_EXPIRY_15M = timedelta(hours=4)  # 15分钟信号4小时后过期
+    MAX_1M_LOOKBACK = 10080  # 最多回看7天的1分钟K线
     
     def __init__(
         self,
@@ -88,8 +90,42 @@ class SignalResultFeedback:
             self.db = None
             print("[INFO] 使用JSON文件存储信号数据", file=sys.stderr)
         
+        self.market_cache = MarketDataCache(default_exchange='gate')
+
         # 加载活跃信号（从数据库或JSON）
         self.active_signals = self._load_active_signals() if load_on_init else []
+
+    def _parse_signal_time(self, value: object) -> Optional[datetime]:
+        if isinstance(value, datetime):
+            return value
+        if not value:
+            return None
+        text = str(value).strip()
+        if not text:
+            return None
+        try:
+            return datetime.fromisoformat(text)
+        except Exception:
+            pass
+        for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M"):
+            try:
+                return datetime.strptime(text, fmt)
+            except Exception:
+                continue
+        return None
+
+    def _get_1m_history(self, symbol: str, start_time: datetime) -> List[Dict]:
+        now = datetime.now()
+        start_ts = int(start_time.timestamp())
+        end_ts = int(now.timestamp())
+        minutes = max(1, int((end_ts - start_ts) / 60) + 2)
+        limit = min(self.MAX_1M_LOOKBACK, minutes)
+        if limit <= 0:
+            return []
+        klines, _stats = self.market_cache.get_klines(symbol, "1m", limit, exchange="gate")
+        if not klines:
+            return []
+        return [k for k in klines if k.get("timestamp", 0) >= start_ts]
     
     def _load_active_signals(self) -> List[Dict]:
         """加载活跃信号（从数据库或JSON）"""
@@ -300,10 +336,12 @@ class SignalResultFeedback:
         take_profit_1 = signal['take_profit_1']
         take_profit_2 = signal['take_profit_2']
         status = signal['status']
-        generated_time = datetime.fromisoformat(signal['generated_time'])
-        
-        # 获取当前价格
-        current_price = self.get_current_price(symbol)
+        generated_time = self._parse_signal_time(signal.get('generated_time'))
+        if not generated_time:
+            return status, None
+
+        klines = self._get_1m_history(symbol, generated_time)
+        current_price = klines[-1]['close'] if klines else self.get_current_price(symbol)
         if not current_price or current_price <= 0:
             return status, None
         
@@ -328,91 +366,110 @@ class SignalResultFeedback:
             'last_check_time': datetime.now().isoformat(),
             'check_count': signal.get('check_count', 0) + 1
         }
-        
-        # 检查是否激活（入场）- 每1分钟检查一次
+
+        entry_index = None
+        entry_time = self._parse_signal_time(signal.get('entry_time')) if signal.get('entry_time') else None
+        if klines:
+            if entry_time:
+                entry_ts = int(entry_time.timestamp())
+                for i, k in enumerate(klines):
+                    if k.get('timestamp', 0) >= entry_ts:
+                        entry_index = i
+                        break
+            if entry_index is None and entry_price > 0:
+                for i, k in enumerate(klines):
+                    if k.get('low', 0) <= entry_price <= k.get('high', 0):
+                        entry_index = i
+                        break
+
+        # 检查是否激活（入场）
         if status == 'pending':
-            # 判断是否达到入场价（允许1%的误差）
-            price_diff_pct = abs(current_price - entry_price) / entry_price if entry_price > 0 else 1.0
-            
-            if price_diff_pct <= 0.01:  # 1%以内认为已入场
-                update_info['status'] = 'active'
-                update_info['entry_time'] = datetime.now().isoformat()
-                update_info['entry_price_actual'] = current_price
-                return 'active', update_info
-        
-        # 如果已激活，检查止损和止盈
+            if entry_index is None:
+                if datetime.now() > expiry_time:
+                    return 'expired', {
+                        'exit_time': datetime.now().isoformat(),
+                        'exit_price': current_price,
+                        'exit_reason': '信号过期未激活'
+                    }
+                return status, update_info
+            entry_k = klines[entry_index]
+            update_info['status'] = 'active'
+            update_info['entry_time'] = datetime.fromtimestamp(entry_k['timestamp']).isoformat()
+            update_info['entry_price_actual'] = entry_price
+            status = 'active'
+
         if status in ['active', 'partial_tp']:
-            # 计算当前盈亏
-            if direction == 'long':
-                pnl_pct = ((current_price - entry_price) / entry_price) * 100
-            else:  # short
-                pnl_pct = ((entry_price - current_price) / entry_price) * 100
-            
-            update_info['pnl_pct'] = pnl_pct
-            
-            # 检查快速止盈（0.5%）
-            if not signal.get('quick_tp_reached', False):
-                if pnl_pct >= self.QUICK_TAKE_PROFIT_PCT * 100:
-                    # 达到0.5%快速止盈
-                    update_info['quick_tp_reached'] = True
-                    update_info['breakeven_stop_set'] = True
-                    update_info['status'] = 'quick_tp'
-                    update_info['exit_time'] = datetime.now().isoformat()
-                    update_info['exit_price'] = current_price
-                    update_info['exit_reason'] = f'快速止盈（{pnl_pct:.2f}%）'
-                    return 'quick_tp', update_info
-            
-            # 检查止损（如果已设置保本止损，使用入场价作为止损）
+            start_idx = entry_index if entry_index is not None else 0
             effective_stop_loss = entry_price if signal.get('breakeven_stop_set', False) else stop_loss
-            
-            if direction == 'long':
-                if current_price <= effective_stop_loss:
-                    update_info['status'] = 'stopped'
-                    update_info['exit_time'] = datetime.now().isoformat()
-                    update_info['exit_price'] = current_price
-                    if signal.get('breakeven_stop_set', False):
-                        update_info['exit_reason'] = '保本止损'
-                    else:
-                        update_info['exit_reason'] = '初始止损'
-                    return 'stopped', update_info
-            else:  # short
-                if current_price >= effective_stop_loss:
-                    update_info['status'] = 'stopped'
-                    update_info['exit_time'] = datetime.now().isoformat()
-                    update_info['exit_price'] = current_price
-                    if signal.get('breakeven_stop_set', False):
-                        update_info['exit_reason'] = '保本止损'
-                    else:
-                        update_info['exit_reason'] = '初始止损'
-                    return 'stopped', update_info
-            
-            # 检查止盈
-            if direction == 'long':
-                if current_price >= take_profit_2:
-                    update_info['status'] = 'full_tp'
-                    update_info['exit_time'] = datetime.now().isoformat()
-                    update_info['exit_price'] = current_price
-                    update_info['exit_reason'] = '全部止盈（TP2）'
-                    return 'full_tp', update_info
-                elif current_price >= take_profit_1 and status != 'partial_tp':
-                    # 达到第一止盈，设置保本止损
-                    update_info['status'] = 'partial_tp'
-                    update_info['breakeven_stop_set'] = True
-                    update_info['exit_reason'] = '部分止盈（TP1），已设置保本止损'
-                    return 'partial_tp', update_info
-            else:  # short
-                if current_price <= take_profit_2:
-                    update_info['status'] = 'full_tp'
-                    update_info['exit_time'] = datetime.now().isoformat()
-                    update_info['exit_price'] = current_price
-                    update_info['exit_reason'] = '全部止盈（TP2）'
-                    return 'full_tp', update_info
-                elif current_price <= take_profit_1 and status != 'partial_tp':
-                    # 达到第一止盈，设置保本止损
-                    update_info['status'] = 'partial_tp'
-                    update_info['breakeven_stop_set'] = True
-                    update_info['exit_reason'] = '部分止盈（TP1），已设置保本止损'
-                    return 'partial_tp', update_info
+            quick_tp_threshold = None
+            if entry_price > 0:
+                if direction == 'long':
+                    quick_tp_threshold = entry_price * (1 + self.QUICK_TAKE_PROFIT_PCT)
+                else:
+                    quick_tp_threshold = entry_price * (1 - self.QUICK_TAKE_PROFIT_PCT)
+
+            for k in klines[start_idx:]:
+                high = k.get('high', 0)
+                low = k.get('low', 0)
+                ts = k.get('timestamp', 0)
+
+                if direction == 'long':
+                    if effective_stop_loss > 0 and low <= effective_stop_loss:
+                        update_info['status'] = 'stopped'
+                        update_info['exit_time'] = datetime.fromtimestamp(ts).isoformat()
+                        update_info['exit_price'] = effective_stop_loss
+                        update_info['exit_reason'] = '保本止损' if signal.get('breakeven_stop_set', False) else '初始止损'
+                        return 'stopped', update_info
+                    if quick_tp_threshold and not signal.get('quick_tp_reached', False) and high >= quick_tp_threshold:
+                        update_info['quick_tp_reached'] = True
+                        update_info['breakeven_stop_set'] = True
+                        update_info['status'] = 'quick_tp'
+                        update_info['exit_time'] = datetime.fromtimestamp(ts).isoformat()
+                        update_info['exit_price'] = quick_tp_threshold
+                        update_info['exit_reason'] = '快速止盈'
+                        return 'quick_tp', update_info
+                    if take_profit_2 > 0 and high >= take_profit_2:
+                        update_info['status'] = 'full_tp'
+                        update_info['exit_time'] = datetime.fromtimestamp(ts).isoformat()
+                        update_info['exit_price'] = take_profit_2
+                        update_info['exit_reason'] = '全部止盈（TP2）'
+                        return 'full_tp', update_info
+                    if take_profit_1 > 0 and high >= take_profit_1 and status != 'partial_tp':
+                        update_info['status'] = 'partial_tp'
+                        update_info['breakeven_stop_set'] = True
+                        update_info['exit_reason'] = '部分止盈（TP1），已设置保本止损'
+                        return 'partial_tp', update_info
+                else:
+                    if effective_stop_loss > 0 and high >= effective_stop_loss:
+                        update_info['status'] = 'stopped'
+                        update_info['exit_time'] = datetime.fromtimestamp(ts).isoformat()
+                        update_info['exit_price'] = effective_stop_loss
+                        update_info['exit_reason'] = '保本止损' if signal.get('breakeven_stop_set', False) else '初始止损'
+                        return 'stopped', update_info
+                    if quick_tp_threshold and not signal.get('quick_tp_reached', False) and low <= quick_tp_threshold:
+                        update_info['quick_tp_reached'] = True
+                        update_info['breakeven_stop_set'] = True
+                        update_info['status'] = 'quick_tp'
+                        update_info['exit_time'] = datetime.fromtimestamp(ts).isoformat()
+                        update_info['exit_price'] = quick_tp_threshold
+                        update_info['exit_reason'] = '快速止盈'
+                        return 'quick_tp', update_info
+                    if take_profit_2 > 0 and low <= take_profit_2:
+                        update_info['status'] = 'full_tp'
+                        update_info['exit_time'] = datetime.fromtimestamp(ts).isoformat()
+                        update_info['exit_price'] = take_profit_2
+                        update_info['exit_reason'] = '全部止盈（TP2）'
+                        return 'full_tp', update_info
+                    if take_profit_1 > 0 and low <= take_profit_1 and status != 'partial_tp':
+                        update_info['status'] = 'partial_tp'
+                        update_info['breakeven_stop_set'] = True
+                        update_info['exit_reason'] = '部分止盈（TP1），已设置保本止损'
+                        return 'partial_tp', update_info
+
+            if direction == 'long' and entry_price > 0:
+                update_info['pnl_pct'] = ((current_price - entry_price) / entry_price) * 100
+            elif direction == 'short' and entry_price > 0:
+                update_info['pnl_pct'] = ((entry_price - current_price) / entry_price) * 100
         
         return status, update_info
     
