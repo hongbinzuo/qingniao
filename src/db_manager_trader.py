@@ -329,6 +329,14 @@ class PostgresDBManager:
         """查询交易信号"""
         conn = None
         try:
+            try:
+                days = int(days)
+            except Exception:
+                days = 7
+            try:
+                limit = int(limit)
+            except Exception:
+                limit = 100
             conn = self.get_connection()
             cursor = conn.cursor()
             
