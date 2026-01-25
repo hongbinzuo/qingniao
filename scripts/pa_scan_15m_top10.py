@@ -960,11 +960,11 @@ def _is_valid_trade(cand: Dict, timeframe: str, klines: List[Dict], features: Di
                 return False
             if tp2_present and tp2 <= tp1:
                 return False
-            else:
-                if stop <= entry or tp1 >= entry:
-                    return False
-                if tp2_present and tp2 >= tp1:
-                    return False
+        else:
+            if stop <= entry or tp1 >= entry:
+                return False
+            if tp2_present and tp2 >= tp1:
+                return False
     if countertrend and cand.get('take_profit_2'):
         cand['take_profit_2'] = None
         reason = (cand.get('reason') or '').strip()
