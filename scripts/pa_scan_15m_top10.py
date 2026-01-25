@@ -31,6 +31,7 @@ from abu.market_cache import MarketDataCache  # type: ignore
 from abu.ranker import score_candidate  # type: ignore
 from abu.kline_feature_extractor import extract_basic_kline_features  # type: ignore
 from abu.brooks_pattern_constraints import BrooksPatternConstraints, ConstraintResult  # type: ignore
+from abu.market_context import classify_market_context, context_mismatch  # type: ignore
 from db_manager_trader import TraderDBManager  # type: ignore
 
 try:
@@ -1129,6 +1130,8 @@ def main() -> None:
         if not features:
             skip_reasons.setdefault(sym, set()).add('特征提取失败')
             continue
+        context_info = classify_market_context(kl, features)
+        features['market_context'] = context_info.get('context')
 
         has_signal = False
         for cand in candidates:
@@ -1157,6 +1160,10 @@ def main() -> None:
                 if best_match:
                     gemini_match_count += 1
                     gemini_match_set.add(best_match)
+                    mismatch_reason = context_mismatch(context_info, best_match, cand.get('type'))
+                    if mismatch_reason:
+                        skip_reasons.setdefault(sym, set()).add(mismatch_reason)
+                        continue
             if not USE_BROOKS_RULES:
                 brooks_score = None
 
@@ -1204,6 +1211,10 @@ def main() -> None:
                 reason = (cand.get('reason') or '').strip()
                 note = " / ".join(relax_notes)
                 cand['reason'] = f"{reason} | {note}" if reason else note
+            context_label = context_info.get('label')
+            if context_label:
+                reason = (cand.get('reason') or '').strip()
+                cand['reason'] = f"{reason} | Context={context_label}" if reason else f"Context={context_label}"
 
             entry_model = f"PA/{base_pattern}" if base_pattern else None
             empirical = prob_estimator.estimate(sym, args.timeframe, entry_model=entry_model)
@@ -1283,8 +1294,8 @@ def main() -> None:
                         "status": "pending",
                     }
                 )
-            except Exception:
-                pass
+            except Exception as exc:
+                print(f"[WARN] 写库失败: {r.get('symbol')} {args.timeframe} {exc}", file=sys.stderr)
         db.close()
 
     output_dir = ROOT / 'outputs' / 'trading_signals'
