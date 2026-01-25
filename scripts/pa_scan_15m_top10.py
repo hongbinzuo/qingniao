@@ -115,7 +115,17 @@ LAST_TOP_META = {
 
 def _normalize_pattern_type(pattern_type: Optional[str]) -> str:
     if not pattern_type:
-    return "unknown"
+        return "unknown"
+    text = str(pattern_type).lower()
+    if "breakout" in text:
+        return "breakout"
+    if "reversal" in text:
+        return "reversal"
+    if "trend" in text:
+        return "trend"
+    if "range" in text or "trading_range" in text:
+        return "trading_range"
+    return text
 
 
 def _ema_deviation_penalty(
@@ -143,16 +153,6 @@ def _ema_deviation_penalty(
     penalty = max(0.0, min(EMA_DEVIATION_PENALTY_MAX, ratio * EMA_DEVIATION_PENALTY_MAX))
     note = f"EMA乖离不足({dist * 100:.2f}%<{min_dev * 100:.2f}%)"
     return penalty, note
-    text = str(pattern_type).lower()
-    if "breakout" in text:
-        return "breakout"
-    if "reversal" in text:
-        return "reversal"
-    if "trend" in text:
-        return "trend"
-    if "range" in text or "trading_range" in text:
-        return "trading_range"
-    return text
 
 
 def _is_excluded_symbol(symbol: str) -> bool:
