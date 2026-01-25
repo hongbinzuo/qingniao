@@ -51,13 +51,11 @@ except Exception:
 EXCL = set(['USDT', 'USDC', 'DAI', 'BUSD', 'FDUSD', 'TUSD', 'PYUSD', 'USDE', 'GUSD', 'EURT'])
 IGNORE_SYMBOLS = set(['RIDE', 'TRALA', 'RIDE-PERP', 'TRALA-PERP', 'RIDEUSDT', 'TRALAUSDT'])
 KLINES_PER_DAY = {
-    '3m': 480,
     '5m': 288,
     '15m': 96,
     '1h': 24,
 }
 DEFAULT_DAYS = {
-    '3m': 3,
     '5m': 5,
     '15m': 14,
     '1h': 45,
@@ -75,9 +73,13 @@ PATTERN_TYPE_MAP = {
     'KeyLevel': 'trading_range',
 }
 LEVERAGED_SUFFIXES = ('UP', 'DOWN', 'BULL', 'BEAR', '3L', '3S', '5L', '5S', '2L', '2S', '10L', '10S')
-MIN_STOP_PCT = {'3m': 0.004, '5m': 0.005, '15m': 0.008, '1h': 0.01}
-EMA_DEVIATION_MIN = {'3m': 0.004, '5m': 0.006, '15m': 0.01, '1h': 0.015}
+MIN_STOP_PCT = {'5m': 0.005, '15m': 0.008, '1h': 0.01}
+EMA_DEVIATION_MIN = {'5m': 0.006, '15m': 0.01, '1h': 0.015}
 EMA_DEVIATION_PENALTY_MAX = 0.6
+STOP_LOOKBACK = {'5m': 10, '15m': 20, '1h': 20}
+ATR_BUFFER_MULT = 0.2
+ATR_K_TREND = 1.2
+ATR_K_COUNTER = 1.5
 EXCHANGES = ('gate', 'bybit', 'bitget')
 SYMBOL_CACHE_DIR = ROOT / 'data' / 'exchange_symbols'
 SYMBOL_CACHE_TTL_HOURS = 12
@@ -826,28 +828,81 @@ def estimate_probabilities(
     return p_tp1, p_tp2, p_sl, source, sample_size
 
 
-def _adjust_stop_to_min(cand: Dict, timeframe: str) -> bool:
+def _calc_atr(klines: List[Dict], period: int = 14) -> float:
+    if not klines or len(klines) < 2:
+        return 0.0
+    recent = klines[-(period + 1):] if len(klines) > period else klines
+    trs: List[float] = []
+    for i in range(1, len(recent)):
+        prev = recent[i - 1]
+        cur = recent[i]
+        high = float(cur.get('high', 0.0))
+        low = float(cur.get('low', 0.0))
+        prev_close = float(prev.get('close', 0.0))
+        tr = max(high - low, abs(high - prev_close), abs(low - prev_close))
+        trs.append(tr)
+    if not trs:
+        return 0.0
+    return sum(trs) / len(trs)
+
+
+def _structure_stop(
+    klines: List[Dict],
+    direction: str,
+    lookback: int,
+    atr: float,
+) -> float:
+    if not klines:
+        return 0.0
+    window = klines[-lookback:] if len(klines) > lookback else klines
+    if not window:
+        return 0.0
+    if direction == 'long':
+        low = min(float(k.get('low', 0.0)) for k in window)
+        return max(0.0, low - atr * ATR_BUFFER_MULT)
+    high = max(float(k.get('high', 0.0)) for k in window)
+    return high + atr * ATR_BUFFER_MULT
+
+
+def _adjust_stop_with_rules(
+    cand: Dict,
+    timeframe: str,
+    klines: List[Dict],
+    features: Dict[str, object],
+) -> Optional[bool]:
     entry = float(cand.get('entry') or 0.0)
     stop = float(cand.get('stop_loss') or 0.0)
     if entry <= 0 or stop <= 0:
         return False
     min_stop = MIN_STOP_PCT.get(timeframe, 0.0)
-    if min_stop <= 0:
-        return False
-    stop_dist = abs(entry - stop) / entry
-    if stop_dist >= min_stop:
-        return False
-
     direction = (cand.get('type') or 'long').lower()
+    trend_dir = str(features.get('trend_direction') or '').lower()
+    countertrend = trend_dir in ('bullish', 'bearish') and (
+        (trend_dir == 'bullish' and direction == 'short') or (trend_dir == 'bearish' and direction == 'long')
+    )
+    atr = _calc_atr(klines, period=14)
+    atr_pct = (atr / entry) if entry > 0 else 0.0
+    k = ATR_K_COUNTER if countertrend else ATR_K_TREND
+    min_stop_pct = max(min_stop, atr_pct * k)
+    stop_by_pct = entry * (1 - min_stop_pct) if direction == 'long' else entry * (1 + min_stop_pct)
+    struct_stop = _structure_stop(klines, direction, STOP_LOOKBACK.get(timeframe, 20), atr)
     if direction == 'long':
-        stop = entry * (1 - min_stop)
+        target_stop = min([s for s in (stop_by_pct, struct_stop) if s > 0], default=stop_by_pct)
+        if stop <= target_stop:
+            return None
+    else:
+        target_stop = max([s for s in (stop_by_pct, struct_stop) if s > 0], default=stop_by_pct)
+        if stop >= target_stop:
+            return None
+
+    stop = target_stop
+    if direction == 'long':
         if stop >= entry:
             return False
         risk = entry - stop
         tp1 = entry + risk
         tp2 = entry + 2 * risk
     else:
-        stop = entry * (1 + min_stop)
         if stop <= entry:
             return False
         risk = stop - entry
@@ -856,14 +911,14 @@ def _adjust_stop_to_min(cand: Dict, timeframe: str) -> bool:
 
     cand['stop_loss'] = float(stop)
     cand['take_profit_1'] = float(tp1)
-    cand['take_profit_2'] = float(tp2)
+    cand['take_profit_2'] = float(tp2) if tp2 is not None else None
     cand['_stop_adjusted'] = True
     reason = (cand.get('reason') or '').strip()
-    cand['reason'] = f"{reason} | 调整止损" if reason else "调整止损"
+    cand['reason'] = f"{reason} | 结构止损" if reason else "结构止损"
     return True
 
 
-def _is_valid_trade(cand: Dict, timeframe: str) -> bool:
+def _is_valid_trade(cand: Dict, timeframe: str, klines: List[Dict], features: Dict[str, object]) -> bool:
     entry = float(cand.get('entry') or 0.0)
     stop = float(cand.get('stop_loss') or 0.0)
     tp1 = float(cand.get('take_profit_1') or 0.0)
@@ -885,29 +940,35 @@ def _is_valid_trade(cand: Dict, timeframe: str) -> bool:
             return False
     if not tp2_present:
         cand['take_profit_2'] = None
-    min_stop = MIN_STOP_PCT.get(timeframe, 0.0)
-    if min_stop > 0:
-        stop_dist = abs(entry - stop) / entry
-        if stop_dist < min_stop:
-            if not _adjust_stop_to_min(cand, timeframe):
+    trend_dir = str(features.get('trend_direction') or '').lower()
+    countertrend = trend_dir in ('bullish', 'bearish') and (
+        (trend_dir == 'bullish' and direction == 'short') or (trend_dir == 'bearish' and direction == 'long')
+    )
+    adjusted = _adjust_stop_with_rules(cand, timeframe, klines, features)
+    if adjusted is False:
+        return False
+    if adjusted:
+        entry = float(cand.get('entry') or 0.0)
+        stop = float(cand.get('stop_loss') or 0.0)
+        tp1 = float(cand.get('take_profit_1') or 0.0)
+        tp2_raw = cand.get('take_profit_2')
+        tp2 = float(tp2_raw) if tp2_raw not in (None, '') else 0.0
+        tp2_present = tp2 > 0
+        direction = (cand.get('type') or 'long').lower()
+        if direction == 'long':
+            if stop >= entry or tp1 <= entry:
                 return False
-            entry = float(cand.get('entry') or 0.0)
-            stop = float(cand.get('stop_loss') or 0.0)
-            tp1 = float(cand.get('take_profit_1') or 0.0)
-            tp2_raw = cand.get('take_profit_2')
-            tp2 = float(tp2_raw) if tp2_raw not in (None, '') else 0.0
-            tp2_present = tp2 > 0
-            direction = (cand.get('type') or 'long').lower()
-            if direction == 'long':
-                if stop >= entry or tp1 <= entry:
-                    return False
-                if tp2_present and tp2 <= tp1:
-                    return False
+            if tp2_present and tp2 <= tp1:
+                return False
             else:
                 if stop <= entry or tp1 >= entry:
                     return False
                 if tp2_present and tp2 >= tp1:
                     return False
+    if countertrend and cand.get('take_profit_2'):
+        cand['take_profit_2'] = None
+        reason = (cand.get('reason') or '').strip()
+        cand['reason'] = f"{reason} | 逆势仅TP1" if reason else "逆势仅TP1"
     return True
 
 
@@ -1066,7 +1127,7 @@ def score_with_pattern_library(
 def main() -> None:
     ap = argparse.ArgumentParser(description='Qingniao-PA Top scanner (Gate/Bybit/Bitget)')
     ap.add_argument('--top', type=int, default=10)
-    ap.add_argument('--timeframe', type=str, default='15m', choices=['3m', '5m', '15m', '1h'])
+    ap.add_argument('--timeframe', type=str, default='15m', choices=['5m', '15m', '1h'])
     ap.add_argument('--rank-by', type=str, default='volume', choices=['volume', 'marketcap'])
     ap.add_argument('--days', type=int, default=None)
     ap.add_argument('--write-db', type=int, default=1)
@@ -1081,7 +1142,7 @@ def main() -> None:
 
     scan_start = time.time()
     days = args.days if args.days is not None else DEFAULT_DAYS.get(args.timeframe, 7)
-    print(f"[INFO] timeframe={args.timeframe} days={days} (建议: 3m=2-3天, 5m=3-5天, 15m=10-14天, 1h=30-60天)")
+    print(f"[INFO] timeframe={args.timeframe} days={days} (建议: 5m=3-5天, 15m=10-14天, 1h=30-60天)")
     limit = min(1000, KLINES_PER_DAY.get(args.timeframe, 96) * max(days, 1))
 
     gate_only = args.exchange_mode == 'gate'
@@ -1172,7 +1233,7 @@ def main() -> None:
             if not cand.get('entry') or not cand.get('stop_loss') or not cand.get('take_profit_1'):
                 skip_reasons.setdefault(sym, set()).add('缺少交易字段')
                 continue
-            if not _is_valid_trade(cand, args.timeframe):
+            if not _is_valid_trade(cand, args.timeframe, kl, features):
                 skip_reasons.setdefault(sym, set()).add('止损/目标不合法')
                 continue
 

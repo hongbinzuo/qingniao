@@ -37,9 +37,9 @@ except Exception:
     PATTERN_LIB_AVAILABLE = False
 
 
-KLINES_PER_DAY = {"3m": 480, "5m": 288, "15m": 96, "1h": 24}
-DEFAULT_DAYS = {"3m": 3, "5m": 5, "15m": 14, "1h": 45}
-MIN_STOP_PCT = {"3m": 0.004, "5m": 0.005, "15m": 0.008, "1h": 0.01}
+KLINES_PER_DAY = {"5m": 288, "15m": 96, "1h": 24}
+DEFAULT_DAYS = {"5m": 5, "15m": 14, "1h": 45}
+MIN_STOP_PCT = {"5m": 0.005, "15m": 0.008, "1h": 0.01}
 PATTERN_TYPE_MAP = {
     "InsideBar": "breakout",
     "Engulfing": "reversal",
@@ -314,7 +314,7 @@ def _trend_summary(features: Dict[str, object]) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description="ABU 交易建议问答（CLI）")
     parser.add_argument("--symbol", type=str, default=None)
-    parser.add_argument("--timeframe", type=str, default=None, choices=["3m", "5m", "15m", "1h"])
+    parser.add_argument("--timeframe", type=str, default=None, choices=["5m", "15m", "1h"])
     parser.add_argument("--direction", type=str, default=None, choices=["long", "short"])
     parser.add_argument("--question", type=str, default=None)
     parser.add_argument("--days", type=int, default=None)

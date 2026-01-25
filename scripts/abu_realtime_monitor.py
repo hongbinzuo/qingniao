@@ -356,7 +356,7 @@ def run_once(
 def main() -> int:
     parser = argparse.ArgumentParser(description="ABU realtime monitor (Gate tickers)")
     parser.add_argument("--top", type=int, default=5)
-    parser.add_argument("--timeframes", type=str, default="3m,5m,15m,1h")
+    parser.add_argument("--timeframes", type=str, default="5m,15m,1h")
     parser.add_argument("--interval", type=int, default=60, help="seconds")
     parser.add_argument("--write-db", type=int, default=1)
     parser.add_argument("--rank-by", type=str, default="marketcap", choices=["volume", "marketcap"])
