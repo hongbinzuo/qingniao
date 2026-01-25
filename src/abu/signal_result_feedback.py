@@ -598,10 +598,10 @@ class SignalResultFeedback:
                         result = result_map.get(signal['status'], signal['status'])
                         
                         # 确定是否触发止损/止盈
-                        stop_loss_hit = 1 if signal['status'] == 'stopped' else 0
-                        take_profit_1_hit = 1 if signal.get('breakeven_stop_set', False) or signal['status'] in ['partial_tp', 'quick_tp'] else 0
-                        take_profit_2_hit = 1 if signal['status'] == 'full_tp' else 0
-                        missed = 1 if signal['status'] == 'expired' else 0
+                        stop_loss_hit = signal['status'] == 'stopped'
+                        take_profit_1_hit = bool(signal.get('breakeven_stop_set', False) or signal['status'] in ['partial_tp', 'quick_tp'])
+                        take_profit_2_hit = signal['status'] == 'full_tp'
+                        missed = signal['status'] == 'expired'
                         
                         self.db.add_signal_evaluation(
                             {
