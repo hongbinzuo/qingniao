@@ -24,6 +24,7 @@
 - 扫描过滤新增 RIDE/TRALA（及其 PERP 形式）忽略规则。
 - 跟踪器改为回看信号后的1分钟K线，按触达顺序判断止盈/止损并更新状态。
 - 跟踪器支持自定义周期（`--interval-minutes`），可设置为15分钟。
+- 跟踪器JSON备份支持datetime/Decimal序列化，并修复评估写库参数传递。
 
 ### TODO
 - 重新运行 `abu_realtime_monitor.py --once`，确认新输出包含溯源字段和 Pro3 统计行。

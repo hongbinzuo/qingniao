@@ -13,6 +13,7 @@ import sys
 import json
 from pathlib import Path
 from datetime import datetime, timedelta
+from decimal import Decimal
 from typing import Dict, List, Optional, Tuple
 import requests
 from abu.market_cache import MarketDataCache  # type: ignore
@@ -114,6 +115,17 @@ class SignalResultFeedback:
                 continue
         return None
 
+    def _json_safe(self, value: object):
+        if isinstance(value, datetime):
+            return value.isoformat()
+        if isinstance(value, Decimal):
+            return float(value)
+        if isinstance(value, dict):
+            return {k: self._json_safe(v) for k, v in value.items()}
+        if isinstance(value, list):
+            return [self._json_safe(v) for v in value]
+        return value
+
     def _get_1m_history(self, symbol: str, start_time: datetime) -> List[Dict]:
         now = datetime.now()
         start_ts = int(start_time.timestamp())
@@ -181,7 +193,7 @@ class SignalResultFeedback:
         # JSON文件作为备份
         try:
             with open(self.signals_file, 'w', encoding='utf-8') as f:
-                json.dump(self.active_signals, f, ensure_ascii=False, indent=2)
+                json.dump(self._json_safe(self.active_signals), f, ensure_ascii=False, indent=2)
         except Exception as e:
             print(f"[WARN] 保存活跃信号备份失败: {e}", file=sys.stderr)
     
@@ -592,17 +604,19 @@ class SignalResultFeedback:
                         missed = 1 if signal['status'] == 'expired' else 0
                         
                         self.db.add_signal_evaluation(
-                            signal_id=signal['db_id'],
-                            evaluation_time=now.strftime('%Y-%m-%d %H:%M:%S'),
-                            result=result,
-                            actual_entry_price=signal.get('entry_price_actual') or signal.get('entry_price'),
-                            actual_exit_price=signal.get('exit_price'),
-                            actual_profit_pct=signal.get('pnl_pct'),
-                            stop_loss_hit=stop_loss_hit,
-                            take_profit_1_hit=take_profit_1_hit,
-                            take_profit_2_hit=take_profit_2_hit,
-                            missed=missed,
-                            notes=signal.get('exit_reason')
+                            {
+                                "signal_id": signal['db_id'],
+                                "evaluation_time": now.strftime('%Y-%m-%d %H:%M:%S'),
+                                "result": result,
+                                "actual_entry_price": signal.get('entry_price_actual') or signal.get('entry_price'),
+                                "actual_exit_price": signal.get('exit_price'),
+                                "actual_profit_pct": signal.get('pnl_pct'),
+                                "stop_loss_hit": stop_loss_hit,
+                                "take_profit_1_hit": take_profit_1_hit,
+                                "take_profit_2_hit": take_profit_2_hit,
+                                "missed": missed,
+                                "notes": signal.get('exit_reason'),
+                            }
                         )
                     except Exception as e:
                         print(f"[WARN] 保存评估到数据库失败: {e}", file=sys.stderr)
@@ -637,7 +651,7 @@ class SignalResultFeedback:
         
         try:
             with open(self.feedback_history_file, 'w', encoding='utf-8') as f:
-                json.dump(history, f, ensure_ascii=False, indent=2)
+                json.dump(self._json_safe(history), f, ensure_ascii=False, indent=2)
         except Exception as e:
             print(f"[WARN] 保存反馈历史失败: {e}", file=sys.stderr)
     
