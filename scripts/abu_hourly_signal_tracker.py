@@ -29,6 +29,21 @@ OUTPUT_DIR = ROOT / "outputs" / "trading_signals"
 LOG_DIR = ROOT / "logs"
 
 
+def _format_price(value: Optional[object]) -> str:
+    if value is None:
+        return "-"
+    try:
+        num = float(value)
+    except (TypeError, ValueError):
+        return "-"
+    abs_num = abs(num)
+    if abs_num >= 1:
+        return f"{num:.4f}"
+    if abs_num >= 0.01:
+        return f"{num:.6f}"
+    return f"{num:.9f}"
+
+
 def _bj_tz() -> timezone:
     try:
         from zoneinfo import ZoneInfo
@@ -138,18 +153,23 @@ def _write_report(
     lines.append("| ID | Symbol | TF | Old | New | Entry | SL | TP1 | TP2 | Exit | PnL% | Reason |")
     lines.append("|---|---|---|---|---|---:|---:|---:|---:|---:|---:|---|")
     for row in changed:
+        entry_fmt = _format_price(row.get("entry_price"))
+        sl_fmt = _format_price(row.get("stop_loss"))
+        tp1_fmt = _format_price(row.get("take_profit_1"))
+        tp2_fmt = _format_price(row.get("take_profit_2"))
+        exit_fmt = _format_price(row.get("exit_price"))
         lines.append(
-            "| {id} | {symbol} | {tf} | {old} | {new} | {entry:.4f} | {sl:.4f} | {tp1:.4f} | {tp2:.4f} | {exit} | {pnl} | {reason} |".format(
+            "| {id} | {symbol} | {tf} | {old} | {new} | {entry} | {sl} | {tp1} | {tp2} | {exit} | {pnl} | {reason} |".format(
                 id=row.get("signal_id"),
                 symbol=row.get("symbol"),
                 tf=row.get("timeframe"),
                 old=row.get("old_status"),
                 new=row.get("status"),
-                entry=float(row.get("entry_price") or 0),
-                sl=float(row.get("stop_loss") or 0),
-                tp1=float(row.get("take_profit_1") or 0),
-                tp2=float(row.get("take_profit_2") or 0),
-                exit=f"{row.get('exit_price'):.4f}" if isinstance(row.get("exit_price"), (int, float)) else "-",
+                entry=entry_fmt,
+                sl=sl_fmt,
+                tp1=tp1_fmt,
+                tp2=tp2_fmt,
+                exit=exit_fmt,
                 pnl=f"{float(row.get('pnl_pct') or 0.0):.2f}",
                 reason=row.get("exit_reason") or "-",
             )

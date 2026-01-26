@@ -5,7 +5,7 @@ Real-time ABU monitor: refresh top signals and attach latest prices.
 
 Runs pa_scan_15m_top10.py for 5m/15m, then enriches with Gate tickers.
 Outputs:
-  - outputs/trading_signals/ABU_realtime_log.md (append)
+  - outputs/trading_signals/ABU_realtime_log*.md (append)
 """
 from __future__ import annotations
 
@@ -86,6 +86,7 @@ def run_scan(
     write_db: int,
     rank_by: str,
     exchange_mode: str,
+    context_filter: str,
     audit_period_hours: int,
     audit_since_days: int,
     audit_min_confidence: float,
@@ -108,6 +109,8 @@ def run_scan(
         "--exchange-mode",
         exchange_mode,
     ]
+    if context_filter and str(context_filter).lower() != "off":
+        cmd.extend(["--context-filter", str(context_filter).lower()])
     if audit_period_hours and audit_period_hours > 0:
         cmd.extend(
             [
@@ -164,6 +167,21 @@ def _parse_pct(value: str) -> Optional[float]:
         return float(txt)
     except ValueError:
         return None
+
+
+def _format_price(value: Optional[object]) -> str:
+    if value is None:
+        return "-"
+    try:
+        num = float(value)
+    except (TypeError, ValueError):
+        return "-"
+    abs_num = abs(num)
+    if abs_num >= 1:
+        return f"{num:.4f}"
+    if abs_num >= 0.01:
+        return f"{num:.6f}"
+    return f"{num:.9f}"
 
 
 def parse_scan_file(path: Path) -> List[Dict]:
@@ -245,13 +263,18 @@ def enrich_with_prices(rows: List[Dict], prices: Dict[str, float]) -> None:
         row["direction_zh"] = direction_map.get(direction, row.get("type") or "-")
 
 
-def write_outputs(payload: Dict, top: int, md_max_mb: int) -> None:
+def write_outputs(payload: Dict, top: int, md_max_mb: int, context_filter: str) -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    append_path = OUTPUT_DIR / "ABU_realtime_log.md"
+    suffix = ""
+    if context_filter and str(context_filter).lower() != "off":
+        suffix = f"_ctx-{str(context_filter).lower()}"
+    append_path = OUTPUT_DIR / f"ABU_realtime_log{suffix}.md"
     _rotate_file(append_path, md_max_mb, OUTPUT_DIR)
 
     lines = []
     lines.append(f"## 生成时间: {payload['generated_at']} | Top: {top} | Rank: {payload.get('rank_by')}")
+    if context_filter and str(context_filter).lower() != "off":
+        lines.append(f"- Context过滤: {str(context_filter).lower()}")
     lines.append("")
 
     for timeframe, rows in payload["timeframes"].items():
@@ -266,21 +289,21 @@ def write_outputs(payload: Dict, top: int, md_max_mb: int) -> None:
             p_tp1 = row.get("p_tp1")
             p_tp2 = row.get("p_tp2")
             p_sl = row.get("p_sl")
-            price_fmt = f"{price:.4f}" if isinstance(price, (int, float)) else "-"
+            price_fmt = _format_price(price)
             triggered_fmt = "是" if triggered is True else "否" if triggered is False else "-"
             dist_fmt = f"{dist:.2f}" if isinstance(dist, (int, float)) else "-"
             p1_fmt = f"{p_tp1:.1f}%" if isinstance(p_tp1, (int, float)) else "-"
             p2_fmt = f"{p_tp2:.1f}%" if isinstance(p_tp2, (int, float)) else "-"
             psl_fmt = f"{p_sl:.1f}%" if isinstance(p_sl, (int, float)) else "-"
             lines.append(
-                "| {rank} | {symbol} | {typ} | {entry:.4f} | {sl:.4f} | {tp1:.4f} | {tp2:.4f} | {p1} | {p2} | {psl} | {price} | {triggered} | {dist} |".format(
+                "| {rank} | {symbol} | {typ} | {entry} | {sl} | {tp1} | {tp2} | {p1} | {p2} | {psl} | {price} | {triggered} | {dist} |".format(
                     rank=row.get("rank"),
                     symbol=row.get("symbol"),
                     typ=typ,
-                    entry=row.get("entry"),
-                    sl=row.get("stop_loss"),
-                    tp1=row.get("tp1"),
-                    tp2=row.get("tp2"),
+                    entry=_format_price(row.get("entry")),
+                    sl=_format_price(row.get("stop_loss")),
+                    tp1=_format_price(row.get("tp1")),
+                    tp2=_format_price(row.get("tp2")),
                     p1=p1_fmt,
                     p2=p2_fmt,
                     psl=psl_fmt,
@@ -304,6 +327,7 @@ def run_once(
     write_db: int,
     rank_by: str,
     exchange_mode: str,
+    context_filter: str,
     audit_period_hours: int,
     audit_since_days: int,
     audit_min_confidence: float,
@@ -320,6 +344,7 @@ def run_once(
             write_db,
             rank_by,
             exchange_mode,
+            context_filter,
             audit_period_hours,
             audit_since_days,
             audit_min_confidence,
@@ -350,7 +375,7 @@ def run_once(
         enrich_with_prices(rows, prices)
         payload["timeframes"][tf] = rows
 
-    write_outputs(payload, top, md_max_mb)
+    write_outputs(payload, top, md_max_mb, context_filter)
 
 
 def main() -> int:
@@ -361,6 +386,7 @@ def main() -> int:
     parser.add_argument("--write-db", type=int, default=1)
     parser.add_argument("--rank-by", type=str, default="marketcap", choices=["volume", "marketcap"])
     parser.add_argument("--exchange-mode", type=str, default="gate", choices=["gate", "bybit", "bitget", "split"])
+    parser.add_argument("--context-filter", type=str, default="off", choices=["off", "brooks", "regime36", "both"])
     parser.add_argument("--audit-period-hours", type=int, default=0)
     parser.add_argument("--audit-since-days", type=int, default=30)
     parser.add_argument("--audit-min-confidence", type=float, default=0.3)
@@ -390,6 +416,7 @@ def main() -> int:
             args.write_db,
             args.rank_by,
             args.exchange_mode,
+            args.context_filter,
             args.audit_period_hours,
             args.audit_since_days,
             args.audit_min_confidence,
@@ -408,6 +435,7 @@ def main() -> int:
             args.write_db,
             args.rank_by,
             args.exchange_mode,
+            args.context_filter,
             args.audit_period_hours,
             args.audit_since_days,
             args.audit_min_confidence,

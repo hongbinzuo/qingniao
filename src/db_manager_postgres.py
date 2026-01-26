@@ -9,6 +9,7 @@ import os
 import sys
 import psycopg2
 import re
+from decimal import Decimal, ROUND_HALF_UP
 from psycopg2 import pool
 from psycopg2.extras import RealDictCursor
 from psycopg2.extensions import cursor as PGCursor
@@ -37,6 +38,7 @@ def _load_env():
 _load_env()
 
 _PLACEHOLDER_RE = re.compile(r'\?')
+PRICE_SCALE = 9
 
 
 def _to_psycopg2_placeholders(sql: str) -> str:
@@ -44,6 +46,17 @@ def _to_psycopg2_placeholders(sql: str) -> str:
     if '?' not in sql:
         return sql
     return _PLACEHOLDER_RE.sub('%s', sql)
+
+
+def _quantize_price(value: object, scale: int = PRICE_SCALE):
+    if value is None:
+        return None
+    try:
+        dec = Decimal(str(value))
+    except Exception:
+        return None
+    quant = Decimal("1").scaleb(-scale)
+    return dec.quantize(quant, rounding=ROUND_HALF_UP)
 
 
 class _CompatCursor:
@@ -200,10 +213,10 @@ class PostgresDBManager:
                 'timeframe': signal_data.get('timeframe'),
                 'symbol': signal_data.get('symbol'),
                 'signal_type': signal_data.get('signal_type'),
-                'entry_price': signal_data.get('entry_price'),
-                'stop_loss': signal_data.get('stop_loss'),
-                'take_profit_1': signal_data.get('take_profit_1'),
-                'take_profit_2': signal_data.get('take_profit_2'),
+                'entry_price': _quantize_price(signal_data.get('entry_price')),
+                'stop_loss': _quantize_price(signal_data.get('stop_loss')),
+                'take_profit_1': _quantize_price(signal_data.get('take_profit_1')),
+                'take_profit_2': _quantize_price(signal_data.get('take_profit_2')),
                 'entry_model': signal_data.get('entry_model'),
                 'strength': signal_data.get('strength'),
                 'risk_reward_ratio': signal_data.get('risk_reward_ratio'),
@@ -269,8 +282,11 @@ class PostgresDBManager:
             
             for key, db_field in field_mapping.items():
                 if key in kwargs and kwargs[key] is not None:
+                    val = kwargs[key]
+                    if key in ('exit_price', 'entry_price_actual'):
+                        val = _quantize_price(val)
                     update_fields.append(f'{db_field} = %s')
-                    values.append(kwargs[key])
+                    values.append(val)
             
             values.append(signal_id)
             
@@ -396,8 +412,8 @@ class PostgresDBManager:
                 'signal_id': evaluation_data.get('signal_id'),
                 'evaluation_time': evaluation_data.get('evaluation_time', datetime.now()),
                 'result': evaluation_data.get('result'),
-                'actual_entry_price': evaluation_data.get('actual_entry_price'),
-                'actual_exit_price': evaluation_data.get('actual_exit_price'),
+                'actual_entry_price': _quantize_price(evaluation_data.get('actual_entry_price')),
+                'actual_exit_price': _quantize_price(evaluation_data.get('actual_exit_price')),
                 'actual_profit_pct': evaluation_data.get('actual_profit_pct'),
                 'actual_profit_usdt': evaluation_data.get('actual_profit_usdt'),
                 'stop_loss_hit': evaluation_data.get('stop_loss_hit', False),

@@ -104,12 +104,28 @@ def extract_basic_kline_features(klines: List[Dict], lookback: int = 50) -> Dict
     close0 = closes[0]
     close_last = closes[-1]
 
+    ema_20 = _ema(closes, 20)
+    prev_ema_20 = _ema(closes[:-1], 20) if len(closes) > 1 else ema_20
+    ema_slope = _safe_pct(ema_20 - prev_ema_20, ema_20)
+    ema_window = closes[-20:] if len(closes) >= 20 else closes
+    above_count = sum(1 for c in ema_window if c > ema_20)
+    below_count = sum(1 for c in ema_window if c < ema_20)
+    ratio_above = above_count / len(ema_window) if ema_window else 0.0
+    ratio_below = below_count / len(ema_window) if ema_window else 0.0
+
+    if ratio_above >= 0.6 and close_last >= ema_20:
+        trend_direction = 'bullish'
+    elif ratio_below >= 0.6 and close_last <= ema_20:
+        trend_direction = 'bearish'
+    elif ema_slope > 0 and close_last >= ema_20 and ratio_above >= 0.5:
+        trend_direction = 'bullish'
+    elif ema_slope < 0 and close_last <= ema_20 and ratio_below >= 0.5:
+        trend_direction = 'bearish'
+    else:
+        trend_direction = 'neutral'
+
     trend_delta = _safe_pct(close_last - close0, close0)
     abs_strength = abs(trend_delta)
-    if abs_strength < 0.003:
-        trend_direction = 'neutral'
-    else:
-        trend_direction = 'bullish' if trend_delta > 0 else 'bearish'
 
     ranges = [(h - l) for h, l in zip(highs, lows)]
     avg_range = sum(ranges) / len(ranges) if ranges else 0.0
@@ -137,7 +153,6 @@ def extract_basic_kline_features(klines: List[Dict], lookback: int = 50) -> Dict
 
     range_mode = range_pct <= 0.03 and abs_strength <= 0.012
 
-    ema_20 = _ema(closes, 20)
     dist_to_ema_pct = _safe_pct(abs(close_last - ema_20), ema_20)
 
     kline_features = _detect_kline_features(recent)

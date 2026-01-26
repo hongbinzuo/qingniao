@@ -31,7 +31,7 @@ from abu.market_cache import MarketDataCache  # type: ignore
 from abu.ranker import score_candidate  # type: ignore
 from abu.kline_feature_extractor import extract_basic_kline_features  # type: ignore
 from abu.brooks_pattern_constraints import BrooksPatternConstraints, ConstraintResult  # type: ignore
-from abu.market_context import classify_market_context, context_mismatch  # type: ignore
+from abu.market_context import classify_market_context, context_filter_reason, context_mismatch  # type: ignore
 from db_manager_trader import TraderDBManager  # type: ignore
 
 try:
@@ -49,7 +49,10 @@ except Exception:
     AUDIT_AVAILABLE = False
 
 EXCL = set(['USDT', 'USDC', 'DAI', 'BUSD', 'FDUSD', 'TUSD', 'PYUSD', 'USDE', 'GUSD', 'EURT'])
-IGNORE_SYMBOLS = set(['RIDE', 'TRALA', 'RIDE-PERP', 'TRALA-PERP', 'RIDEUSDT', 'TRALAUSDT'])
+IGNORE_SYMBOLS = set([
+    'AIR', 'AIRUSDT', 'AIR-PERP',
+    'RIDE', 'TRALA', 'RIDE-PERP', 'TRALA-PERP', 'RIDEUSDT', 'TRALAUSDT'
+])
 KLINES_PER_DAY = {
     '5m': 288,
     '15m': 96,
@@ -91,7 +94,7 @@ VELO_GAINERS_URL = (
     "?range=3600000&resolution=1%20minute&filter=Top%20Gainers"
 )
 EXCHANGE_HEALTH: Dict[str, Dict[str, Optional[str]]] = {}
-PATTERN_SOURCES = ['gemini_pro3']
+PATTERN_SOURCES = ['gemini_pro3', 'brooks_rule']
 USE_BROOKS_RULES = False
 FIXED_MARKETCAP = [
     'BTC', 'ETH', 'SOL', 'BNB', 'XRP', 'TRX', 'DOGE', 'BCH', 'ADA', 'XLM',
@@ -129,6 +132,21 @@ def _normalize_pattern_type(pattern_type: Optional[str]) -> str:
     if "range" in text or "trading_range" in text:
         return "trading_range"
     return text
+
+
+def _format_price(value: Optional[object]) -> str:
+    if value is None:
+        return "-"
+    try:
+        num = float(value)
+    except (TypeError, ValueError):
+        return "-"
+    abs_num = abs(num)
+    if abs_num >= 1:
+        return f"{num:.4f}"
+    if abs_num >= 0.01:
+        return f"{num:.6f}"
+    return f"{num:.9f}"
 
 
 def _ema_deviation_penalty(
@@ -1138,6 +1156,7 @@ def main() -> None:
     ap.add_argument('--audit-min-confidence', type=float, default=0.3)
     ap.add_argument('--audit-max-duplicates', type=int, default=20)
     ap.add_argument('--audit-max-unused', type=int, default=50)
+    ap.add_argument('--context-filter', type=str, default='off', choices=['off', 'brooks', 'regime36', 'both'])
     args = ap.parse_args()
 
     scan_start = time.time()
@@ -1158,10 +1177,13 @@ def main() -> None:
     if PATTERN_LIB_AVAILABLE:
         try:
             pattern_library = UnifiedPatternLibrary('abu')
+            load_gemini = any(str(s).startswith('gemini') for s in PATTERN_SOURCES)
+            load_cursor = any(str(s) == 'cursor_ai' for s in PATTERN_SOURCES)
+            load_brooks = 'brooks_rule' in PATTERN_SOURCES
             pattern_stats = pattern_library.load_all_patterns(
-                load_gemini=True,
-                load_cursor_ai=False,
-                load_brooks=False,
+                load_gemini=load_gemini,
+                load_cursor_ai=load_cursor,
+                load_brooks=load_brooks,
             )
         except Exception:
             pattern_library = None
@@ -1170,6 +1192,7 @@ def main() -> None:
     constraints = BrooksPatternConstraints() if USE_BROOKS_RULES else None
     rulebook = BestPracticeRulebook()
     prob_estimator = SignalProbabilityEstimator()
+    context_filter_mode = (args.context_filter or 'off').lower()
 
     exchange_mode = args.exchange_mode.lower()
     fallback_exchange = 'gate' if args.exchange_fallback and exchange_mode == 'split' else None
@@ -1227,6 +1250,8 @@ def main() -> None:
             continue
         context_info = classify_market_context(kl, features)
         features['market_context'] = context_info.get('context')
+        features['regime_36'] = context_info.get('regime_36')
+        features['regime_36_components'] = context_info.get('regime_36_components')
 
         has_signal = False
         for cand in candidates:
@@ -1238,6 +1263,16 @@ def main() -> None:
                 continue
 
             query_features = build_query_features(cand, features)
+            if context_filter_mode != 'off':
+                filter_reason = context_filter_reason(
+                    context_info,
+                    query_features.get('pattern_type'),
+                    cand.get('type'),
+                    context_filter_mode,
+                )
+                if filter_reason:
+                    skip_reasons.setdefault(sym, set()).add(filter_reason)
+                    continue
             pattern_candidates = _pattern_type_candidates(cand, features)
             pattern_score = 0.0
             best_match = None
@@ -1310,6 +1345,14 @@ def main() -> None:
             if context_label:
                 reason = (cand.get('reason') or '').strip()
                 cand['reason'] = f"{reason} | Context={context_label}" if reason else f"Context={context_label}"
+            regime_label = context_info.get('regime')
+            if regime_label:
+                reason = (cand.get('reason') or '').strip()
+                cand['reason'] = f"{reason} | Regime={regime_label}" if reason else f"Regime={regime_label}"
+            regime_36_label = context_info.get('regime_36')
+            if regime_36_label:
+                reason = (cand.get('reason') or '').strip()
+                cand['reason'] = f"{reason} | Regime36={regime_36_label}" if reason else f"Regime36={regime_36_label}"
 
             entry_model = f"PA/{base_pattern}" if base_pattern else None
             empirical = prob_estimator.estimate(sym, args.timeframe, entry_model=entry_model)
@@ -1401,7 +1444,10 @@ def main() -> None:
     output_dir = ROOT / 'outputs' / 'trading_signals'
     output_dir.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now().strftime('%Y%m%d_%H%M')
-    out = output_dir / f"ABU_top{args.top}_{args.timeframe}_{timestamp}.md"
+    context_suffix = ""
+    if context_filter_mode != "off":
+        context_suffix = f"_ctx-{context_filter_mode}"
+    out = output_dir / f"ABU_top{args.top}_{args.timeframe}{context_suffix}_{timestamp}.md"
 
     used_counts: Dict[str, int] = {}
     fallback_count = 0
@@ -1417,9 +1463,14 @@ def main() -> None:
     lines = [
         f"# Abu Top{args.top} ({args.timeframe})",
         '',
+    ]
+    if context_filter_mode != "off":
+        lines.append(f"- Context过滤: {context_filter_mode}")
+        lines.append("")
+    lines.extend([
         '| # | Symbol | Type | Entry | SL | TP1 | TP2 | P(TP1) | P(TP2) | P(SL) | Score | PatternScore | Brooks | Match | Source | PatternId | ImagePath | Page | Reason |',
         '|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---|---|---|---|---|---|'
-    ]
+    ])
     for i, r in enumerate(top, 1):
         match_source = r.get('_pattern_match_source') or '-'
         if match_source == 'gemini_flash':
@@ -1429,15 +1480,19 @@ def main() -> None:
         match_id = r.get('_pattern_match_id') or '-'
         page = r.get('_pattern_match_page')
         page = str(page) if page not in (None, '') else '-'
+        entry_fmt = _format_price(r.get('entry'))
+        sl_fmt = _format_price(r.get('stop_loss'))
+        tp1_fmt = _format_price(r.get('take_profit_1') if r.get('take_profit_1') is not None else 0.0)
+        tp2_fmt = _format_price(r.get('take_profit_2') if r.get('take_profit_2') is not None else 0.0)
         lines.append(
-            "| {idx} | {symbol} | {typ} | {entry:.4f} | {sl:.4f} | {tp1:.4f} | {tp2:.4f} | {p1} | {p2} | {psl} | {score:.2f} | {pscore:.2f} | {brooks} | {match} | {source} | {match_id} | {image_path} | {page} | {reason} |".format(
+            "| {idx} | {symbol} | {typ} | {entry} | {sl} | {tp1} | {tp2} | {p1} | {p2} | {psl} | {score:.2f} | {pscore:.2f} | {brooks} | {match} | {source} | {match_id} | {image_path} | {page} | {reason} |".format(
                 idx=i,
                 symbol=r['symbol'],
                 typ=r['type'],
-                entry=r['entry'],
-                sl=r['stop_loss'],
-                tp1=float(r.get('take_profit_1') or 0.0),
-                tp2=float(r.get('take_profit_2') or 0.0),
+                entry=entry_fmt,
+                sl=sl_fmt,
+                tp1=tp1_fmt,
+                tp2=tp2_fmt,
                 p1=f"{float(r.get('_prob_tp1') or 0.0) * 100:.1f}%",
                 p2=f"{float(r.get('_prob_tp2') or 0.0) * 100:.1f}%",
                 psl=f"{float(r.get('_prob_sl') or 0.0) * 100:.1f}%",
