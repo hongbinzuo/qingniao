@@ -81,8 +81,8 @@ EMA_DEVIATION_MIN = {'5m': 0.006, '15m': 0.01, '1h': 0.015}
 EMA_DEVIATION_PENALTY_MAX = 0.6
 STOP_LOOKBACK = {'5m': 10, '15m': 20, '1h': 20}
 ATR_BUFFER_MULT = 0.2
-ATR_K_TREND = 1.2
-ATR_K_COUNTER = 1.5
+ATR_K_TREND = {'5m': 3.0, '15m': 1.2, '1h': 1.2}
+ATR_K_COUNTER = {'5m': 3.0, '15m': 1.5, '1h': 1.5}
 EXCHANGES = ('gate', 'bybit', 'bitget')
 SYMBOL_CACHE_DIR = ROOT / 'data' / 'exchange_symbols'
 SYMBOL_CACHE_TTL_HOURS = 12
@@ -95,7 +95,7 @@ VELO_GAINERS_URL = (
 )
 EXCHANGE_HEALTH: Dict[str, Dict[str, Optional[str]]] = {}
 PATTERN_SOURCES = ['gemini_pro3', 'brooks_rule']
-USE_BROOKS_RULES = False
+USE_BROOKS_RULES = True
 FIXED_MARKETCAP = [
     'BTC', 'ETH', 'SOL', 'BNB', 'XRP', 'TRX', 'DOGE', 'BCH', 'ADA', 'XLM',
     'LINK', 'ZEC', 'SUI', 'HBAR', 'AVAX', 'LTC', 'SHIB', 'WLFI', 'UNI',
@@ -900,7 +900,11 @@ def _adjust_stop_with_rules(
     )
     atr = _calc_atr(klines, period=14)
     atr_pct = (atr / entry) if entry > 0 else 0.0
-    k = ATR_K_COUNTER if countertrend else ATR_K_TREND
+    k_map = ATR_K_COUNTER if countertrend else ATR_K_TREND
+    if isinstance(k_map, dict):
+        k = float(k_map.get(timeframe, next(iter(k_map.values()))))
+    else:
+        k = float(k_map)
     min_stop_pct = max(min_stop, atr_pct * k)
     stop_by_pct = entry * (1 - min_stop_pct) if direction == 'long' else entry * (1 + min_stop_pct)
     struct_stop = _structure_stop(klines, direction, STOP_LOOKBACK.get(timeframe, 20), atr)

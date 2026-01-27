@@ -1,0 +1,7 @@
+version: 1
+agent:
+  name: abu_image_analyzer
+  extend: default
+  system_prompt_path: ./abu_analyzer_prompt.md
+  exclude_tools:
+    - "kimi_cli.tools.multiagent:Task"  # 排除Task避免嵌套调用
