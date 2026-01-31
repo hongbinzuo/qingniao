@@ -186,7 +186,7 @@ def main():
     print("\n下一步:")
     print("  1. 运行测试验证: python src/db_manager_postgres.py")
     print("  2. 备份 DuckDB 文件: move src\\data\\qingniao_abu.duckdb src\\data\\qingniao_abu.duckdb.bak")
-    print("  3. 重启 Abu 系统: Abu全部启动.bat")
+    print("  3. 重启 Abu 系统: scripts/abu/Abu全部启动.bat")
 
 if __name__ == '__main__':
     main()

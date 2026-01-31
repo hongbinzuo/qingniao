@@ -10,7 +10,7 @@
    - 完整的表结构和索引设计
 
 2. ✅ **Go程序实现**
-   - `scripts/abu_kline_fetcher.go` - 完整实现
+   - `scripts/abu/abu_kline_fetcher.go` - 完整实现
    - 并发从Gate.io获取K线数据
    - 增量获取逻辑
    - 自动去重
@@ -61,14 +61,14 @@ gcc --version
 # 2. 启用 CGO 并编译
 cd C:\Users\zuoho\code\qingniao\scripts
 $env:CGO_ENABLED=1
-go build -o abu_kline_fetcher.exe abu_kline_fetcher.go
+go build -o abu/abu_kline_fetcher.exe abu/abu_kline_fetcher.go
 ```
 
 ## 📋 下一步
 
 安装 gcc 后：
 
-1. ⏳ 验证 gcc 安装（运行 `scripts/install_gcc.ps1`）
+1. ⏳ 验证 gcc 安装（运行 `scripts/abu/install_gcc.ps1`）
 2. ⏳ 编译 Go 程序（`go build`）
 3. ⏳ 测试运行程序
 4. ⏳ 获取初始数据
@@ -84,10 +84,10 @@ go build -o abu_kline_fetcher.exe abu_kline_fetcher.go
 
 ## 📝 相关文件
 
-- `scripts/abu_kline_fetcher.go` - Go程序（主文件）
+- `scripts/abu/abu_kline_fetcher.go` - Go程序（主文件）
 - `scripts/FIX_CGO_WINDOWS.md` - CGO修复指南
-- `scripts/install_gcc.ps1` - gcc检查脚本
-- `scripts/build_with_cgo.ps1` - 编译脚本
+- `scripts/abu/install_gcc.ps1` - gcc检查脚本
+- `scripts/abu/build_with_cgo.ps1` - 编译脚本
 - `src/kline_db.py` - Python集成模块
 
 

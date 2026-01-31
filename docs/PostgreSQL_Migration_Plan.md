@@ -309,7 +309,7 @@ TraderDBManager = PostgresDBManager
 
 ### 4.2 创建数据库表结构
 
-**文件：`scripts/init_postgres_abu_db.py`**
+**文件：`scripts/abu/init_postgres_abu_db.py`**
 
 ```python
 #!/usr/bin/env python3
@@ -633,17 +633,17 @@ EOF
 
 ```bash
 # 连接 PostgreSQL 创建数据库和用户
-psql -U postgres -f scripts/create_abu_database.sql
+psql -U postgres -f scripts/abu/create_abu_database.sql
 
 # 初始化表结构
-python scripts/init_postgres_abu_db.py
+python scripts/abu/init_postgres_abu_db.py
 ```
 
 ### Step 3: 数据迁移（10-30分钟，取决于数据量）
 
 ```bash
 # 停止所有 Abu 进程
-Abu停止所有.bat
+scripts/abu/Abu停止所有.bat
 
 # 执行迁移
 python scripts/migrate_duckdb_to_postgres.py
@@ -676,7 +676,7 @@ psql -U abu_user -d qingniao_abu -c "SELECT * FROM trading_signals ORDER BY crea
 ### Step 6: 重新启动系统
 
 ```bash
-Abu全部启动.bat
+scripts/abu/Abu全部启动.bat
 ```
 
 ---
@@ -687,14 +687,14 @@ Abu全部启动.bat
 
 ```bash
 # 停止系统
-Abu停止所有.bat
+scripts/abu/Abu停止所有.bat
 
 # 恢复 DuckDB 管理器
 move src\db_manager_trader.py src\db_manager_trader_postgres.py.bak
 move src\db_manager_trader_duckdb.py.bak src\db_manager_trader.py
 
 # 重启系统
-Abu全部启动.bat
+scripts/abu/Abu全部启动.bat
 ```
 
 ---

@@ -71,7 +71,7 @@
 
 ### 3. 信号扫描器扩展
 
-**文件**: `scripts/abu_gemini_signal_scanner_enhanced.py`
+**文件**: `scripts/abu/abu_gemini_signal_scanner_enhanced.py`
 
 **扩展内容**：
 
@@ -98,7 +98,7 @@
 
 **使用方法**：
 ```bash
-python scripts/abu_gemini_signal_scanner_enhanced.py \
+python scripts/abu/abu_gemini_signal_scanner_enhanced.py \
     --top 50 \
     --timeframes 5m,15m,1h,4h \
     --days 28 \
@@ -109,7 +109,7 @@ python scripts/abu_gemini_signal_scanner_enhanced.py \
 
 ### 4. 测试和验证工具
 
-**文件**: `scripts/abu_gemini_match_validator.py`
+**文件**: `scripts/abu/abu_gemini_match_validator.py`
 
 **功能**：
 
@@ -130,7 +130,7 @@ python scripts/abu_gemini_signal_scanner_enhanced.py \
 
 **使用方法**：
 ```bash
-python scripts/abu_gemini_match_validator.py \
+python scripts/abu/abu_gemini_match_validator.py \
     --symbols BTC,ETH,SOL \
     --timeframes 5m,15m,1h,4h \
     --days 28 \
@@ -165,7 +165,7 @@ python scripts/abu_gemini_match_validator.py \
 
 使用扩展版扫描器进行日常扫描：
 ```bash
-python scripts/abu_gemini_signal_scanner_enhanced.py \
+python scripts/abu/abu_gemini_signal_scanner_enhanced.py \
     --top 50 \
     --timeframes 5m,15m,1h,4h \
     --days 28 \
@@ -177,7 +177,7 @@ python scripts/abu_gemini_signal_scanner_enhanced.py \
 
 使用验证器测试不同参数：
 ```bash
-python scripts/abu_gemini_match_validator.py \
+python scripts/abu/abu_gemini_match_validator.py \
     --symbols BTC,ETH,SOL \
     --min-similarities 0.3,0.4,0.5,0.6,0.7
 ```
@@ -186,7 +186,7 @@ python scripts/abu_gemini_match_validator.py \
 
 如果需要使用深度学习特征（需要安装torch）：
 ```bash
-python scripts/abu_gemini_signal_scanner_enhanced.py \
+python scripts/abu/abu_gemini_signal_scanner_enhanced.py \
     --top 50 \
     --timeframes 5m,15m,1h,4h \
     --days 28 \
@@ -221,8 +221,8 @@ python scripts/abu_gemini_signal_scanner_enhanced.py \
 ### 新增文件
 1. `src/abu/gemini_pattern_matcher_enhanced.py` - 优化的匹配器
 2. `src/abu/dl_features.py` - 深度学习特征提取器
-3. `scripts/abu_gemini_signal_scanner_enhanced.py` - 扩展的信号扫描器
-4. `scripts/abu_gemini_match_validator.py` - 匹配验证器
+3. `scripts/abu/abu_gemini_signal_scanner_enhanced.py` - 扩展的信号扫描器
+4. `scripts/abu/abu_gemini_match_validator.py` - 匹配验证器
 
 ### 修改文件
 无（保持向后兼容）

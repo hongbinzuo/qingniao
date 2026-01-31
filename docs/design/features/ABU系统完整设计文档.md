@@ -317,7 +317,7 @@ rules = retriever.get_trading_rules('Triangle')  # 获取交易规则
 
 ### 3.6 信号生成模块
 
-**文件**: `scripts/abu_gemini_signal_scanner_enhanced.py`
+**文件**: `scripts/abu/abu_gemini_signal_scanner_enhanced.py`
 
 **功能**:
 - 扫描多时间框架（5m/15m/1h/4h）
@@ -418,15 +418,15 @@ CREATE TABLE match_history (
 
 #### 5.1.1 Gemini Vision分析
 
-**脚本**: `scripts/abu_optimize_speed.py` 或 `scripts/abu_run_stage0_full.py`
+**脚本**: `scripts/abu/abu_optimize_speed.py` 或 `scripts/abu/abu_run_stage0_full.py`
 
 **步骤**:
 1. 准备图片: `data/abu/images/*.png` (1,000张)
-2. 运行分析: `python scripts/abu_optimize_speed.py`
+2. 运行分析: `python scripts/abu/abu_optimize_speed.py`
 3. 结果输出: `outputs/abu_gemini_annotations_enhanced.jsonl`
-4. 解析结果: `python scripts/abu_parse_gemini_output.py`
-5. 更新数据库: `python scripts/abu_update_pattern_library_from_gemini.py`
-6. 验证质量: `python scripts/abu_verify_gemini_analysis.py`
+4. 解析结果: `python scripts/abu/abu_parse_gemini_output.py`
+5. 更新数据库: `python scripts/abu/abu_update_pattern_library_from_gemini.py`
+6. 验证质量: `python scripts/abu/abu_verify_gemini_analysis.py`
 
 **完成状态**: ✅ 已完成
 - 成功分析: 953张
@@ -436,10 +436,10 @@ CREATE TABLE match_history (
 #### 5.1.2 电子书知识提取
 
 **步骤**:
-1. 创建表: `python scripts/abu_create_ebook_tables.py`
-2. 提取文本: `python scripts/abu_extract_ebook_text.py --ebooks-dir "C:\baidunetdiskdownload"`
-3. 分析知识: `python scripts/abu_analyze_ebook_text.py`
-4. 关联模式: `python scripts/abu_link_ebook_to_patterns.py`
+1. 创建表: `python scripts/abu/abu_create_ebook_tables.py`
+2. 提取文本: `python scripts/abu/abu_extract_ebook_text.py --ebooks-dir "C:\baidunetdiskdownload"`
+3. 分析知识: `python scripts/abu/abu_analyze_ebook_text.py`
+4. 关联模式: `python scripts/abu/abu_link_ebook_to_patterns.py`
 
 **完成状态**: ✅ 已完成
 - 知识总数: 1,539条
@@ -447,7 +447,7 @@ CREATE TABLE match_history (
 
 ### 5.2 阶段1: 实时信号生成（已实现）✅
 
-**脚本**: `scripts/abu_gemini_signal_scanner_enhanced.py`
+**脚本**: `scripts/abu/abu_gemini_signal_scanner_enhanced.py`
 
 **工作流程**:
 ```
@@ -487,13 +487,13 @@ CREATE TABLE match_history (
 **使用示例**:
 ```bash
 # 生成Top 20信号（15分钟时间框架）
-python scripts/abu_gemini_signal_scanner_enhanced.py --top 20 --timeframes 15m
+python scripts/abu/abu_gemini_signal_scanner_enhanced.py --top 20 --timeframes 15m
 
 # 使用Gate.io，最小相似度0.4
-python scripts/abu_gemini_signal_scanner_enhanced.py --top 20 --exchange gate --min-similarity 0.4
+python scripts/abu/abu_gemini_signal_scanner_enhanced.py --top 20 --exchange gate --min-similarity 0.4
 
 # 写入数据库
-python scripts/abu_gemini_signal_scanner_enhanced.py --top 20 --write-db 1
+python scripts/abu/abu_gemini_signal_scanner_enhanced.py --top 20 --write-db 1
 ```
 
 ### 5.3 阶段2: ML模型训练（待实施）⚠️
@@ -796,30 +796,30 @@ matcher = EnhancedGeminiPatternMatcher(
 
 ```bash
 # 运行完整分析（推荐）
-python scripts/abu_optimize_speed.py
+python scripts/abu/abu_optimize_speed.py
 
 # 检查进度
 python scripts/show_progress.py
 
 # 验证结果
-python scripts/abu_verify_gemini_analysis.py
+python scripts/abu/abu_verify_gemini_analysis.py
 ```
 
 ### 10.2 信号生成
 
 ```bash
 # 生成Top 20信号（15分钟）
-python scripts/abu_gemini_signal_scanner_enhanced.py --top 20 --timeframes 15m
+python scripts/abu/abu_gemini_signal_scanner_enhanced.py --top 20 --timeframes 15m
 
 # 使用Gate.io，最小相似度0.4，写入数据库
-python scripts/abu_gemini_signal_scanner_enhanced.py \
+python scripts/abu/abu_gemini_signal_scanner_enhanced.py \
     --top 20 \
     --exchange gate \
     --min-similarity 0.4 \
     --write-db 1
 
 # 多时间框架扫描
-python scripts/abu_gemini_signal_scanner_enhanced.py \
+python scripts/abu/abu_gemini_signal_scanner_enhanced.py \
     --top 20 \
     --timeframes 5m,15m,1h
 ```

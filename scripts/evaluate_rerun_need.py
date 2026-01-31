@@ -133,8 +133,8 @@ def main():
         print("=" * 80)
         if should_rerun:
             print("建议操作:")
-            print("  1. 清空现有输出: python scripts/abu_reset_stage0.py")
-            print("  2. 使用优化后的Prompt重新处理: python scripts/abu_optimize_speed.py")
+            print("  1. 清空现有输出: python scripts/abu/abu_reset_stage0.py")
+            print("  2. 使用优化后的Prompt重新处理: python scripts/abu/abu_optimize_speed.py")
         else:
             print("当前结果质量可接受，继续处理剩余图片即可")
         

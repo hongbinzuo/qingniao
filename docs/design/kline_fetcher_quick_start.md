@@ -2,7 +2,7 @@
 
 ## ✅ 已完成的工作
 
-1. ✅ **Go程序实现** (`scripts/abu_kline_fetcher.go`)
+1. ✅ **Go程序实现** (`scripts/abu/abu_kline_fetcher.go`)
    - 并发从Gate.io获取K线数据
    - 支持增量获取
    - 自动去重
@@ -36,14 +36,14 @@ go get github.com/marcboeker/go-duckdb
 
 ```bash
 # 首次运行：获取90天数据
-go run scripts/abu_kline_fetcher.go \
+go run scripts/abu/abu_kline_fetcher.go \
   --symbols BTC,ETH,SOL \
   --timeframe 15m \
   --days 90 \
   --concurrency 20
 
 # 后续运行：增量获取（只获取新数据）
-go run scripts/abu_kline_fetcher.go \
+go run scripts/abu/abu_kline_fetcher.go \
   --symbols BTC,ETH,SOL \
   --timeframe 15m \
   --incremental \
@@ -92,7 +92,7 @@ klines = load_klines('BTC', '15m', limit=200)
 
 1. **首次运行**：获取历史数据（90天）
    ```bash
-   go run scripts/abu_kline_fetcher.go --symbols BTC,ETH,SOL --timeframe 15m --days 90
+   go run scripts/abu/abu_kline_fetcher.go --symbols BTC,ETH,SOL --timeframe 15m --days 90
    ```
 
 2. **数据存储**：自动存储到`data/kline_data/klines.duckdb`
@@ -107,7 +107,7 @@ klines = load_klines('BTC', '15m', limit=200)
 
 1. **增量更新**（定时任务，如每15分钟运行一次）
    ```bash
-   go run scripts/abu_kline_fetcher.go --symbols BTC,ETH,SOL --timeframe 15m --incremental
+   go run scripts/abu/abu_kline_fetcher.go --symbols BTC,ETH,SOL --timeframe 15m --incremental
    ```
 
 2. **Python读取**：从数据库读取最新数据
@@ -120,7 +120,7 @@ klines = load_klines('BTC', '15m', limit=200)
 
 1. ✅ 安装Go依赖并测试
 2. ⏳ 运行Go程序获取初始数据
-3. ⏳ 集成到Python代码中（修改`scripts/abu_gemini_signal_scanner_enhanced.py`）
+3. ⏳ 集成到Python代码中（修改`scripts/abu/abu_gemini_signal_scanner_enhanced.py`）
 4. ⏳ 设置定时任务自动更新
 
 ## ⚠️ 注意事项

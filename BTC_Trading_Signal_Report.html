@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>BTC Trading Signal Report</title>
+        <style>
+            @page {
+                size: A4;
+                margin: 2cm;
+            }
+
+            @media print {
+                body {
+                    margin: 0;
+                }
+                .no-print {
+                    display: none;
+                }
+            }
+
+            body {
+                font-family: "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+                font-size: 11pt;
+                line-height: 1.6;
+                color: #333;
+                max-width: 900px;
+                margin: 0 auto;
+                padding: 20px;
+                background: #fff;
+            }
+
+            h1 {
+                color: #1a1a1a;
+                font-size: 24pt;
+                border-bottom: 3px solid #0066cc;
+                padding-bottom: 10px;
+                margin-top: 20px;
+            }
+
+            h2 {
+                color: #0066cc;
+                font-size: 18pt;
+                margin-top: 25px;
+                border-bottom: 2px solid #e0e0e0;
+                padding-bottom: 5px;
+                page-break-after: avoid;
+            }
+
+            h3 {
+                color: #0066cc;
+                font-size: 14pt;
+                margin-top: 20px;
+                page-break-after: avoid;
+            }
+
+            .header-info {
+                color: #666;
+                font-size: 10pt;
+                margin-bottom: 20px;
+            }
+
+            .executive-summary {
+                background-color: #f0f8ff;
+                border-left: 4px solid #0066cc;
+                padding: 15px;
+                margin: 20px 0;
+                page-break-inside: avoid;
+            }
+
+            .signal-box {
+                background-color: #fff3cd;
+                border: 2px solid #ffc107;
+                padding: 15px;
+                margin: 15px 0;
+                border-radius: 5px;
+                page-break-inside: avoid;
+            }
+
+            .signal-box.short {
+                background-color: #f8d7da;
+                border-color: #dc3545;
+            }
+
+            .signal-box.long {
+                background-color: #d4edda;
+                border-color: #28a745;
+            }
+
+            table {
+                border-collapse: collapse;
+                width: 100%;
+                margin: 15px 0;
+                page-break-inside: avoid;
+            }
+
+            th,
+            td {
+                border: 1px solid #ddd;
+                padding: 10px;
+                text-align: left;
+            }
+
+            th {
+                background-color: #0066cc;
+                color: white;
+                font-weight: bold;
+            }
+
+            tr:nth-child(even) {
+                background-color: #f9f9f9;
+            }
+
+            strong {
+                color: #0066cc;
+            }
+
+            hr {
+                border: none;
+                border-top: 2px solid #e0e0e0;
+                margin: 20px 0;
+            }
+
+            ul,
+            ol {
+                margin: 10px 0;
+                padding-left: 30px;
+            }
+
+            li {
+                margin: 5px 0;
+            }
+
+            .metric-row {
+                display: flex;
+                justify-content: space-between;
+                margin: 5px 0;
+            }
+
+            .metric-label {
+                font-weight: bold;
+                color: #555;
+            }
+
+            .pattern-list {
+                background-color: #f9f9f9;
+                padding: 10px;
+                border-radius: 5px;
+                margin: 10px 0;
+            }
+
+            .print-button {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 10px 20px;
+                background-color: #0066cc;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 14pt;
+            }
+
+            .print-button:hover {
+                background-color: #0052a3;
+            }
+        </style>
+    </head>
+    <body>
+        <button class="print-button no-print" onclick="window.print()">
+            打印/保存为PDF
+        </button>
+
+        <h1>BTC Trading Signal Report</h1>
+        <h2>Multi-Timeframe Analysis with Vector Pattern Matching</h2>
+
+        <div class="header-info">
+            <strong>Generated:</strong> 2026-01-30 04:04:31<br />
+            <strong>Symbol:</strong> BTC/USDT<br />
+            <strong>Analysis Method:</strong> Vector Pattern Matching (938
+            Brooks Patterns)
+        </div>
+
+        <hr />
+
+        <h2>Executive Summary</h2>
+
+        <div class="executive-summary">
+            <h3>RECOMMENDED TRADE: SHORT on 1H Timeframe</h3>
+            <div class="metric-row">
+                <span class="metric-label">Entry:</span>
+                <span>$83,917.30</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Stop Loss:</span>
+                <span>$85,068.24 (1.37% risk)</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Target:</span>
+                <span>$81,615.42 (2.74% profit)</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Risk/Reward:</span>
+                <span>1:2.00</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Win Probability:</span>
+                <span>70%</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Pattern Similarity:</span>
+                <span><strong>84.1% (Excellent)</strong></span>
+            </div>
+        </div>
+
+        <hr />
+
+        <h2>Multi-Timeframe Analysis</h2>
+
+        <h3>5-Minute Timeframe</h3>
+
+        <div class="signal-box long">
+            <strong>Trading Signal: LONG</strong>
+        </div>
+
+        <p><strong>Market Conditions:</strong></p>
+        <ul>
+            <li>Current Price: $83,917.40</li>
+            <li>EMA-20: $83,901.22</li>
+            <li>Price vs EMA: +0.02% (neutral)</li>
+            <li>Direction: NEUTRAL</li>
+            <li>ATR(14): $227.93</li>
+        </ul>
+
+        <p><strong>Vector Pattern Analysis:</strong></p>
+        <ul>
+            <li>Win Probability: 70%</li>
+            <li>Risk/Reward: 2.00</li>
+            <li>Confidence: 20%</li>
+            <li>Consensus: BULLISH</li>
+        </ul>
+
+        <div class="pattern-list">
+            <strong>Top 5 Similar Patterns:</strong>
+            <ol>
+                <li>ID:64 - trend/long (60.1% similarity)</li>
+                <li>ID:69 - trend/long (60.1% similarity)</li>
+                <li>ID:76 - trend/long (60.1% similarity)</li>
+                <li>ID:89 - trend/long (60.1% similarity)</li>
+                <li>ID:95 - trend/long (60.1% similarity)</li>
+            </ol>
+        </div>
+
+        <p><strong>Trade Setup:</strong></p>
+        <ul>
+            <li>Entry: $83,917.40</li>
+            <li>Stop Loss: $83,575.51 (-0.41%)</li>
+            <li>Target: $84,601.19 (+0.81%)</li>
+            <li>Risk/Reward: 1:2.00</li>
+        </ul>
+
+        <hr />
+
+        <h3>15-Minute Timeframe</h3>
+
+        <div class="signal-box short">
+            <strong>Trading Signal: SHORT</strong>
+        </div>
+
+        <p><strong>Market Conditions:</strong></p>
+        <ul>
+            <li>Current Price: $83,917.40</li>
+            <li>EMA-20: $84,354.20</li>
+            <li>Price vs EMA: -0.52% (slightly bearish)</li>
+            <li>Direction: NEUTRAL</li>
+            <li>ATR(14): $501.09</li>
+        </ul>
+
+        <p><strong>Vector Pattern Analysis:</strong></p>
+        <ul>
+            <li>Win Probability: 66%</li>
+            <li>Risk/Reward: 1.90</li>
+            <li>Confidence: 20.7%</li>
+            <li>Consensus: BEARISH</li>
+        </ul>
+
+        <div class="pattern-list">
+            <strong>Top 5 Similar Patterns:</strong>
+            <ol>
+                <li>ID:111 - trend/short (63.0% similarity)</li>
+                <li>ID:757 - trend/short (60.4% similarity)</li>
+                <li>ID:916 - trend/short (60.4% similarity)</li>
+                <li>ID:1055 - trend/neutral (60.4% similarity)</li>
+                <li>ID:1336 - trend/short (60.4% similarity)</li>
+            </ol>
+        </div>
+
+        <p><strong>Trade Setup:</strong></p>
+        <ul>
+            <li>Entry: $83,917.40</li>
+            <li>Stop Loss: $84,669.03 (+0.90%)</li>
+            <li>Target: $82,488.67 (-1.70%)</li>
+            <li>Risk/Reward: 1:1.90</li>
+        </ul>
+
+        <hr />
+
+        <h3>1-Hour Timeframe (PRIMARY SIGNAL)</h3>
+
+        <div class="signal-box short">
+            <strong>Trading Signal: SHORT (STRONG)</strong>
+        </div>
+
+        <p><strong>Market Conditions:</strong></p>
+        <ul>
+            <li>Current Price: $83,917.30</li>
+            <li>EMA-20: $86,285.00</li>
+            <li>Price vs EMA: -2.74% (STRONG BEARISH)</li>
+            <li>Direction: DOWN</li>
+            <li>ATR(14): $767.29</li>
+        </ul>
+
+        <p><strong>Vector Pattern Analysis:</strong></p>
+        <ul>
+            <li>Win Probability: 70%</li>
+            <li>Risk/Reward: 2.00</li>
+            <li>Confidence: 20%</li>
+            <li>Consensus: BEARISH</li>
+            <li>
+                <strong>Pattern Similarity: 84.1% (EXCELLENT MATCH)</strong>
+            </li>
+        </ul>
+
+        <div class="pattern-list">
+            <strong>Top 5 Similar Patterns:</strong>
+            <ol>
+                <li>ID:111 - trend/short (84.1% similarity)</li>
+                <li>ID:757 - trend/short (84.1% similarity)</li>
+                <li>ID:916 - trend/short (84.1% similarity)</li>
+                <li>ID:1336 - trend/short (84.1% similarity)</li>
+                <li>ID:1055 - trend/neutral (84.1% similarity)</li>
+            </ol>
+        </div>
+
+        <p><strong>Trade Setup:</strong></p>
+        <ul>
+            <li>Entry: $83,917.30</li>
+            <li>Stop Loss: $85,068.24 (+1.37%)</li>
+            <li>Target: $81,615.42 (-2.74%)</li>
+            <li>Risk/Reward: 1:2.00</li>
+        </ul>
+
+        <hr />
+
+        <h2>Timeframe Comparison</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>5-Minute</th>
+                    <th>15-Minute</th>
+                    <th>1-Hour</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Signal</strong></td>
+                    <td>LONG</td>
+                    <td>SHORT</td>
+                    <td>SHORT</td>
+                </tr>
+                <tr>
+                    <td><strong>Pattern Similarity</strong></td>
+                    <td>60.1%</td>
+                    <td>60.4-63.0%</td>
+                    <td><strong>84.1%</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>Win Probability</strong></td>
+                    <td>70%</td>
+                    <td>66%</td>
+                    <td>70%</td>
+                </tr>
+                <tr>
+                    <td><strong>Risk/Reward</strong></td>
+                    <td>2.00</td>
+                    <td>1.90</td>
+                    <td>2.00</td>
+                </tr>
+                <tr>
+                    <td><strong>Price vs EMA</strong></td>
+                    <td>+0.02%</td>
+                    <td>-0.52%</td>
+                    <td><strong>-2.74%</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>Trend Direction</strong></td>
+                    <td>Neutral</td>
+                    <td>Neutral</td>
+                    <td><strong>Down</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>Consensus</strong></td>
+                    <td>Bullish</td>
+                    <td>Bearish</td>
+                    <td>Bearish</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <hr />
+
+        <h2>Key Observations</h2>
+
+        <ol>
+            <li>
+                <strong>Pattern Similarity Quality</strong>
+                <ul>
+                    <li>
+                        1H timeframe shows exceptional pattern match at 84.1%
+                        similarity
+                    </li>
+                    <li>
+                        5m and 15m timeframes show moderate matches at ~60%
+                        similarity
+                    </li>
+                    <li>
+                        Higher similarity indicates stronger pattern recognition
+                        and higher confidence
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <strong>Pattern Overlap</strong>
+                <ul>
+                    <li>
+                        15m and 1H share 4 common pattern IDs: 111, 757, 916,
+                        1336
+                    </li>
+                    <li>
+                        5m shows completely different patterns (64, 69, 76, 89,
+                        95)
+                    </li>
+                    <li>
+                        Pattern convergence between 15m and 1H strengthens
+                        bearish case
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <strong>Trend Structure</strong>
+                <ul>
+                    <li>
+                        1H shows clear bearish structure (price 2.74% below
+                        EMA-20)
+                    </li>
+                    <li>
+                        15m shows early bearish signs (price 0.52% below EMA-20)
+                    </li>
+                    <li>5m is neutral/consolidating near EMA-20</li>
+                </ul>
+            </li>
+            <li>
+                <strong>Signal Conflict Resolution</strong>
+                <ul>
+                    <li>5m shows LONG signal (counter-trend bounce)</li>
+                    <li>
+                        15m and 1H both show SHORT signals (aligned with trend)
+                    </li>
+                    <li>
+                        Higher timeframe alignment (15m + 1H) takes priority
+                    </li>
+                </ul>
+            </li>
+        </ol>
+
+        <hr />
+
+        <h2>Trading Recommendations</h2>
+
+        <h3>Primary Trade Setup (1H SHORT)</h3>
+
+        <p><strong>Entry Strategy:</strong></p>
+        <ul>
+            <li>Enter SHORT at current market price: $83,917.30</li>
+            <li>Or wait for pullback to $84,200-$84,400 resistance zone</li>
+        </ul>
+
+        <p><strong>Risk Management:</strong></p>
+        <ul>
+            <li>Stop Loss: $85,068.24 (above recent swing high)</li>
+            <li>Risk: 1.37% per position</li>
+            <li>Position Size: Calculate based on 1-2% account risk</li>
+        </ul>
+
+        <p><strong>Profit Targets:</strong></p>
+        <ul>
+            <li>Target 1 (50%): $82,766 (1.37% profit, 1:1 RR)</li>
+            <li>Target 2 (50%): $81,615 (2.74% profit, 1:2 RR)</li>
+        </ul>
+
+        <p><strong>Trade Rationale:</strong></p>
+        <ul>
+            <li>Exceptional 84.1% pattern similarity (highest confidence)</li>
+            <li>Clear bearish structure on 1H chart</li>
+            <li>Price trading 2.74% below EMA-20</li>
+            <li>Pattern convergence with 15m timeframe</li>
+            <li>70% historical win probability</li>
+        </ul>
+
+        <h3>Alternative Scenarios</h3>
+
+        <p><strong>If 5m LONG Signal Plays Out:</strong></p>
+        <ul>
+            <li>Watch for rejection at $84,200-$84,400 zone</li>
+            <li>This would be ideal SHORT entry for 1H setup</li>
+            <li>Invalidation: Break above $85,100</li>
+        </ul>
+
+        <p><strong>If Price Breaks Above $85,100:</strong></p>
+        <ul>
+            <li>1H SHORT setup invalidated</li>
+            <li>Wait for new pattern formation</li>
+            <li>Re-analyze with fresh data</li>
+        </ul>
+
+        <hr />
+
+        <h2>Conclusions</h2>
+
+        <ol>
+            <li>
+                <strong
+                    >Primary Recommendation: SHORT BTC on 1H timeframe</strong
+                >
+                <ul>
+                    <li>
+                        Highest pattern similarity (84.1%) provides strong
+                        confidence
+                    </li>
+                    <li>
+                        Clear bearish market structure supports the trade
+                        direction
+                    </li>
+                    <li>Risk/reward ratio of 1:2.00 is favorable</li>
+                </ul>
+            </li>
+            <li>
+                <strong>Why 1H Over Lower Timeframes:</strong>
+                <ul>
+                    <li>
+                        Pattern match quality is significantly superior (84.1%
+                        vs 60%)
+                    </li>
+                    <li>Trend alignment is clear and unambiguous</li>
+                    <li>Pattern convergence with 15m adds confirmation</li>
+                    <li>Lower noise and false signals compared to 5m/15m</li>
+                </ul>
+            </li>
+            <li>
+                <strong>Risk Considerations:</strong>
+                <ul>
+                    <li>
+                        5m timeframe shows conflicting LONG signal (short-term
+                        bounce risk)
+                    </li>
+                    <li>Stop loss at $85,068 must be respected strictly</li>
+                    <li>
+                        Position size should reflect 1-2% account risk maximum
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <strong>System Validation:</strong>
+                <ul>
+                    <li>
+                        Vector pattern matching successfully identified
+                        different patterns across timeframes
+                    </li>
+                    <li>
+                        Pattern IDs 111, 757, 916, 1336 appear in both 15m and
+                        1H (strong convergence)
+                    </li>
+                    <li>
+                        System correctly differentiates between
+                        timeframe-specific patterns
+                    </li>
+                    <li>
+                        938 Brooks patterns database providing reliable
+                        historical context
+                    </li>
+                </ul>
+            </li>
+        </ol>
+
+        <hr />
+
+        <h2>Disclaimer</h2>
+
+        <p style="color: #666; font-size: 10pt; line-height: 1.8">
+            This report is generated by an automated vector pattern matching
+            system based on historical price action patterns. Past performance
+            does not guarantee future results. Always conduct your own analysis
+            and manage risk appropriately. Trading cryptocurrencies involves
+            substantial risk of loss.
+        </p>
+
+        <hr />
+
+        <p
+            style="
+                text-align: center;
+                color: #999;
+                font-size: 10pt;
+                margin-top: 30px;
+            "
+        >
+            <strong>Report End</strong>
+        </p>
+    </body>
+</html>

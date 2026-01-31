@@ -11,7 +11,7 @@
 
 **Windows**:
 ```batch
-双击运行: abu_start_all.bat
+双击运行: scripts/abu/abu_start_all.bat
 ```
 
 这将自动启动：
@@ -32,7 +32,7 @@
 
 如果不确定系统是否在运行，可以使用检查脚本：
 ```batch
-双击运行: abu_check_and_start.bat
+双击运行: scripts/abu/abu_check_and_start.bat
 ```
 
 这个脚本会：
@@ -65,7 +65,7 @@ python scripts\auto_signal_generator.py --interval 1.0 --coins 30
 
 ### 2. 视觉匹配系统（Gemini Flash）
 
-**脚本**: `scripts/abu_vision_scanner_4h.py`
+**脚本**: `scripts/abu/abu_vision_scanner_4h.py`
 
 **功能**:
 - 每4小时运行一次（成本控制）
@@ -74,7 +74,7 @@ python scripts\auto_signal_generator.py --interval 1.0 --coins 30
 
 **运行方式**:
 ```batch
-python scripts\abu_vision_scanner_4h.py --interval 14400 --symbols 10
+python scripts\abu\abu_vision_scanner_4h.py --interval 14400 --symbols 10
 ```
 
 **输出**:
@@ -113,14 +113,14 @@ python scripts\generate_daily_summary_report.py --date 2026-01-15
 **方法1: 使用批处理文件（推荐，最简单）**:
 ```batch
 # 以管理员身份运行
-双击运行: setup_abu_auto_start.bat
+双击运行: scripts/abu/setup_abu_auto_start.bat
 ```
 
 **方法2: 使用PowerShell（如果方法1失败）**:
 ```powershell
 # 以管理员身份运行PowerShell
 cd C:\Users\zuoho\code\qingniao
-powershell -ExecutionPolicy Bypass -File "scripts\setup_abu_auto_start.ps1"
+powershell -ExecutionPolicy Bypass -File "scripts\abu\setup_abu_auto_start.ps1"
 ```
 
 这将创建一个Windows任务计划，系统启动时自动检查并启动ABU系统。
@@ -223,7 +223,7 @@ outputs\daily_reports\daily_summary_YYYYMMDD.md
 
 1. **启动系统**:
    ```batch
-   双击运行: abu_start_all.bat
+   双击运行: scripts/abu/abu_start_all.bat
    ```
 
 2. **设置每日报告**:
@@ -301,7 +301,7 @@ outputs\daily_reports\daily_summary_YYYYMMDD.md
 
 2. 手动运行一次:
    ```batch
-   python scripts\abu_vision_scanner_4h.py --once
+   python scripts\abu\abu_vision_scanner_4h.py --once
    ```
 
 ---
@@ -330,7 +330,7 @@ python scripts\query_ml_optimization_results.py
 
 ## 🎯 总结
 
-**一键启动**: 运行 `abu_start_all.bat` 即可启动所有系统
+**一键启动**: 运行 `scripts/abu/abu_start_all.bat` 即可启动所有系统
 
 **自动运行**: 
 - 模式匹配：每小时自动运行
@@ -346,4 +346,4 @@ python scripts\query_ml_optimization_results.py
 ---
 
 **状态**: ✅ 已实现  
-**下一步**: 运行 `abu_start_all.bat` 启动系统
+**下一步**: 运行 `scripts/abu/abu_start_all.bat` 启动系统

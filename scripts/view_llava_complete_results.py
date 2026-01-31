@@ -137,7 +137,7 @@ def main():
         print(f"[OK] 已分类: {classified} 条 ({classified/total*100:.1f}%)")
     print(f"\n查看详细结果:")
     print(f"  python scripts/view_llava_database_results.py")
-    print(f"  python scripts/abu_check_pattern_details.py")
+    print(f"  python scripts/abu/abu_check_pattern_details.py")
     
     return 0
 

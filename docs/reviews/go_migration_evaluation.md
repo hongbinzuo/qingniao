@@ -1,7 +1,7 @@
 # Go版本迁移评估报告
 
 **评估日期**: 2025-01-11  
-**评估文件**: `scripts/abu_gemini_signal_scanner_enhanced.py`
+**评估文件**: `scripts/abu/abu_gemini_signal_scanner_enhanced.py`
 
 ## 📊 执行摘要
 
@@ -26,7 +26,7 @@
 ### 2. 项目中已有的Go基础设施
 
 **已有的Go代码**:
-- ✅ `scripts/abu_fetch_klines.go` - 批量获取K线数据的Go实现
+- ✅ `scripts/abu/abu_fetch_klines.go` - 批量获取K线数据的Go实现
 - ✅ `external/nofx/` - 完整的Go交易系统（包含K线结构定义）
 - ✅ `external/nofx/market/types.go` - K线数据结构定义
 
@@ -45,8 +45,8 @@ type KlineBar struct {
 ### 3. 交易所API支持
 
 **已有的实现**:
-- ✅ Binance API支持（`scripts/abu_fetch_klines.go`）
-- ✅ Gate.io API支持（`scripts/abu_fetch_klines.go`）
+- ✅ Binance API支持（`scripts/abu/abu_fetch_klines.go`）
+- ✅ Gate.io API支持（`scripts/abu/abu_fetch_klines.go`）
 - ✅ 并发请求支持（goroutine + semaphore）
 
 ---
@@ -99,7 +99,7 @@ from abu.gemini_pattern_matcher_enhanced import EnhancedGeminiPatternMatcher
 ### 3. 开发成本
 
 **迁移工作量估算**:
-- K线数据获取: **已完成** ✅（`scripts/abu_fetch_klines.go`）
+- K线数据获取: **已完成** ✅（`scripts/abu/abu_fetch_klines.go`）
 - 数据库访问层: **中等**（1-2周）
 - 模式匹配核心逻辑: **极高**（1-2个月）
 - ML/DL集成: **极高**（2-3个月）
@@ -120,7 +120,7 @@ Go (K线数据获取) → JSON → Python (模式匹配和信号生成)
 
 **实现**:
 1. **Go部分**（已完成）:
-   - 使用`scripts/abu_fetch_klines.go`批量获取K线数据
+   - 使用`scripts/abu/abu_fetch_klines.go`批量获取K线数据
    - 输出JSON格式
    - 利用Go的并发优势
 
@@ -141,7 +141,7 @@ Go (K线数据获取) → JSON → Python (模式匹配和信号生成)
 ./abu_fetch_klines --symbols BTC,ETH,SOL --timeframe 15m --exchange gate > klines.json
 
 # Python处理模式匹配
-python scripts/abu_gemini_signal_scanner_enhanced.py --klines-file klines.json
+python scripts/abu/abu_gemini_signal_scanner_enhanced.py --klines-file klines.json
 ```
 
 ### 方案2: 保持Python（当前方案）
@@ -195,7 +195,7 @@ python scripts/abu_gemini_signal_scanner_enhanced.py --klines-file klines.json
 ### 已有的Go库
 
 1. **K线数据结构** ✅
-   - 项目中已有：`scripts/abu_fetch_klines.go`
+   - 项目中已有：`scripts/abu/abu_fetch_klines.go`
    - `external/nofx/market/types.go`
 
 2. **技术指标库** ⚠️
@@ -221,7 +221,7 @@ python scripts/abu_gemini_signal_scanner_enhanced.py --klines-file klines.json
 ### 如果选择Go（部分迁移）
 
 1. **短期**（1-2周）:
-   - ✅ 使用现有的`scripts/abu_fetch_klines.go`
+   - ✅ 使用现有的`scripts/abu/abu_fetch_klines.go`
    - ✅ 优化并发参数
    - ✅ 添加批量处理功能
 

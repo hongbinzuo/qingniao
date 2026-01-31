@@ -13,7 +13,7 @@
 ### Step 1: 停止 Abu 系统
 
 ```cmd
-Abu停止所有.bat
+scripts/abu/Abu停止所有.bat
 ```
 
 等待所有进程停止（重要！避免数据库锁定）
@@ -86,7 +86,7 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO abu_user;
 ### Step 4: 初始化数据库表结构
 
 ```cmd
-python scripts\init_postgres_abu_db.py
+python scripts\abu\init_postgres_abu_db.py
 ```
 
 应该看到：
@@ -202,7 +202,7 @@ SELECT * FROM trading_signals ORDER BY created_at DESC LIMIT 5;
 ### Step 10: 重新启动 Abu 系统
 
 ```cmd
-Abu全部启动.bat
+scripts/abu/Abu全部启动.bat
 ```
 
 观察日志，确认：
@@ -262,7 +262,7 @@ taskkill /F /IM python.exe
 
 ```cmd
 REM 1. 停止系统
-Abu停止所有.bat
+scripts/abu/Abu停止所有.bat
 
 REM 2. 恢复 DuckDB 管理器
 del src\db_manager_trader.py
@@ -273,7 +273,7 @@ del src\data\qingniao_abu.duckdb
 move src\data\qingniao_abu.duckdb.bak src\data\qingniao_abu.duckdb
 
 REM 4. 重启系统
-Abu全部启动.bat
+scripts/abu/Abu全部启动.bat
 ```
 
 ---

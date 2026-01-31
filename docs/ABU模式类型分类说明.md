@@ -32,10 +32,10 @@ if not pattern_type:
 
 ```bash
 # 运行Gemini标注
-py -3 scripts\abu_gemini_annotate.py --api-key YOUR_KEY --images-dir data\abu\images
+py -3 scripts\abu\abu_gemini_annotate.py --api-key YOUR_KEY --images-dir data\abu\images
 
 # 重新入库（带Gemini标注）
-py -3 scripts\abu_ingest_patterns.py --from-jsonl data\abu\raw_pages.jsonl --from-gemini outputs\abu_gemini_annotations.jsonl
+py -3 scripts\abu\abu_ingest_patterns.py --from-jsonl data\abu\raw_pages.jsonl --from-gemini outputs\abu_gemini_annotations.jsonl
 ```
 
 **优点**: 
@@ -141,7 +141,7 @@ WHERE id IN (10, 11, 12, ...);
 
 ### 步骤1: 改进推断逻辑
 
-修改 `scripts/abu_ingest_patterns.py`，添加从上下文文本提取模式类型的逻辑。
+修改 `scripts/abu/abu_ingest_patterns.py`，添加从上下文文本提取模式类型的逻辑。
 
 ### 步骤2: 重新分类现有模式
 
@@ -159,7 +159,7 @@ for pattern in patterns:
 检查分类结果：
 
 ```bash
-py -3 scripts\abu_check_patterns.py
+py -3 scripts\abu\abu_check_patterns.py
 ```
 
 ## ⚠️ 注意事项

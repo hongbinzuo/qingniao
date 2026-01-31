@@ -79,7 +79,7 @@
 ```
 
 #### 1.3 实现脚本
-**文件**: `scripts/abu_extract_ebook_text.py`
+**文件**: `scripts/abu/abu_extract_ebook_text.py`
 
 **功能**：
 - 批量处理PDF文件
@@ -117,7 +117,7 @@
 - **正则表达式**：模式匹配（模式名称、价格、百分比等）
 - **规则引擎**：基于规则的交易参数提取
 
-**实现脚本**: `scripts/abu_analyze_ebook_text.py`
+**实现脚本**: `scripts/abu/abu_analyze_ebook_text.py`
 
 ---
 
@@ -167,7 +167,7 @@ ALTER TABLE pattern_library ADD COLUMN IF NOT EXISTS text_description TEXT;
 2. **特征匹配**：基于模式特征描述匹配
 3. **上下文匹配**：基于交易场景和上下文匹配
 
-**实现脚本**: `scripts/abu_link_ebook_to_patterns.py`
+**实现脚本**: `scripts/abu/abu_link_ebook_to_patterns.py`
 
 ---
 
@@ -211,7 +211,7 @@ class EnhancedGeminiPatternMatcher:
 
 #### 4.2 交易信号生成增强
 
-**修改**: `scripts/abu_gemini_signal_scanner_enhanced.py`
+**修改**: `scripts/abu/abu_gemini_signal_scanner_enhanced.py`
 
 **增强点**：
 - 从电子书知识库提取交易规则
@@ -233,7 +233,7 @@ class EnhancedGeminiPatternMatcher:
 
 ### 1. PDF文本提取脚本
 
-**文件**: `scripts/abu_extract_ebook_text.py`
+**文件**: `scripts/abu/abu_extract_ebook_text.py`
 
 ```python
 #!/usr/bin/env python3
@@ -403,7 +403,7 @@ if __name__ == '__main__':
 
 ### 2. 文本分析与知识提取脚本
 
-**文件**: `scripts/abu_analyze_ebook_text.py`
+**文件**: `scripts/abu/abu_analyze_ebook_text.py`
 
 **核心功能**：
 - 使用spaCy进行命名实体识别
@@ -412,7 +412,7 @@ if __name__ == '__main__':
 
 ### 3. 知识关联脚本
 
-**文件**: `scripts/abu_link_ebook_to_patterns.py`
+**文件**: `scripts/abu/abu_link_ebook_to_patterns.py`
 
 **功能**：
 - 将电子书中的模式描述与`pattern_library`表中的模式关联
@@ -498,17 +498,17 @@ python -m spacy download en_core_web_sm
 ### 步骤2: 提取文本
 ```bash
 # 将电子书PDF放在 data/abu/ebooks/ 目录
-python scripts/abu_extract_ebook_text.py
+python scripts/abu/abu_extract_ebook_text.py
 ```
 
 ### 步骤3: 分析文本
 ```bash
-python scripts/abu_analyze_ebook_text.py
+python scripts/abu/abu_analyze_ebook_text.py
 ```
 
 ### 步骤4: 关联知识
 ```bash
-python scripts/abu_link_ebook_to_patterns.py
+python scripts/abu/abu_link_ebook_to_patterns.py
 ```
 
 ### 步骤5: 集成测试

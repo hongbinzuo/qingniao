@@ -23,28 +23,28 @@ go get github.com/marcboeker/go-duckdb
 
 ```bash
 # 获取BTC、ETH、SOL的15分钟K线数据（增量）
-go run scripts/abu_kline_fetcher.go \
+go run scripts/abu/abu_kline_fetcher.go \
   --symbols BTC,ETH,SOL \
   --timeframe 15m \
   --days 90 \
   --incremental
 
 # 获取多个币种（使用配置文件中的TOP 50币种）
-go run scripts/abu_kline_fetcher.go \
+go run scripts/abu/abu_kline_fetcher.go \
   --symbols BTC,ETH,SOL,BNB,XRP,ADA,AVAX,DOGE,LINK,DOT \
   --timeframe 15m \
   --concurrency 20 \
   --incremental
 
 # 全量获取（覆盖模式，不使用增量）
-go run scripts/abu_kline_fetcher.go \
+go run scripts/abu/abu_kline_fetcher.go \
   --symbols BTC,ETH \
   --timeframe 15m \
   --days 90 \
   --incremental=false
 
 # 指定数据库路径
-go run scripts/abu_kline_fetcher.go \
+go run scripts/abu/abu_kline_fetcher.go \
   --symbols BTC,ETH \
   --timeframe 15m \
   --db data/kline_data/klines.duckdb
@@ -164,10 +164,10 @@ def get_latest_timestamp(symbol, timeframe, exchange='gate'):
 
 ```bash
 # Windows
-go build -o scripts/abu_kline_fetcher.exe scripts/abu_kline_fetcher.go
+go build -o scripts/abu/abu_kline_fetcher.exe scripts/abu/abu_kline_fetcher.go
 
 # Linux/macOS
-go build -o scripts/abu_kline_fetcher scripts/abu_kline_fetcher.go
+go build -o scripts/abu/abu_kline_fetcher scripts/abu/abu_kline_fetcher.go
 ```
 
 ## 📝 注意事项

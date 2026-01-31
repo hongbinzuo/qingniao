@@ -42,7 +42,7 @@
 
 ### 2. 更新ABU信号扫描器
 
-**文件**: `scripts/abu_gemini_signal_scanner_enhanced.py`
+**文件**: `scripts/abu/abu_gemini_signal_scanner_enhanced.py`
 
 **更改**:
 - 优先导入`TalibEnhancedGeminiPatternMatcher`
@@ -127,7 +127,7 @@ talib_feature_map = {
 扫描器会自动检测TA-Lib是否可用，如果可用则使用增强版：
 
 ```bash
-python scripts/abu_gemini_signal_scanner_enhanced.py
+python scripts/abu/abu_gemini_signal_scanner_enhanced.py
 ```
 
 ### 方式2: 手动指定

@@ -40,7 +40,7 @@
   - 脚本: `scripts/pattern_library_matcher.py`
 
 - **[organize_pdf_processing_pipeline]** 整合PDF处理完整流程：从PDF提取→图片导出→模式识别→OCR文字提取→数据库存储，形成端到端自动化流程，每次有更新都要整合进去
-  - 脚本: `scripts/abu_complete_pipeline.py`
+  - 脚本: `scripts/abu/abu_complete_pipeline.py`
 
 
 ---
@@ -95,10 +95,10 @@ python scripts/view_llava_complete_results.py
 ### PDF处理流程
 ```bash
 # 完整流程
-python scripts/abu_complete_pipeline.py --pdf path/to/book.pdf
+python scripts/abu/abu_complete_pipeline.py --pdf path/to/book.pdf
 
 # 只执行OCR
-python scripts/abu_complete_pipeline.py --skip step1,step2,step3
+python scripts/abu/abu_complete_pipeline.py --skip step1,step2,step3
 ```
 
 ---

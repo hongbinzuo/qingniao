@@ -368,7 +368,7 @@ class MLOptimizationReadinessChecker:
                 'type': 'incremental_learning',
                 'action': '可以开始增量学习',
                 'target': f'当前: {completed_count} 条，目标: 50 条',
-                'script': 'python scripts/abu_incremental_learning.py'
+                'script': 'python scripts/abu/abu_incremental_learning.py'
             })
         elif completed_count < 100:
             recommendations.append({
@@ -384,7 +384,7 @@ class MLOptimizationReadinessChecker:
                 'type': 'full_retrain',
                 'action': '数据充足，可以进行完整模型重训练',
                 'target': f'当前: {completed_count} 条',
-                'script': 'python scripts/abu_full_ml_retrain.py'
+                'script': 'python scripts/abu/abu_full_ml_retrain.py'
             })
         
         # 建议2: 评估数据
@@ -414,7 +414,7 @@ class MLOptimizationReadinessChecker:
                 'type': 'quality_optimization',
                 'action': '胜率偏低，建议立即优化',
                 'target': f'当前胜率: {win_rate:.1f}%，目标: ≥ 50%',
-                'script': 'python scripts/abu_optimize_signal_quality.py'
+                'script': 'python scripts/abu/abu_optimize_signal_quality.py'
             })
         
         return recommendations

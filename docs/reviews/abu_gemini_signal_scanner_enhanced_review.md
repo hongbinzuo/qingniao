@@ -1,6 +1,6 @@
 # ABU Gemini信号扫描器（扩展版）代码Review
 
-**文件**: `scripts/abu_gemini_signal_scanner_enhanced.py`  
+**文件**: `scripts/abu/abu_gemini_signal_scanner_enhanced.py`  
 **Review日期**: 2025-01-11  
 **Reviewer**: Auto
 
@@ -152,7 +152,7 @@ except ImportError:
 ## 📚 参考实现
 
 可以参考以下文件的实现：
-- `scripts/abu_gemini_signal_scanner.py`：基础版本的实现
+- `scripts/abu/abu_gemini_signal_scanner.py`：基础版本的实现
 - `scripts/scan_15m_only.py`：15分钟扫描的完整实现
 - `scripts/scan_15m_only.py`：展示了如何实现`scan_timeframe`函数
 

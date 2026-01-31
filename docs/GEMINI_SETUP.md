@@ -56,13 +56,13 @@ PY
 
 How We Use It
 - Image extraction is in `scripts/pa_ingest_pdf.py` (writes to `data/abu/images/` and `data/abu/raw_pages.jsonl`).
-- Call `scripts/abu_gemini_annotate.py` to annotate those images with Gemini and write JSONL to `outputs/abu_gemini_annotations.jsonl`.
+- Call `scripts/abu/abu_gemini_annotate.py` to annotate those images with Gemini and write JSONL to `outputs/abu_gemini_annotations.jsonl`.
 
 Run Annotation (example)
 ```
-py -3 scripts\abu_gemini_annotate.py --limit 50 --model gemini-1.5-pro
+py -3 scripts\abu\abu_gemini_annotate.py --limit 50 --model gemini-1.5-pro
 # or include context from surrounding pages (default window=2)
-py -3 scripts\abu_gemini_annotate.py --limit 50 --context-window 2 --model gemini-1.5-pro
+py -3 scripts\abu\abu_gemini_annotate.py --limit 50 --context-window 2 --model gemini-1.5-pro
 ```
 
 Model Choice

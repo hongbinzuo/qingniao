@@ -14,7 +14,7 @@
 **包含内容**:
 - 完整的迁移步骤（环境准备 → 数据库初始化 → 数据迁移 → 代码切换 → 测试）
 - `src/db_manager_postgres.py` - PostgreSQL 数据库管理器（支持连接池）
-- `scripts/init_postgres_abu_db.py` - 数据库表结构初始化
+- `scripts/abu/init_postgres_abu_db.py` - 数据库表结构初始化
 - `scripts/migrate_duckdb_to_postgres.py` - 数据迁移工具
 - 回滚方案和性能优化建议
 
@@ -31,7 +31,7 @@
 
 ### 修改内容
 
-#### A. 修改 `Abu全部启动.bat`
+#### A. 修改 `scripts/abu/Abu全部启动.bat`
 
 ```批处理
 REM 原来: --interval 1.0 --coins 30

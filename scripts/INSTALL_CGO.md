@@ -25,7 +25,7 @@ go-duckdb 需要 CGO 支持，在 Windows 上需要安装 C 编译器（gcc）�
    ```bash
    $env:CGO_ENABLED=1
    cd scripts
-   go build -o abu_kline_fetcher.exe abu_kline_fetcher.go
+   go build -o abu/abu_kline_fetcher.exe abu/abu_kline_fetcher.go
    ```
 
 ### 方案2：使用 MSYS2 + MinGW-w64
@@ -59,7 +59,7 @@ $env:CGO_ENABLED=1
 
 # 测试编译
 cd scripts
-go build -o abu_kline_fetcher.exe abu_kline_fetcher.go
+go build -o abu/abu_kline_fetcher.exe abu/abu_kline_fetcher.go
 ```
 
 ## 永久启用 CGO（可选）

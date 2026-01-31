@@ -11,7 +11,7 @@
 
 #### 1.1 核心文件
 - ✅ `src/abu/gemini_pattern_matcher_talib_enhanced.py` - TA-Lib增强版匹配器
-- ✅ `scripts/test_abu_talib_integration.py` - 集成测试脚本
+- ✅ `scripts/abu/test_abu_talib_integration.py` - 集成测试脚本
 - ✅ `docs/design/features/ABU_TA_Lib集成优化说明.md` - 集成文档
 
 #### 1.2 功能实现
@@ -65,7 +65,7 @@
 ### 3. 扫描器更新 ✓
 
 #### 3.1 文件更新
-- ✅ `scripts/abu_gemini_signal_scanner_enhanced.py`
+- ✅ `scripts/abu/abu_gemini_signal_scanner_enhanced.py`
   - 优先使用Al Brooks增强版匹配器
   - 自动回退机制（Al Brooks → TA-Lib → 标准版）
 
@@ -132,14 +132,14 @@ GeminiPatternMatcher (基础)
 1. `src/abu/gemini_pattern_matcher_talib_enhanced.py`
 2. `src/abu/al_brooks_special_patterns_detector.py`
 3. `src/abu/gemini_pattern_matcher_al_brooks_enhanced.py`
-4. `scripts/test_abu_talib_integration.py`
+4. `scripts/abu/test_abu_talib_integration.py`
 5. `scripts/check_gemini_patterns.py`
 6. `scripts/check_specific_pages.py`
 7. `docs/design/features/ABU_TA_Lib集成优化说明.md`
 8. `docs/design/features/Al_Brooks特殊模式集成说明.md`
 
 ### 修改文件（2个）
-1. `scripts/abu_gemini_signal_scanner_enhanced.py` - 更新匹配器选择逻辑
+1. `scripts/abu/abu_gemini_signal_scanner_enhanced.py` - 更新匹配器选择逻辑
 2. `scripts/scan_15m_only.py` - 修复格式化错误
 
 ---
@@ -149,7 +149,7 @@ GeminiPatternMatcher (基础)
 ### 自动使用（推荐）
 ```bash
 # 扫描器会自动使用Al Brooks增强版（包含TA-Lib）
-python scripts/abu_gemini_signal_scanner_enhanced.py
+python scripts/abu/abu_gemini_signal_scanner_enhanced.py
 ```
 
 ### 手动指定

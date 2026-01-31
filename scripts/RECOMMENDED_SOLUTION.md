@@ -17,18 +17,19 @@ go-duckdb在Windows上存在C++标准库链接问题，这是包的已知兼容�
 
 1. **Go程序获取数据**（输出JSON）
    ```bash
-   go build -o abu_kline_fetcher_simple.exe abu_kline_fetcher_simple.go
-   .\abu_kline_fetcher_simple.exe --symbols BTC,ETH,SOL --timeframe 15m --days 90 --output klines.json
+   cd scripts
+   go build -o abu/abu_kline_fetcher_simple.exe abu/abu_kline_fetcher_simple.go
+   .\abu\abu_kline_fetcher_simple.exe --symbols BTC,ETH,SOL --timeframe 15m --days 90 --output klines.json
    ```
 
 2. **Python脚本导入数据库**
    ```bash
-   python scripts/import_klines_json.py klines.json
+   python import_klines_json.py klines.json
    ```
 
 ### 文件说明
 
-- `abu_kline_fetcher_simple.go` - Go程序（不需要CGO，输出JSON）
+- `abu/abu_kline_fetcher_simple.go` - Go程序（不需要CGO，输出JSON）
 - `import_klines_json.py` - Python导入脚本（使用Python DuckDB库）
 
 ### 使用示例
@@ -36,10 +37,10 @@ go-duckdb在Windows上存在C++标准库链接问题，这是包的已知兼容�
 ```bash
 # 1. 编译Go程序（不需要CGO）
 cd scripts
-go build -o abu_kline_fetcher_simple.exe abu_kline_fetcher_simple.go
+go build -o abu/abu_kline_fetcher_simple.exe abu/abu_kline_fetcher_simple.go
 
 # 2. 获取K线数据（输出JSON）
-.\abu_kline_fetcher_simple.exe --symbols BTC,ETH,SOL --timeframe 15m --days 90 --output klines.json
+.\abu\abu_kline_fetcher_simple.exe --symbols BTC,ETH,SOL --timeframe 15m --days 90 --output klines.json
 
 # 3. 导入到数据库
 python import_klines_json.py klines.json
@@ -60,6 +61,5 @@ python
 ## 结论
 
 **推荐使用混合方案**，既发挥了Go的并发优势，又避免了Windows上的兼容性问题。
-
 
 

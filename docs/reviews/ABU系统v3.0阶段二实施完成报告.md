@@ -39,7 +39,7 @@
 - 多源融合：自动应用多源置信度融合算法
 - 可选视觉验证：支持AI视觉验证Top N结果
 
-#### 2. `scripts/test_abu_v3_integration.py` ✅
+#### 2. `scripts/abu/test_abu_v3_integration.py` ✅
 
 **功能**：
 - 统一模式库加载测试
@@ -261,7 +261,7 @@ ABU系统v3.0集成测试
 ### 9.2 关键文件
 
 - `src/abu/enhanced_hybrid_matcher.py` - 增强版混合匹配器核心
-- `scripts/test_abu_v3_integration.py` - 集成测试脚本
+- `scripts/abu/test_abu_v3_integration.py` - 集成测试脚本
 - `config/pattern_weights.yaml` - 权重和策略配置
 
 ### 9.3 下一步行动

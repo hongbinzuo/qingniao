@@ -54,7 +54,7 @@ if lines < 1000:
     print(f"待处理: {remaining} 张")
     print(f"预计耗时: {estimated_time:.1f} 分钟")
     print(f"预计成本: ${estimated_cost:.6f}")
-    print("\n建议: 运行 python scripts/abu_run_stage0_full.py")
+    print("\n建议: 运行 python scripts/abu/abu_run_stage0_full.py")
 else:
     print("✅ 所有图片已处理完成!")
 

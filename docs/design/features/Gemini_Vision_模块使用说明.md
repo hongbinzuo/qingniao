@@ -10,9 +10,9 @@
 
 ```
 src/abu/gemini_vision_analyzer.py  # 核心分析模块（独立）
-scripts/abu_parse_gemini_output.py  # 解析输出
-scripts/abu_update_pattern_library_from_gemini.py  # 更新数据库
-scripts/abu_verify_gemini_analysis.py  # 验证结果
+scripts/abu/abu_parse_gemini_output.py  # 解析输出
+scripts/abu/abu_update_pattern_library_from_gemini.py  # 更新数据库
+scripts/abu/abu_verify_gemini_analysis.py  # 验证结果
 ```
 
 ## 🚀 快速开始
@@ -45,16 +45,16 @@ python -m src.abu.gemini_vision_analyzer --status
 
 ```bash
 # 解析Gemini输出
-python scripts/abu_parse_gemini_output.py \
+python scripts/abu/abu_parse_gemini_output.py \
     --input outputs/abu_gemini_annotations_enhanced.jsonl
 
 # 更新模式库（先预览）
-python scripts/abu_update_pattern_library_from_gemini.py \
+python scripts/abu/abu_update_pattern_library_from_gemini.py \
     --input outputs/abu_gemini_parsed.jsonl \
     --dry-run
 
 # 实际更新
-python scripts/abu_update_pattern_library_from_gemini.py \
+python scripts/abu/abu_update_pattern_library_from_gemini.py \
     --input outputs/abu_gemini_parsed.jsonl
 ```
 

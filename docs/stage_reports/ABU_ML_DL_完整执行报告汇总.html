@@ -885,7 +885,7 @@ pattern_library表已有1004条记录，但<code>gemini_annotation_json</code>�
 缺少多模式组合识别 - 缺少交易参数提取（概率、入场、止损、止盈） -
 缺少K线行为特征</p>
 <p><strong>增强后的Prompt</strong>（更新
-<code>scripts/abu_gemini_annotate.py</code>）:</p>
+<code>scripts/abu/abu_gemini_annotate.py</code>）:</p>
 <div class="sourceCode" id="cb7"><pre
 class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>ENHANCED_PROMPT <span class="op">=</span> <span class="st">&quot;&quot;&quot;</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="st">You are an expert price-action trading analyst. Analyze this chart image and extract ALL relevant trading information in structured JSON format.</span></span>
@@ -972,10 +972,10 @@ class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a hr
 <span id="cb7-83"><a href="#cb7-83" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;&quot;&quot;</span></span></code></pre></div>
 <h4 id="gemini分析执行流程">0.2 Gemini分析执行流程</h4>
 <p><strong>脚本</strong>:
-<code>scripts/abu_gemini_annotate_enhanced.py</code> (新建，增强版)</p>
+<code>scripts/abu/abu_gemini_annotate_enhanced.py</code> (新建，增强版)</p>
 <div class="sourceCode" id="cb8"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 完整分析1000张图片</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu_gemini_annotate_enhanced.py <span class="dt">\</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu/abu_gemini_annotate_enhanced.py <span class="dt">\</span></span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">--model</span> gemini-1.5-pro <span class="dt">\</span></span>
 <span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">--limit</span> 0 <span class="dt">\ </span> <span class="co"># 0表示处理所有图片</span></span>
 <span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="ex">--context-window</span> 2 <span class="dt">\</span></span>
@@ -984,13 +984,13 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="
 <span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="co"># 分批处理（推荐，避免长时间运行中断）</span></span>
 <span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="co"># 第一批：1-300</span></span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu_gemini_annotate_enhanced.py <span class="at">--start-idx</span> 0 <span class="at">--end-idx</span> 300</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu/abu_gemini_annotate_enhanced.py <span class="at">--start-idx</span> 0 <span class="at">--end-idx</span> 300</span>
 <span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="co"># 第二批：301-600</span></span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu_gemini_annotate_enhanced.py <span class="at">--start-idx</span> 300 <span class="at">--end-idx</span> 600</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu/abu_gemini_annotate_enhanced.py <span class="at">--start-idx</span> 300 <span class="at">--end-idx</span> 600</span>
 <span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a><span class="co"># 第三批：601-1000</span></span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu_gemini_annotate_enhanced.py <span class="at">--start-idx</span> 600 <span class="at">--end-idx</span> 1000</span></code></pre></div>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu/abu_gemini_annotate_enhanced.py <span class="at">--start-idx</span> 600 <span class="at">--end-idx</span> 1000</span></code></pre></div>
 <p><strong>成本估算</strong>: - Gemini 1.5 Pro: 约 $0.0025/张图片 -
 1000张图片: 约 $2.5 USD - Gemini 1.5 Flash: 约
 $0.000125/张图片（更快更便宜） - 1000张图片: 约 $0.125
@@ -1002,7 +1002,7 @@ USD（推荐使用Flash）</p>
 <p><strong>问题</strong>:
 Gemini返回的JSON可能不完整、格式不一致，需要智能解析和补全</p>
 <p><strong>实现</strong>:
-<code>scripts/abu_parse_gemini_output.py</code> (新建)</p>
+<code>scripts/abu/abu_parse_gemini_output.py</code> (新建)</p>
 <div class="sourceCode" id="cb9"><pre
 class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> GeminiOutputParser:</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;智能解析Gemini Vision API输出&quot;&quot;&quot;</span></span>
@@ -1101,7 +1101,7 @@ class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a hr
 <span id="cb9-95"><a href="#cb9-95" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">None</span></span></code></pre></div>
 <h4 id="更新模式库数据">0.4 更新模式库数据</h4>
 <p><strong>脚本</strong>:
-<code>scripts/abu_update_pattern_library_from_gemini.py</code>
+<code>scripts/abu/abu_update_pattern_library_from_gemini.py</code>
 (新建)</p>
 <div class="sourceCode" id="cb10"><pre
 class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> update_pattern_library_from_gemini():</span>
@@ -1565,7 +1565,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb21-1"><a href=
 <h4 id="智能解析gemini输出独立模块的一部分">0.2
 智能解析Gemini输出（独立模块的一部分）</h4>
 <p><strong>文件</strong>:
-<code>scripts/abu_parse_gemini_output.py</code> (新建)</p>
+<code>scripts/abu/abu_parse_gemini_output.py</code> (新建)</p>
 <p><strong>功能</strong>: -
 解析Gemini返回的JSON（可能不完整或格式不一致） -
 从text_notes提取交易参数（概率、价格等） - 补全缺失字段 - 标准化格式 -
@@ -1578,7 +1578,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb21-1"><a href=
 <p><strong>执行</strong>:</p>
 <div class="sourceCode" id="cb22"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 解析Gemini输出</span></span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu_parse_gemini_output.py <span class="dt">\</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu/abu_parse_gemini_output.py <span class="dt">\</span></span>
 <span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">--input</span> outputs/abu_gemini_annotations_enhanced.jsonl <span class="dt">\</span></span>
 <span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">--output</span> outputs/abu_gemini_parsed.jsonl <span class="dt">\</span></span>
 <span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">--verify</span>  <span class="co"># 验证解析结果，报告错误</span></span>
@@ -1592,7 +1592,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb22-1"><a href=
 <h4 id="更新模式库数据独立模块的一部分">0.3
 更新模式库数据（独立模块的一部分）</h4>
 <p><strong>文件</strong>:
-<code>scripts/abu_update_pattern_library_from_gemini.py</code>
+<code>scripts/abu/abu_update_pattern_library_from_gemini.py</code>
 (新建)</p>
 <p><strong>功能</strong>: - 读取解析后的Gemini结果 -
 匹配pattern_library记录（通过image_path或page_number） -
@@ -1601,12 +1601,12 @@ key_features等字段 - 支持预览模式（–dry-run）</p>
 <p><strong>执行</strong>:</p>
 <div class="sourceCode" id="cb23"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 预览模式（不实际更新，先检查）</span></span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu_update_pattern_library_from_gemini.py <span class="dt">\</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu/abu_update_pattern_library_from_gemini.py <span class="dt">\</span></span>
 <span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">--input</span> outputs/abu_gemini_parsed.jsonl <span class="dt">\</span></span>
 <span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">--dry-run</span></span>
 <span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a><span class="co"># 实际更新（确认无误后执行）</span></span>
-<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu_update_pattern_library_from_gemini.py <span class="dt">\</span></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu/abu_update_pattern_library_from_gemini.py <span class="dt">\</span></span>
 <span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">--input</span> outputs/abu_gemini_parsed.jsonl <span class="dt">\</span></span>
 <span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">--skip-existing</span>  <span class="co"># 跳过已有gemini_annotation_json的记录（默认）</span></span></code></pre></div>
 <p><strong>更新内容</strong>: - <code>gemini_annotation_json</code>:
@@ -1617,7 +1617,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb23-1"><a href=
 从解析结果提取 - <code>updated_at</code>: 更新时间戳</p>
 <h4 id="验证gemini分析结果">0.4 验证Gemini分析结果</h4>
 <p><strong>文件</strong>:
-<code>scripts/abu_verify_gemini_analysis.py</code> (新建)</p>
+<code>scripts/abu/abu_verify_gemini_analysis.py</code> (新建)</p>
 <p><strong>功能</strong>: - 检查更新后的数据质量 - 统计： -
 有多少条记录有gemini_annotation_json（覆盖率） -
 模式组合分布（“W底+三角形”有多少条） -
@@ -1625,7 +1625,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb23-1"><a href=
 生成质量报告</p>
 <p><strong>执行</strong>:</p>
 <div class="sourceCode" id="cb24"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu_verify_gemini_analysis.py <span class="dt">\</span></span>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu/abu_verify_gemini_analysis.py <span class="dt">\</span></span>
 <span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">--output</span> outputs/abu_gemini_verification_report.md</span></code></pre></div>
 <p><strong>报告内容</strong>: - 覆盖率统计 - 模式类型分布 -
 交易参数完整性 - 置信度分布 - 质量评分</p>
@@ -1677,7 +1677,7 @@ class="sourceCode sql"><code class="sourceCode sql"><span id="cb25-1"><a href="#
 <span id="cb25-40"><a href="#cb25-40" aria-hidden="true" tabindex="-1"></a>);</span></code></pre></div>
 <h4 id="记录模式匹配历史">1.2 记录模式匹配历史</h4>
 <p><strong>实现</strong>:
-<code>scripts/abu_record_match_history.py</code></p>
+<code>scripts/abu/abu_record_match_history.py</code></p>
 <p>在每次生成ABU信号后，记录: - 哪些模式被匹配了 - 匹配时的市场状态 -
 后续的价格表现 (TP/SL结果)</p>
 <p><strong>执行方式</strong>:</p>
@@ -1686,7 +1686,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb26-1"><a href=
 <span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/pa_scan_15m_top10.py <span class="at">--record-match-history</span></span>
 <span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 或批量回测历史信号</span></span>
-<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu_backtest_pattern_matches.py <span class="at">--start-date</span> 2025-01-01</span></code></pre></div>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu/abu_backtest_pattern_matches.py <span class="at">--start-date</span> 2025-01-01</span></code></pre></div>
 <h4 id="信号评估数据收集">1.3 信号评估数据收集</h4>
 <p><strong>数据源</strong>: - <code>trading_signals</code> 表
 (system_name=‘abu’) - <code>signal_evaluations</code> 表
@@ -2050,7 +2050,7 @@ class="sourceCode python"><code class="sourceCode python"><span id="cb40-1"><a h
 <span id="cb40-20"><a href="#cb40-20" aria-hidden="true" tabindex="-1"></a>record_match_history(ranked, klines, market_context)</span></code></pre></div>
 <h4 id="模型评估与监控">3.2 模型评估与监控</h4>
 <p><strong>创建评估脚本</strong>:
-<code>scripts/abu_ml_model_evaluation.py</code></p>
+<code>scripts/abu/abu_ml_model_evaluation.py</code></p>
 <div class="sourceCode" id="cb41"><pre
 class="sourceCode python"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> evaluate_ml_models():</span>
 <span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;评估所有ML模型的性能&quot;&quot;&quot;</span></span>
@@ -2070,7 +2070,7 @@ class="sourceCode python"><code class="sourceCode python"><span id="cb41-1"><a h
 <p><strong>定期重训练</strong>:</p>
 <div class="sourceCode" id="cb42"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 每周自动重训练模型</span></span>
-<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu_retrain_ml_models.py <span class="at">--auto</span></span></code></pre></div>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu/abu_retrain_ml_models.py <span class="at">--auto</span></span></code></pre></div>
 <h4 id="ab测试框架">3.3 A/B测试框架</h4>
 <p><strong>对比ML评分 vs 规则评分</strong>:</p>
 <div class="sourceCode" id="cb43"><pre
@@ -2284,31 +2284,31 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb48-1"><a href=
 <span id="cb48-11"><a href="#cb48-11" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb48-12"><a href="#cb48-12" aria-hidden="true" tabindex="-1"></a><span class="co"># 步骤0.5: 智能解析并更新模式库</span></span>
 <span id="cb48-13"><a href="#cb48-13" aria-hidden="true" tabindex="-1"></a><span class="co"># 解析Gemini输出（标准化格式）</span></span>
-<span id="cb48-14"><a href="#cb48-14" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu_parse_gemini_output.py <span class="dt">\</span></span>
+<span id="cb48-14"><a href="#cb48-14" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu/abu_parse_gemini_output.py <span class="dt">\</span></span>
 <span id="cb48-15"><a href="#cb48-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">--input</span> outputs/abu_gemini_annotations_enhanced.jsonl <span class="dt">\</span></span>
 <span id="cb48-16"><a href="#cb48-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">--output</span> outputs/abu_gemini_parsed.jsonl</span>
 <span id="cb48-17"><a href="#cb48-17" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb48-18"><a href="#cb48-18" aria-hidden="true" tabindex="-1"></a><span class="co"># 更新模式库（预览模式，先检查）</span></span>
-<span id="cb48-19"><a href="#cb48-19" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu_update_pattern_library_from_gemini.py <span class="dt">\</span></span>
+<span id="cb48-19"><a href="#cb48-19" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu/abu_update_pattern_library_from_gemini.py <span class="dt">\</span></span>
 <span id="cb48-20"><a href="#cb48-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">--input</span> outputs/abu_gemini_parsed.jsonl <span class="dt">\</span></span>
 <span id="cb48-21"><a href="#cb48-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">--dry-run</span></span>
 <span id="cb48-22"><a href="#cb48-22" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb48-23"><a href="#cb48-23" aria-hidden="true" tabindex="-1"></a><span class="co"># 实际更新（确认无误后）</span></span>
-<span id="cb48-24"><a href="#cb48-24" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu_update_pattern_library_from_gemini.py <span class="dt">\</span></span>
+<span id="cb48-24"><a href="#cb48-24" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu/abu_update_pattern_library_from_gemini.py <span class="dt">\</span></span>
 <span id="cb48-25"><a href="#cb48-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">--input</span> outputs/abu_gemini_parsed.jsonl</span>
 <span id="cb48-26"><a href="#cb48-26" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb48-27"><a href="#cb48-27" aria-hidden="true" tabindex="-1"></a><span class="co"># 验证分析结果</span></span>
-<span id="cb48-28"><a href="#cb48-28" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu_verify_gemini_analysis.py <span class="dt">\</span></span>
+<span id="cb48-28"><a href="#cb48-28" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu/abu_verify_gemini_analysis.py <span class="dt">\</span></span>
 <span id="cb48-29"><a href="#cb48-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">--output</span> outputs/abu_gemini_verification_report.md</span>
 <span id="cb48-30"><a href="#cb48-30" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb48-31"><a href="#cb48-31" aria-hidden="true" tabindex="-1"></a><span class="co"># 步骤1: 创建模式匹配历史表</span></span>
-<span id="cb48-32"><a href="#cb48-32" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu_init_ml_tables.py</span>
+<span id="cb48-32"><a href="#cb48-32" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu/abu_init_ml_tables.py</span>
 <span id="cb48-33"><a href="#cb48-33" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb48-34"><a href="#cb48-34" aria-hidden="true" tabindex="-1"></a><span class="co"># 步骤2: 回测历史信号，生成匹配记录</span></span>
-<span id="cb48-35"><a href="#cb48-35" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu_backtest_pattern_matches.py <span class="at">--start-date</span> 2025-01-01</span>
+<span id="cb48-35"><a href="#cb48-35" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu/abu_backtest_pattern_matches.py <span class="at">--start-date</span> 2025-01-01</span>
 <span id="cb48-36"><a href="#cb48-36" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb48-37"><a href="#cb48-37" aria-hidden="true" tabindex="-1"></a><span class="co"># 步骤3: 评估ABU历史信号（生成评估数据）</span></span>
-<span id="cb48-38"><a href="#cb48-38" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu_evaluate_signals.py <span class="at">--start-date</span> 2025-01-01</span></code></pre></div>
+<span id="cb48-38"><a href="#cb48-38" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu/abu_evaluate_signals.py <span class="at">--start-date</span> 2025-01-01</span></code></pre></div>
 <h3 id="训练模型">3. 训练模型</h3>
 <div class="sourceCode" id="cb49"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 训练价格行为特征学习模型（最高优先级）</span></span>
@@ -2386,11 +2386,11 @@ Gemini分析相关（最高优先级，独立模块）</h4>
 <li>✅ 断点续传：状态文件保存，支持中断后继续</li>
 <li>✅ 健壮性：完整错误处理、重试机制、详细日志</li>
 </ul></li>
-<li><code>scripts/abu_parse_gemini_output.py</code> -
+<li><code>scripts/abu/abu_parse_gemini_output.py</code> -
 智能解析Gemini输出（标准化格式）</li>
-<li><code>scripts/abu_update_pattern_library_from_gemini.py</code> -
+<li><code>scripts/abu/abu_update_pattern_library_from_gemini.py</code> -
 更新模式库数据</li>
-<li><code>scripts/abu_verify_gemini_analysis.py</code> -
+<li><code>scripts/abu/abu_verify_gemini_analysis.py</code> -
 验证Gemini分析结果质量</li>
 </ul>
 <h4 id="阶段1-2-ml模型相关">阶段1-2: ML模型相关</h4>
@@ -2405,17 +2405,17 @@ Gemini分析相关（最高优先级，独立模块）</h4>
 </ul>
 <h4 id="阶段1-数据准备相关">阶段1: 数据准备相关</h4>
 <ul>
-<li><code>scripts/abu_record_match_history.py</code> - 记录匹配历史</li>
-<li><code>scripts/abu_evaluate_signals.py</code> - 评估ABU信号</li>
-<li><code>scripts/abu_backtest_pattern_matches.py</code> -
+<li><code>scripts/abu/abu_record_match_history.py</code> - 记录匹配历史</li>
+<li><code>scripts/abu/abu_evaluate_signals.py</code> - 评估ABU信号</li>
+<li><code>scripts/abu/abu_backtest_pattern_matches.py</code> -
 回测历史匹配</li>
-<li><code>scripts/abu_init_ml_tables.py</code> - 初始化ML相关表</li>
+<li><code>scripts/abu/abu_init_ml_tables.py</code> - 初始化ML相关表</li>
 </ul>
 <h4 id="阶段3-4-模型集成与监控">阶段3-4: 模型集成与监控</h4>
 <ul>
-<li><code>scripts/abu_retrain_ml_models.py</code> - 定期重训练模型</li>
-<li><code>scripts/abu_ml_model_evaluation.py</code> - 模型评估脚本</li>
-<li><code>scripts/check_abu_db_size.py</code> - 数据库容量检查脚本</li>
+<li><code>scripts/abu/abu_retrain_ml_models.py</code> - 定期重训练模型</li>
+<li><code>scripts/abu/abu_ml_model_evaluation.py</code> - 模型评估脚本</li>
+<li><code>scripts/abu/check_abu_db_size.py</code> - 数据库容量检查脚本</li>
 </ul>
 <h4 id="现有文件增强">现有文件增强</h4>
 <ul>
@@ -2602,9 +2602,9 @@ probability）</li>
 </ul></li>
 <li><strong>阶段0.5: 解析和更新模式库</strong> 🗄️
 <ul>
-<li>运行 <code>scripts/abu_parse_gemini_output.py</code></li>
+<li>运行 <code>scripts/abu/abu_parse_gemini_output.py</code></li>
 <li>运行
-<code>scripts/abu_update_pattern_library_from_gemini.py</code></li>
+<code>scripts/abu/abu_update_pattern_library_from_gemini.py</code></li>
 <li>验证数据库更新结果</li>
 </ul></li>
 </ol>
@@ -2945,9 +2945,9 @@ Gemini_Vision_模块使用说明</h2>
 <strong>成本估算</strong>：1000张图片约 $0.125 USD</p>
 <h2 id="文件结构">📁 文件结构</h2>
 <pre><code>src/abu/gemini_vision_analyzer.py  # 核心分析模块（独立）
-scripts/abu_parse_gemini_output.py  # 解析输出
-scripts/abu_update_pattern_library_from_gemini.py  # 更新数据库
-scripts/abu_verify_gemini_analysis.py  # 验证结果</code></pre>
+scripts/abu/abu_parse_gemini_output.py  # 解析输出
+scripts/abu/abu_update_pattern_library_from_gemini.py  # 更新数据库
+scripts/abu/abu_verify_gemini_analysis.py  # 验证结果</code></pre>
 <h2 id="快速开始-1">🚀 快速开始</h2>
 <h3 id="设置api-key">1. 设置API Key</h3>
 <div class="sourceCode" id="cb57"><pre
@@ -2967,16 +2967,16 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb59-1"><a href=
 <h3 id="解析并更新数据库">4. 解析并更新数据库</h3>
 <div class="sourceCode" id="cb60"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 解析Gemini输出</span></span>
-<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu_parse_gemini_output.py <span class="dt">\</span></span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu/abu_parse_gemini_output.py <span class="dt">\</span></span>
 <span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">--input</span> outputs/abu_gemini_annotations_enhanced.jsonl</span>
 <span id="cb60-4"><a href="#cb60-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb60-5"><a href="#cb60-5" aria-hidden="true" tabindex="-1"></a><span class="co"># 更新模式库（先预览）</span></span>
-<span id="cb60-6"><a href="#cb60-6" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu_update_pattern_library_from_gemini.py <span class="dt">\</span></span>
+<span id="cb60-6"><a href="#cb60-6" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu/abu_update_pattern_library_from_gemini.py <span class="dt">\</span></span>
 <span id="cb60-7"><a href="#cb60-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">--input</span> outputs/abu_gemini_parsed.jsonl <span class="dt">\</span></span>
 <span id="cb60-8"><a href="#cb60-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">--dry-run</span></span>
 <span id="cb60-9"><a href="#cb60-9" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb60-10"><a href="#cb60-10" aria-hidden="true" tabindex="-1"></a><span class="co"># 实际更新</span></span>
-<span id="cb60-11"><a href="#cb60-11" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu_update_pattern_library_from_gemini.py <span class="dt">\</span></span>
+<span id="cb60-11"><a href="#cb60-11" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> scripts/abu/abu_update_pattern_library_from_gemini.py <span class="dt">\</span></span>
 <span id="cb60-12"><a href="#cb60-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">--input</span> outputs/abu_gemini_parsed.jsonl</span></code></pre></div>
 <h2 id="成本控制机制">🔒 成本控制机制</h2>
 <ol type="1">

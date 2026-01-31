@@ -23,7 +23,7 @@
 
 ### 2. 修改获取逻辑
 
-**文件**: `scripts/abu_gemini_signal_scanner_enhanced.py`
+**文件**: `scripts/abu/abu_gemini_signal_scanner_enhanced.py`
 
 **修改**:
 - `get_klines()`: 添加`days`参数，支持扩展API
@@ -84,7 +84,7 @@
 
 ### 2. 修改文件
 
-- `scripts/abu_gemini_signal_scanner_enhanced.py`:
+- `scripts/abu/abu_gemini_signal_scanner_enhanced.py`:
   - 导入扩展API模块
   - 修改`get_klines()`函数
   - 修改`scan_timeframe()`函数

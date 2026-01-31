@@ -26,13 +26,13 @@ where gcc
 **PowerShell:**
 ```powershell
 $env:CGO_ENABLED=1
-go build -o abu_kline_fetcher.exe abu_kline_fetcher.go
+go build -o abu/abu_kline_fetcher.exe abu/abu_kline_fetcher.go
 ```
 
 **CMD:**
 ```cmd
 set CGO_ENABLED=1
-go build -o abu_kline_fetcher.exe abu_kline_fetcher.go
+go build -o abu/abu_kline_fetcher.exe abu/abu_kline_fetcher.go
 ```
 
 ### 3. 如果仍然报错 "gcc not found"
@@ -56,11 +56,11 @@ go build -o abu_kline_fetcher.exe abu_kline_fetcher.go
 
 ## 验证编译
 
-编译成功后，应该生成 `abu_kline_fetcher.exe` 文件。
+编译成功后，应该生成 `abu/abu_kline_fetcher.exe` 文件。
 
 测试运行：
 ```cmd
-.\abu_kline_fetcher.exe --help
+.\abu\abu_kline_fetcher.exe --help
 ```
 
 ## 快速检查脚本
@@ -68,8 +68,7 @@ go build -o abu_kline_fetcher.exe abu_kline_fetcher.go
 使用批处理脚本检查：
 ```cmd
 cd scripts
-check_gcc.bat
+abu\\check_gcc.bat
 ```
-
 
 

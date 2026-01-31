@@ -85,7 +85,7 @@ PG_POOL_MAX_SIZE=10
 在命令行执行：
 
 ```cmd
-python scripts\init_postgres_abu_db.py
+python scripts\abu\init_postgres_abu_db.py
 ```
 
 应该看到：
@@ -165,7 +165,7 @@ SELECT * FROM trading_signals ORDER BY created_at DESC LIMIT 5;
 ### Step 12: 重启 Abu 系统
 
 ```cmd
-Abu全部启动.bat
+scripts/abu/Abu全部启动.bat
 ```
 
 观察两个窗口的日志，确认：
@@ -220,14 +220,14 @@ Abu全部启动.bat
 
 ```cmd
 REM 停止系统
-Abu停止所有.bat
+scripts/abu/Abu停止所有.bat
 
 REM 恢复 DuckDB 管理器
 del src\db_manager_trader.py
 move src\db_manager_trader_duckdb.bak src\db_manager_trader.py
 
 REM 重启系统
-Abu全部启动.bat
+scripts/abu/Abu全部启动.bat
 ```
 
 ---

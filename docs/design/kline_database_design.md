@@ -131,7 +131,7 @@ CREATE INDEX idx_klines_timestamp ON klines(timestamp);
 
 4. **命令行接口**
    ```bash
-   go run scripts/abu_kline_fetcher.go \
+   go run scripts/abu/abu_kline_fetcher.go \
      --symbols BTC,ETH,SOL \
      --timeframe 15m \
      --days 90 \

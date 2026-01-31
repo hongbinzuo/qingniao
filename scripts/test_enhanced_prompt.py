@@ -118,8 +118,8 @@ def main():
             print("建议: 重新运行全部1000张图片")
             print()
             print("步骤:")
-            print("  1. 清空现有输出: python scripts/abu_reset_stage0.py")
-            print("  2. 使用增强Prompt重新处理: python scripts/abu_optimize_speed.py")
+            print("  1. 清空现有输出: python scripts/abu/abu_reset_stage0.py")
+            print("  2. 使用增强Prompt重新处理: python scripts/abu/abu_optimize_speed.py")
         else:
             print("建议: 进一步优化Prompt后再运行")
         

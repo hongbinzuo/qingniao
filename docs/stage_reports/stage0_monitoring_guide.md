@@ -81,7 +81,7 @@ Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*abu_optimi
 Get-Content outputs\abu_gemini\gemini_analysis.log -Tail 50 -Encoding UTF8
 
 # 2. 手动重启（会从断点继续）
-python scripts/abu_optimize_speed.py
+python scripts/abu/abu_optimize_speed.py
 ```
 
 ### 如果进度异常

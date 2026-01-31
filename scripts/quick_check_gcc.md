@@ -5,14 +5,14 @@
 直接运行：
 ```cmd
 cd C:\Users\zuoho\code\qingniao\scripts
-check_gcc.bat
+abu\check_gcc.bat
 ```
 
 ## 方法2：在PowerShell中临时绕过执行策略
 
 ```powershell
 cd C:\Users\zuoho\code\qingniao\scripts
-PowerShell -ExecutionPolicy Bypass -File .\install_gcc.ps1
+PowerShell -ExecutionPolicy Bypass -File .\abu\install_gcc.ps1
 ```
 
 ## 方法3：直接运行命令
@@ -38,8 +38,7 @@ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 然后就可以运行：
 ```powershell
-.\install_gcc.ps1
+.\abu\install_gcc.ps1
 ```
-
 
 

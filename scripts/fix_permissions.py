@@ -64,7 +64,7 @@ def main():
         print("=" * 60)
         print()
         print("现在可以运行:")
-        print("  python scripts\\init_postgres_abu_db.py")
+        print("  python scripts\\abu\\init_postgres_abu_db.py")
         
     except Exception as e:
         print(f"\n[ERROR] 修复失败: {e}")

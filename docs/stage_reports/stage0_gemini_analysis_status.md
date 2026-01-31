@@ -104,8 +104,8 @@
    - 根据实际输出调整解析脚本
 
 3. **阶段0.5: 解析和更新模式库** 🗄️
-   - 运行 `scripts/abu_parse_gemini_output.py`
-   - 运行 `scripts/abu_update_pattern_library_from_gemini.py`
+   - 运行 `scripts/abu/abu_parse_gemini_output.py`
+   - 运行 `scripts/abu/abu_update_pattern_library_from_gemini.py`
    - 验证数据库更新结果
 
 ## 成本控制

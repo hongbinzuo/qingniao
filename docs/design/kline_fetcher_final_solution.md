@@ -22,7 +22,7 @@ Go程序（并发获取） → JSON文件 → Python脚本（导入数据库）
 
 ### 文件
 
-1. **Go程序**：`scripts/abu_kline_fetcher_simple.go`
+1. **Go程序**：`scripts/abu/abu_kline_fetcher_simple.go`
    - ✅ 不需要CGO
    - ✅ 不需要数据库驱动
    - ✅ 并发从Gate.io获取数据
@@ -46,17 +46,17 @@ Go程序（并发获取） → JSON文件 → Python脚本（导入数据库）
 cd scripts
 
 # 获取数据，输出JSON
-.\abu_kline_fetcher_simple.exe --symbols BTC,ETH,SOL --timeframe 15m --days 90 --output klines.json
+.\abu\abu_kline_fetcher_simple.exe --symbols BTC,ETH,SOL --timeframe 15m --days 90 --output klines.json
 
 # 获取多个币种
-.\abu_kline_fetcher_simple.exe --symbols BTC,ETH,SOL,BNB,XRP --timeframe 15m --days 90 --output klines.json --concurrency 20
+.\abu\abu_kline_fetcher_simple.exe --symbols BTC,ETH,SOL,BNB,XRP --timeframe 15m --days 90 --output klines.json --concurrency 20
 ```
 
 ### 2. 导入数据库
 
 ```bash
 # 导入JSON到数据库
-python scripts/import_klines_json.py klines.json
+python import_klines_json.py klines.json
 ```
 
 ### 3. Python中使用
@@ -94,10 +94,10 @@ klines = load_klines('BTC', '15m', limit=200)
 
 ```bash
 # 1. 获取历史数据
-.\abu_kline_fetcher_simple.exe --symbols BTC,ETH,SOL --timeframe 15m --days 90 --output klines.json
+.\abu\abu_kline_fetcher_simple.exe --symbols BTC,ETH,SOL --timeframe 15m --days 90 --output klines.json
 
 # 2. 导入数据库
-python scripts/import_klines_json.py klines.json
+python import_klines_json.py klines.json
 
 # 3. Python中使用
 python
@@ -109,10 +109,10 @@ python
 
 ```bash
 # 1. 获取增量数据（从指定时间戳）
-.\abu_kline_fetcher_simple.exe --symbols BTC,ETH,SOL --timeframe 15m --from 1704067200 --to 1704153600 --output klines_incremental.json
+.\abu\abu_kline_fetcher_simple.exe --symbols BTC,ETH,SOL --timeframe 15m --from 1704067200 --to 1704153600 --output klines_incremental.json
 
 # 2. 导入数据库（自动去重）
-python scripts/import_klines_json.py klines_incremental.json
+python import_klines_json.py klines_incremental.json
 ```
 
 ### 定时任务（示例）
@@ -120,10 +120,10 @@ python scripts/import_klines_json.py klines_incremental.json
 ```bash
 # 每15分钟运行一次
 # 获取最新数据
-.\abu_kline_fetcher_simple.exe --symbols BTC,ETH,SOL --timeframe 15m --from $(python -c "import time; print(int(time.time()) - 3600)") --output klines_latest.json
+.\abu\abu_kline_fetcher_simple.exe --symbols BTC,ETH,SOL --timeframe 15m --from $(python -c "import time; print(int(time.time()) - 3600)") --output klines_latest.json
 
 # 导入数据库
-python scripts/import_klines_json.py klines_latest.json
+python import_klines_json.py klines_latest.json
 ```
 
 ## ✅ 优势
@@ -137,8 +137,8 @@ python scripts/import_klines_json.py klines_latest.json
 ## 📝 文件列表
 
 ### Go程序
-- `scripts/abu_kline_fetcher_simple.go` - 简化版Go程序（✅ 已编译）
-- `scripts/abu_kline_fetcher_simple.exe` - 编译后的可执行文件
+- `scripts/abu/abu_kline_fetcher_simple.go` - 简化版Go程序（✅ 已编译）
+- `scripts/abu/abu_kline_fetcher_simple.exe` - 编译后的可执行文件
 
 ### Python脚本
 - `scripts/import_klines_json.py` - JSON导入脚本
@@ -159,6 +159,5 @@ python scripts/import_klines_json.py klines_latest.json
 - ✅ 完整的文档和说明
 
 可以开始使用了！🚀
-
 
 

@@ -48,7 +48,7 @@ qingniao/
 │   ├── trading_rules_engine.py   # 交易规则引擎
 │   └── strategy_registry.yaml    # 策略注册表
 ├── scripts/                      # 运行脚本 (250+ 脚本)
-│   ├── abu_*.py                  # ABU系统脚本
+│   ├── abu/                      # ABU系统脚本（子目录，含 abu_*）
 │   ├── test_*.py                 # 测试脚本
 │   └── *.bat                     # Windows批处理脚本
 ├── config/                       # 配置文件
@@ -77,10 +77,15 @@ qingniao/
 
 ### 3.1 Database Management / 数据库管理
 
-**多数据库架构**:
-- **DuckDB** (推荐): `src/db_manager_duckdb.py`, `src/db_manager_trader.py`
-- **PostgreSQL**: `src/db_manager_postgres.py` (迁移中)
-- **MySQL**: `src/db_manager_mysql.py` (历史支持)
+**数据库优先级规则 / Database Priority Rule**:
+1. **PostgreSQL** (首选): 用于所有数据库场景 / Use for all database scenarios
+2. **DuckDB** (备用): 仅在PostgreSQL不可用时使用 / Use only as fallback when PostgreSQL unavailable
+3. **SQLite** (禁止): 不要在任何情况下使用 / DO NOT use in any case
+
+**数据库管理器**:
+- **PostgreSQL**: `src/db_manager_postgres.py`, `src/db_manager_trader.py`
+- **DuckDB** (备用): `src/db_manager_duckdb.py`
+- **MySQL** (历史): `src/db_manager_mysql.py` (不推荐使用)
 
 **核心表结构**:
 - `de_viewpoints` - De.观点和交易指令
@@ -159,7 +164,7 @@ pip install pyyaml experta
 **核心文件**:
 - `src/abu/gemini_vision_analyzer.py` - Gemini视觉分析器
 - `src/abu/vector_index_manager.py` - 向量索引管理
-- `scripts/abu_gemini_pipeline_manager.py` - 流水线管理器
+- `scripts/abu/abu_gemini_pipeline_manager.py` - 流水线管理器
 
 ---
 
@@ -222,15 +227,19 @@ python rules_engine/setup_rules_engine.py
 call scripts\start_de_system.bat
 
 # 价格同步测试
-call test_price_sync.bat
+call scripts\test_price_sync.bat
 
 # ABU全部启动
-call abu_start_all.bat
+call scripts\abu\abu_start_all.bat
 ```
 
 ---
 
 ## 5. Code Style Guidelines / 代码风格规范
+
+### 5.0 Script Placement / 脚本存放规则
+- **所有脚本必须放在 `scripts/` 下**（根目录禁止放脚本）。
+- **ABU相关脚本必须放在 `scripts/abu/`**（禁止放在 `scripts/` 根目录）。
 
 ### 5.1 Python Style / Python风格
 
@@ -290,6 +299,16 @@ import requests
 from db_manager_duckdb import get_db_connection
 from system_logger import log_signal_generation
 ```
+
+### 5.4 DON'T REPEAT YOURSELF (DRY Principle) / 不要重复自己
+
+**核心原则**: 避免代码重复，提高可维护性
+
+**规则**:
+1. **识别重复**: 如果相同的代码出现2次以上，应该重构
+2. **提取函数**: 将重复的逻辑提取为独立函数
+3. **使用参数**: 通过参数化处理差异，而不是复制代码
+4. **单一职责**: 每个函数只做一件事，便于复用
 
 ---
 
@@ -462,7 +481,7 @@ with get_db_connection() as conn:
 
 查看系统状态:
 ```bash
-python scripts/check_abu_status.py
+python scripts/abu/check_abu_status.py
 python scripts/check_latest_signals.py
 ```
 

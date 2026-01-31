@@ -24,7 +24,7 @@ go get github.com/marcboeker/go-duckdb
 
 **选项2：如果go-duckdb不可用，可以使用SQLite驱动（DuckDB支持SQLite兼容）**
 
-编辑`scripts/abu_kline_fetcher.go`，修改导入：
+编辑`scripts/abu/abu_kline_fetcher.go`，修改导入：
 ```go
 // 将
 _ "github.com/marcboeker/go-duckdb"
@@ -51,7 +51,7 @@ db, err := sql.Open("sqlite", dbPath)
 ```bash
 cd scripts
 go mod tidy
-go build -o abu_kline_fetcher.exe abu_kline_fetcher.go
+go build -o abu/abu_kline_fetcher.exe abu/abu_kline_fetcher.go
 ```
 
 如果编译成功，说明依赖已安装。
@@ -62,16 +62,16 @@ go build -o abu_kline_fetcher.exe abu_kline_fetcher.go
 
 ```bash
 # Windows
-.\abu_kline_fetcher.exe --symbols BTC,ETH,SOL --timeframe 15m --days 90
+.\abu\abu_kline_fetcher.exe --symbols BTC,ETH,SOL --timeframe 15m --days 90
 
 # 或直接运行
-go run abu_kline_fetcher.go --symbols BTC,ETH,SOL --timeframe 15m --days 90
+go run abu/abu_kline_fetcher.go --symbols BTC,ETH,SOL --timeframe 15m --days 90
 ```
 
 ### 增量获取
 
 ```bash
-go run abu_kline_fetcher.go --symbols BTC,ETH,SOL --timeframe 15m --incremental
+go run abu/abu_kline_fetcher.go --symbols BTC,ETH,SOL --timeframe 15m --incremental
 ```
 
 ## ⚠️ 常见问题

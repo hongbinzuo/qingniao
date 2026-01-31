@@ -21,7 +21,7 @@
 - `generate_signal_from_match()`: 生成交易信号
 
 #### 1.2 ABU Gemini信号扫描器
-**文件**: `scripts/abu_gemini_signal_scanner.py`
+**文件**: `scripts/abu/abu_gemini_signal_scanner.py`
 
 **功能**：
 - ✅ 扫描TOP 20加密货币
@@ -111,12 +111,12 @@ TOP 20 加密货币
 
 1. **降低匹配阈值**：
    ```bash
-   python scripts/abu_gemini_signal_scanner.py --min-similarity 0.3
+   python scripts/abu/abu_gemini_signal_scanner.py --min-similarity 0.3
    ```
 
 2. **增加每个币种的匹配数**：
    ```bash
-   python scripts/abu_gemini_signal_scanner.py --max-matches-per-symbol 10
+   python scripts/abu/abu_gemini_signal_scanner.py --max-matches-per-symbol 10
    ```
 
 3. **优化特征匹配算法**：
@@ -163,10 +163,10 @@ TOP 20 加密货币
 
 ```bash
 # 使用较低阈值生成信号
-python scripts/abu_gemini_signal_scanner.py --top 10 --min-similarity 0.3 --write-db 1
+python scripts/abu/abu_gemini_signal_scanner.py --top 10 --min-similarity 0.3 --write-db 1
 
 # 每个币种匹配更多模式
-python scripts/abu_gemini_signal_scanner.py --top 10 --max-matches-per-symbol 5 --min-similarity 0.3
+python scripts/abu/abu_gemini_signal_scanner.py --top 10 --max-matches-per-symbol 5 --min-similarity 0.3
 ```
 
 ### 调试

@@ -18,7 +18,7 @@
 ### 2. 执行脚本
 | 文件 | 路径 | 说明 |
 |-----|------|------|
-| 批量处理脚本 | `scripts/run_abu_batch_601_1000.py` | 完整的批量处理Python脚本 |
+| 批量处理脚本 | `scripts/abu/run_abu_batch_601_1000.py` | 完整的批量处理Python脚本 |
 
 ### 3. Sub Agent 配置
 | 文件 | 路径 | 说明 |
@@ -77,7 +77,7 @@
    kimi
    
    # 然后使用 Task 工具调用 Sub Agent
-   # 参考 scripts/run_abu_batch_601_1000.py 中的逻辑
+   # 参考 scripts/abu/run_abu_batch_601_1000.py 中的逻辑
    ```
 
 ---
@@ -134,7 +134,7 @@ git checkout feat/sentiment-weighting-combo-snapshot
 | 操作 | 命令/位置 |
 |-----|----------|
 | 查看任务详情 | `docs/ABU_BATCH_PROCESS_STATUS.md` |
-| 查看执行脚本 | `scripts/run_abu_batch_601_1000.py` |
+| 查看执行脚本 | `scripts/abu/run_abu_batch_601_1000.py` |
 | 查看 Sub Agent 配置 | `config/abu_image_analyzer.yaml` |
 | 检查执行进度 | `outputs/abu_progress_601_1000.json` |
 | 查看分析结果 | `outputs/abu_results_601_1000.jsonl` |

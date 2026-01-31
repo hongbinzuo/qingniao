@@ -43,8 +43,8 @@
 
 ## 执行计划
 
-1. ✅ **清空现有输出** - `python scripts/abu_reset_stage0.py`
-2. ✅ **重新处理全部1000张图片** - `python scripts/abu_optimize_speed.py`
+1. ✅ **清空现有输出** - `python scripts/abu/abu_reset_stage0.py`
+2. ✅ **重新处理全部1000张图片** - `python scripts/abu/abu_optimize_speed.py`
 3. ⏳ **监控处理进度** - 预计耗时约5.5小时
 4. ⏳ **处理完成后验证** - 检查新字段提取率
 5. ⏳ **如有问题，进一步优化Prompt**

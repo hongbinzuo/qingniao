@@ -10,7 +10,7 @@
 
 #### 方案1: 手动启动（当前）
 
-1. **双击运行**: `abu_start_all.bat`
+1. **双击运行**: `scripts/abu/abu_start_all.bat`
 
 2. **会打开两个窗口**:
    - `ABU模式匹配` - 每小时生成信号（Top 30币种）
@@ -28,13 +28,13 @@
 1. **设置开机自动启动**:
    ```batch
    # 以管理员身份运行
-   双击运行: setup_abu_auto_start.bat
+   双击运行: scripts/abu/setup_abu_auto_start.bat
    ```
    或者使用PowerShell:
    ```powershell
    # 以管理员身份运行PowerShell
    cd C:\Users\zuoho\code\qingniao
-   powershell -ExecutionPolicy Bypass -File "scripts\setup_abu_auto_start.ps1"
+   powershell -ExecutionPolicy Bypass -File "scripts\abu\setup_abu_auto_start.ps1"
    ```
 
 2. **设置每日报告**:
@@ -57,8 +57,8 @@
 - **如果设置了开机自动启动**：系统会自动检查并启动，无需手动操作 ✅
 - **如果没有设置自动启动**：
   - 睡眠模式：进程会继续运行，无需操作 ✅
-  - 休眠模式：建议运行 `abu_check_and_start.bat` 检查一下
-  - 完全关机/重启：需要重新运行 `abu_start_all.bat` 或 `abu_check_and_start.bat`
+  - 休眠模式：建议运行 `scripts/abu/abu_check_and_start.bat` 检查一下
+  - 完全关机/重启：需要重新运行 `scripts/abu/abu_start_all.bat` 或 `scripts/abu/abu_check_and_start.bat`
 
 ---
 
@@ -188,7 +188,7 @@ type outputs\daily_reports\daily_summary_20260115.md
 
 **如果没有设置自动启动**：
 - **睡眠模式（Sleep）**: 进程会继续运行，无需操作 ✅
-- **休眠模式（Hibernate）**: 建议运行 `abu_check_and_start.bat` 检查
+- **休眠模式（Hibernate）**: 建议运行 `scripts/abu/abu_check_and_start.bat` 检查
 - **完全关机/重启**: 需要重新运行启动脚本
 
 ### 2. 保持电脑开启
@@ -241,13 +241,13 @@ python scripts\generate_daily_summary_report.py --date 2026-01-15
 
 1. **检查并启动**（推荐）:
    ```batch
-   双击运行: abu_check_and_start.bat
+   双击运行: scripts/abu/abu_check_and_start.bat
    ```
    这个脚本会自动检查系统状态，如果未运行则自动启动。
 
 2. **或手动重新启动**:
    ```batch
-   双击运行: abu_start_all.bat
+   双击运行: scripts/abu/abu_start_all.bat
    ```
 
 3. **检查错误**: 查看窗口中的错误信息
@@ -273,7 +273,7 @@ python scripts\generate_daily_summary_report.py --date 2026-01-15
 
 2. **手动测试**:
    ```batch
-   python scripts\abu_vision_scanner_4h.py --once
+   python scripts\abu\abu_vision_scanner_4h.py --once
    ```
 
 ---
@@ -282,7 +282,7 @@ python scripts\generate_daily_summary_report.py --date 2026-01-15
 
 ```batch
 # 启动所有系统
-abu_start_all.bat
+scripts/abu/abu_start_all.bat
 
 # 查看信号状态
 python scripts\show_auto_signal_status.py
@@ -302,7 +302,7 @@ python scripts\query_ml_optimization_results.py
 ## ✅ 检查清单
 
 ### 启动时
-- [ ] 运行 `abu_start_all.bat`
+- [ ] 运行 `scripts/abu/abu_start_all.bat`
 - [ ] 看到两个窗口打开
 - [ ] 设置每日报告任务（可选）
 
@@ -319,4 +319,4 @@ python scripts\query_ml_optimization_results.py
 
 **就这么简单！** 🎉
 
-运行 `abu_start_all.bat`，然后等待3天，每天查看报告即可。
+运行 `scripts/abu/abu_start_all.bat`，然后等待3天，每天查看报告即可。

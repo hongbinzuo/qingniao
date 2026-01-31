@@ -51,7 +51,7 @@ def analyze_image_ocr(image_path: str) -> Optional[Dict]:
         import importlib.util
         spec = importlib.util.spec_from_file_location(
             "abu_chart_recognizer", 
-            ROOT / "scripts" / "abu_chart_recognizer.py"
+            ROOT / "scripts" / "abu" / "abu_chart_recognizer.py"
         )
         if spec and spec.loader:
             module = importlib.util.module_from_spec(spec)
@@ -258,4 +258,3 @@ def main():
 
 if __name__ == '__main__':
     sys.exit(main())
-

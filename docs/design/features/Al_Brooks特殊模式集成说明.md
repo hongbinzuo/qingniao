@@ -103,7 +103,7 @@
 扫描器会自动检测并使用Al Brooks增强版：
 
 ```bash
-python scripts/abu_gemini_signal_scanner_enhanced.py
+python scripts/abu/abu_gemini_signal_scanner_enhanced.py
 ```
 
 ### 方式2: 手动指定

@@ -56,7 +56,7 @@ def main():
     todos = [
         {"task":"start_api", "cmd":"scripts\\start_qingniao_be_api.bat", "port":8090, "status":"pending"},
         {"task":"resume_abu_scan_scheduler", "cmd":"schtasks /Run /TN \"Qingniao-Abu-15m\"", "status":"pending"},
-        {"task":"optional_pdf_ingestion", "cmd":"set PDF_IN=<your_pdf> && set PDF_PAGES=1000 && scripts\\abu_upgrade_and_run.bat", "status":"pending"}
+        {"task":"optional_pdf_ingestion", "cmd":"set PDF_IN=<your_pdf> && set PDF_PAGES=1000 && scripts\\abu\\abu_upgrade_and_run.bat", "status":"pending"}
     ]
     (td_dir/f'gn_todo_{ts}.json').write_text(json.dumps({"created_at": snap['ts'], "todos": todos}, ensure_ascii=False, indent=2), encoding='utf-8')
 

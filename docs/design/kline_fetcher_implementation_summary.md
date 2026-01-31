@@ -35,7 +35,7 @@ CREATE TABLE klines (
 
 ### 2. Go程序实现
 
-**文件**: `scripts/abu_kline_fetcher.go`
+**文件**: `scripts/abu/abu_kline_fetcher.go`
 
 **功能**:
 - ✅ 并发从Gate.io获取K线数据（goroutine）
@@ -83,7 +83,7 @@ go mod init abu-kline-fetcher
 go get github.com/marcboeker/go-duckdb
 
 # 获取K线数据（增量）
-go run abu_kline_fetcher.go \
+go run abu/abu_kline_fetcher.go \
   --symbols BTC,ETH,SOL \
   --timeframe 15m \
   --days 90 \
@@ -111,7 +111,7 @@ latest_ts = get_latest_timestamp('BTC', '15m')
 
 ```bash
 # 第一次运行，获取90天数据
-go run scripts/abu_kline_fetcher.go \
+go run scripts/abu/abu_kline_fetcher.go \
   --symbols BTC,ETH,SOL \
   --timeframe 15m \
   --days 90
@@ -127,7 +127,7 @@ go run scripts/abu_kline_fetcher.go \
 
 ```bash
 # 后续运行，只获取新数据
-go run scripts/abu_kline_fetcher.go \
+go run scripts/abu/abu_kline_fetcher.go \
   --symbols BTC,ETH,SOL \
   --timeframe 15m \
   --incremental

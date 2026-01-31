@@ -18,7 +18,7 @@
    ```bat
    set PDF_IN=C:\baidunetdiskdownload\阿布图表百科全书8800合并版-原版.pdf
    set PDF_PAGES=1000
-   scripts\abu_upgrade_and_run.bat
+   scripts\abu\abu_upgrade_and_run.bat
    ```
    说明：
    - `PDF_IN` 为本地 PDF 路径；`PDF_PAGES` 未设置时默认 500
@@ -50,7 +50,7 @@
 ## 4. 常用变体
 - 仅跑信号 + 启服务（不读 PDF）
   ```bat
-  scripts\abu_upgrade_and_run.bat
+  scripts\abu\abu_upgrade_and_run.bat
   ```
 - 改端口（8090 被占用时）
   ```bat
@@ -87,14 +87,14 @@
 
 ## 8. 文件对照表（关键脚本）
 - 批处理与入口
-  - `scripts/abu_upgrade_and_run.bat`：一键流程
+  - `scripts/abu/abu_upgrade_and_run.bat`：一键流程
   - `scripts/start_qingniao_be_api.bat`：启动后端
 - 数据库与结构
-  - `src/database_design_v2.py`、`scripts/migrate_abu_add_score.py`
+  - `src/database_design_v2.py`、`scripts/abu/migrate_abu_add_score.py`
   - `src/db_manager_trader.py`（`add_trading_signal` 支持 `symbol/score/notes`）
 - PDF → 库
   - `scripts/pa_ingest_pdf.py`（→ `data/abu/raw_pages.jsonl`）
-  - `scripts/abu_build_library.py`（→ `config/abu_patterns.yaml`）
+  - `scripts/abu/abu_build_library.py`（→ `config/abu_patterns.yaml`）
 - 扫描与产出
   - `scripts/pa_scan_15m_top10.py`（写 DuckDB + `trading_signals/ABU_top*_15m_*.md`）
 - 后端与页面

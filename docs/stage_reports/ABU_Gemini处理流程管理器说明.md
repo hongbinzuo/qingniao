@@ -2,7 +2,7 @@
 
 ## 📋 概述
 
-`scripts/abu_gemini_pipeline_manager.py` 是一个综合的管理工具，用于管理Gemini分析的完整处理流程：
+`scripts/abu/abu_gemini_pipeline_manager.py` 是一个综合的管理工具，用于管理Gemini分析的完整处理流程：
 
 1. **Gemini分析**（步骤1）：使用Gemini Vision API分析图片（完整版约9000+张）
 2. **解析Gemini输出**（步骤2）：解析Gemini分析结果，标准化格式
@@ -39,7 +39,7 @@ ML模型训练（abu_price_action_learner.py，增量训练）
 ### 1. 运行一次（处理已有输出）
 
 ```bash
-python scripts/abu_gemini_pipeline_manager.py
+python scripts/abu/abu_gemini_pipeline_manager.py
 ```
 
 这将：
@@ -53,10 +53,10 @@ python scripts/abu_gemini_pipeline_manager.py
 
 ```bash
 # 每4小时轮询一次（默认）
-python scripts/abu_gemini_pipeline_manager.py --poll
+python scripts/abu/abu_gemini_pipeline_manager.py --poll
 
 # 每6小时轮询一次
-python scripts/abu_gemini_pipeline_manager.py --poll --interval 6
+python scripts/abu/abu_gemini_pipeline_manager.py --poll --interval 6
 ```
 
 轮询模式将：
@@ -68,10 +68,10 @@ python scripts/abu_gemini_pipeline_manager.py --poll --interval 6
 
 ```bash
 # 只运行解析步骤
-python scripts/abu_gemini_pipeline_manager.py --step parse
+python scripts/abu/abu_gemini_pipeline_manager.py --step parse
 
 # 只运行数据库更新步骤
-python scripts/abu_gemini_pipeline_manager.py --step update_db
+python scripts/abu/abu_gemini_pipeline_manager.py --step update_db
 ```
 
 ## 📁 文件说明
@@ -156,7 +156,7 @@ Gemini处理流程进度
 
 ```bash
 # Gemini正在运行（40%进度），现在处理已有输出
-python scripts/abu_gemini_pipeline_manager.py
+python scripts/abu/abu_gemini_pipeline_manager.py
 ```
 
 这将：
@@ -167,7 +167,7 @@ python scripts/abu_gemini_pipeline_manager.py
 
 ```bash
 # 每4小时自动处理新输出
-python scripts/abu_gemini_pipeline_manager.py --poll --interval 4
+python scripts/abu/abu_gemini_pipeline_manager.py --poll --interval 4
 ```
 
 这将：
@@ -179,7 +179,7 @@ python scripts/abu_gemini_pipeline_manager.py --poll --interval 4
 
 ```bash
 # 只运行数据库更新步骤
-python scripts/abu_gemini_pipeline_manager.py --step update_db
+python scripts/abu/abu_gemini_pipeline_manager.py --step update_db
 ```
 
 ## ⚠️ 注意事项
@@ -222,8 +222,8 @@ python scripts/abu_gemini_pipeline_manager.py --step update_db
 
 1. **数据准备阶段**（需要先完成）：
    - 创建 `pattern_match_history` 表（模式匹配历史）
-   - 实现 `scripts/abu_record_match_history.py`（记录匹配历史）
-   - 实现 `scripts/abu_evaluate_signals.py`（信号评估）
+   - 实现 `scripts/abu/abu_record_match_history.py`（记录匹配历史）
+   - 实现 `scripts/abu/abu_evaluate_signals.py`（信号评估）
    - 收集足够的训练数据（至少需要数百条评估记录）
 
 2. **模式匹配成功率预测模型**（`src/ml_dl/abu_pattern_match_predictor.py`）

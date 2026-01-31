@@ -4,12 +4,12 @@
 
 ### 持续运行（每4小时自动生成）
 ```cmd
-abu_run.bat
+scripts/abu/abu_run.bat
 ```
 
 ### 单次运行（运行一次后退出）
 ```cmd
-abu_run_once.bat
+scripts/abu/abu_run_once.bat
 ```
 
 ## 重要说明
@@ -23,7 +23,7 @@ abu_run_once.bat
 ### 使用方法
 
 **方法1: 双击运行**
-- 直接双击 `abu_run.bat` 或 `abu_run_once.bat` 文件
+- 直接双击 `scripts/abu/abu_run.bat` 或 `scripts/abu/abu_run_once.bat` 文件
 
 **方法2: 新窗口运行**
 - 打开新的命令提示符（Win+R，输入 `cmd`）
@@ -33,7 +33,7 @@ abu_run_once.bat
   ```
 - 运行命令：
   ```cmd
-  abu_run.bat
+  scripts/abu/abu_run.bat
   ```
 
 **方法3: PowerShell运行**
@@ -44,12 +44,12 @@ abu_run_once.bat
   ```
 - 运行命令：
   ```powershell
-  .\abu_run.bat
+  .\scripts/abu/abu_run.bat
   ```
 
 ## 功能说明
 
-### abu_run.bat
+### scripts/abu/abu_run.bat
 - **功能**: 启动持续运行的自动信号生成系统
 - **配置**: 
   - 每4小时自动生成一次
@@ -58,7 +58,7 @@ abu_run_once.bat
   - 每4小时约20个信号（10币种 × 2时间框架）
 - **停止**: 按 `Ctrl+C` 或关闭窗口
 
-### abu_run_once.bat
+### scripts/abu/abu_run_once.bat
 - **功能**: 运行一次信号生成和评估
 - **用途**: 测试或手动触发一次生成
 - **退出**: 完成后自动退出
@@ -79,7 +79,7 @@ python scripts\show_auto_signal_status.py
 
 ## 停止运行
 
-如果使用 `abu_run.bat` 启动：
+如果使用 `scripts/abu/abu_run.bat` 启动：
 - 按 `Ctrl+C` 停止
 - 或关闭运行窗口
 

@@ -36,6 +36,9 @@ src/data/*.db
 # =============================================================================
 data/
 !data/.gitkeep
+!data/vectors/
+!data/vectors/*.ann
+!data/vectors/*.json
 data/de_*.json
 data/de_trade_*.json
 data/*.csv
@@ -166,3 +169,4 @@ NUL
 # =============================================================================
 elasticsearch-*/
 elasticsearch-*.*/
+.env

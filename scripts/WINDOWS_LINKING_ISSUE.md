@@ -23,7 +23,7 @@
 由于go-duckdb在Windows上的兼容性问题，**推荐使用Python实现**：
 
 1. **Go程序获取数据，输出JSON**
-   - 使用 `abu_kline_fetcher_simple.go`（不需要CGO）
+   - 使用 `abu/abu_kline_fetcher_simple.go`（不需要CGO）
    
 2. **Python脚本导入数据库**
    - 创建导入脚本，读取JSON并写入DuckDB
@@ -40,7 +40,7 @@
 ## 推荐方案：混合实现
 
 1. **Go程序**：获取K线数据，输出JSON
-   - 文件：`abu_kline_fetcher_simple.go`（不需要数据库驱动）
+   - 文件：`abu/abu_kline_fetcher_simple.go`（不需要数据库驱动）
    
 2. **Python脚本**：读取JSON，导入DuckDB
    - 使用Python的duckdb库（稳定，无CGO问题）

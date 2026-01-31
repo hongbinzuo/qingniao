@@ -39,9 +39,9 @@
 - 观察 CHZ 等逆势信号是否出现 `EMA乖离不足` 降权提示，并确认分数变化。
 
 ### 已完成（追加）
-- 新增独立回放审计脚本 `scripts/abu_signal_replay_audit.py`，规则：触达入场、同K先算SL、Gate 1m，仅用于审计。
+- 新增独立回放审计脚本 `scripts/abu/abu_signal_replay_audit.py`，规则：触达入场、同K先算SL、Gate 1m，仅用于审计。
 - 回放逻辑支持仅限制入场截止时间，入场后持续回放到结束时间；精度输出提升到 9 位小数。
-- 新增统一入口 `scripts/abu_tracker_audit_runner.py`，默认 tracker=15分钟、replay=4小时，支持开关与频率配置。
+- 新增统一入口 `scripts/abu/abu_tracker_audit_runner.py`，默认 tracker=15分钟、replay=4小时，支持开关与频率配置。
 - 新增迁移脚本 `scripts/migrate_trading_signal_precision_9.py`，将价格列提升到 NUMERIC(20,9)。
 - 写库逻辑统一量化到 9 位小数（`db_manager_trader.py` / `db_manager_postgres.py`）。
 - AIR 加入扫描忽略列表。

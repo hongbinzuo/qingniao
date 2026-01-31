@@ -20,7 +20,7 @@
 
 ### 2. 修改扫描脚本
 
-**文件**: `scripts/abu_gemini_signal_scanner_enhanced.py`
+**文件**: `scripts/abu/abu_gemini_signal_scanner_enhanced.py`
 
 **修改**:
 - 导入扩展API模块

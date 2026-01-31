@@ -441,7 +441,7 @@ PyMuPDF  1000张图片   Gemini Vision API  解析器    pattern_library  特征
 - 缺少交易参数提取（概率、入场、止损、止盈）
 - 缺少K线行为特征
 
-**增强后的Prompt**（更新 `scripts/abu_gemini_annotate.py`）:
+**增强后的Prompt**（更新 `scripts/abu/abu_gemini_annotate.py`）:
 
 ```python
 ENHANCED_PROMPT = """
@@ -531,11 +531,11 @@ Respond with ONLY valid JSON, no additional text.
 
 #### 0.2 Gemini分析执行流程
 
-**脚本**: `scripts/abu_gemini_annotate_enhanced.py` (新建，增强版)
+**脚本**: `scripts/abu/abu_gemini_annotate_enhanced.py` (新建，增强版)
 
 ```bash
 # 完整分析1000张图片
-python scripts/abu_gemini_annotate_enhanced.py \
+python scripts/abu/abu_gemini_annotate_enhanced.py \
     --model gemini-1.5-pro \
     --limit 0 \  # 0表示处理所有图片
     --context-window 2 \
@@ -544,13 +544,13 @@ python scripts/abu_gemini_annotate_enhanced.py \
 
 # 分批处理（推荐，避免长时间运行中断）
 # 第一批：1-300
-python scripts/abu_gemini_annotate_enhanced.py --start-idx 0 --end-idx 300
+python scripts/abu/abu_gemini_annotate_enhanced.py --start-idx 0 --end-idx 300
 
 # 第二批：301-600
-python scripts/abu_gemini_annotate_enhanced.py --start-idx 300 --end-idx 600
+python scripts/abu/abu_gemini_annotate_enhanced.py --start-idx 300 --end-idx 600
 
 # 第三批：601-1000
-python scripts/abu_gemini_annotate_enhanced.py --start-idx 600 --end-idx 1000
+python scripts/abu/abu_gemini_annotate_enhanced.py --start-idx 600 --end-idx 1000
 ```
 
 **成本估算**:
@@ -566,7 +566,7 @@ python scripts/abu_gemini_annotate_enhanced.py --start-idx 600 --end-idx 1000
 
 **问题**: Gemini返回的JSON可能不完整、格式不一致，需要智能解析和补全
 
-**实现**: `scripts/abu_parse_gemini_output.py` (新建)
+**实现**: `scripts/abu/abu_parse_gemini_output.py` (新建)
 
 ```python
 class GeminiOutputParser:
@@ -668,7 +668,7 @@ class GeminiOutputParser:
 
 #### 0.4 更新模式库数据
 
-**脚本**: `scripts/abu_update_pattern_library_from_gemini.py` (新建)
+**脚本**: `scripts/abu/abu_update_pattern_library_from_gemini.py` (新建)
 
 ```python
 def update_pattern_library_from_gemini():
@@ -1201,7 +1201,7 @@ python -m src.abu.gemini_vision_analyzer --status
 
 #### 0.2 智能解析Gemini输出（独立模块的一部分）
 
-**文件**: `scripts/abu_parse_gemini_output.py` (新建)
+**文件**: `scripts/abu/abu_parse_gemini_output.py` (新建)
 
 **功能**:
 - 解析Gemini返回的JSON（可能不完整或格式不一致）
@@ -1217,7 +1217,7 @@ python -m src.abu.gemini_vision_analyzer --status
 **执行**:
 ```bash
 # 解析Gemini输出
-python scripts/abu_parse_gemini_output.py \
+python scripts/abu/abu_parse_gemini_output.py \
     --input outputs/abu_gemini_annotations_enhanced.jsonl \
     --output outputs/abu_gemini_parsed.jsonl \
     --verify  # 验证解析结果，报告错误
@@ -1233,7 +1233,7 @@ python scripts/abu_parse_gemini_output.py \
 
 #### 0.3 更新模式库数据（独立模块的一部分）
 
-**文件**: `scripts/abu_update_pattern_library_from_gemini.py` (新建)
+**文件**: `scripts/abu/abu_update_pattern_library_from_gemini.py` (新建)
 
 **功能**:
 - 读取解析后的Gemini结果
@@ -1245,12 +1245,12 @@ python scripts/abu_parse_gemini_output.py \
 **执行**:
 ```bash
 # 预览模式（不实际更新，先检查）
-python scripts/abu_update_pattern_library_from_gemini.py \
+python scripts/abu/abu_update_pattern_library_from_gemini.py \
     --input outputs/abu_gemini_parsed.jsonl \
     --dry-run
 
 # 实际更新（确认无误后执行）
-python scripts/abu_update_pattern_library_from_gemini.py \
+python scripts/abu/abu_update_pattern_library_from_gemini.py \
     --input outputs/abu_gemini_parsed.jsonl \
     --skip-existing  # 跳过已有gemini_annotation_json的记录（默认）
 ```
@@ -1265,7 +1265,7 @@ python scripts/abu_update_pattern_library_from_gemini.py \
 
 #### 0.4 验证Gemini分析结果
 
-**文件**: `scripts/abu_verify_gemini_analysis.py` (新建)
+**文件**: `scripts/abu/abu_verify_gemini_analysis.py` (新建)
 
 **功能**:
 - 检查更新后的数据质量
@@ -1278,7 +1278,7 @@ python scripts/abu_update_pattern_library_from_gemini.py \
 
 **执行**:
 ```bash
-python scripts/abu_verify_gemini_analysis.py \
+python scripts/abu/abu_verify_gemini_analysis.py \
     --output outputs/abu_gemini_verification_report.md
 ```
 
@@ -1342,7 +1342,7 @@ CREATE TABLE IF NOT EXISTS pattern_match_history (
 
 #### 1.2 记录模式匹配历史
 
-**实现**: `scripts/abu_record_match_history.py`
+**实现**: `scripts/abu/abu_record_match_history.py`
 
 在每次生成ABU信号后，记录:
 - 哪些模式被匹配了
@@ -1355,7 +1355,7 @@ CREATE TABLE IF NOT EXISTS pattern_match_history (
 python scripts/pa_scan_15m_top10.py --record-match-history
 
 # 或批量回测历史信号
-python scripts/abu_backtest_pattern_matches.py --start-date 2025-01-01
+python scripts/abu/abu_backtest_pattern_matches.py --start-date 2025-01-01
 ```
 
 #### 1.3 信号评估数据收集
@@ -1757,7 +1757,7 @@ record_match_history(ranked, klines, market_context)
 
 #### 3.2 模型评估与监控
 
-**创建评估脚本**: `scripts/abu_ml_model_evaluation.py`
+**创建评估脚本**: `scripts/abu/abu_ml_model_evaluation.py`
 
 ```python
 def evaluate_ml_models():
@@ -1780,7 +1780,7 @@ def evaluate_ml_models():
 **定期重训练**:
 ```bash
 # 每周自动重训练模型
-python scripts/abu_retrain_ml_models.py --auto
+python scripts/abu/abu_retrain_ml_models.py --auto
 ```
 
 #### 3.3 A/B测试框架
@@ -2003,31 +2003,31 @@ python -m src.abu.gemini_vision_analyzer --status
 
 # 步骤0.5: 智能解析并更新模式库
 # 解析Gemini输出（标准化格式）
-python scripts/abu_parse_gemini_output.py \
+python scripts/abu/abu_parse_gemini_output.py \
     --input outputs/abu_gemini_annotations_enhanced.jsonl \
     --output outputs/abu_gemini_parsed.jsonl
 
 # 更新模式库（预览模式，先检查）
-python scripts/abu_update_pattern_library_from_gemini.py \
+python scripts/abu/abu_update_pattern_library_from_gemini.py \
     --input outputs/abu_gemini_parsed.jsonl \
     --dry-run
 
 # 实际更新（确认无误后）
-python scripts/abu_update_pattern_library_from_gemini.py \
+python scripts/abu/abu_update_pattern_library_from_gemini.py \
     --input outputs/abu_gemini_parsed.jsonl
 
 # 验证分析结果
-python scripts/abu_verify_gemini_analysis.py \
+python scripts/abu/abu_verify_gemini_analysis.py \
     --output outputs/abu_gemini_verification_report.md
 
 # 步骤1: 创建模式匹配历史表
-python scripts/abu_init_ml_tables.py
+python scripts/abu/abu_init_ml_tables.py
 
 # 步骤2: 回测历史信号，生成匹配记录
-python scripts/abu_backtest_pattern_matches.py --start-date 2025-01-01
+python scripts/abu/abu_backtest_pattern_matches.py --start-date 2025-01-01
 
 # 步骤3: 评估ABU历史信号（生成评估数据）
-python scripts/abu_evaluate_signals.py --start-date 2025-01-01
+python scripts/abu/abu_evaluate_signals.py --start-date 2025-01-01
 ```
 
 ### 3. 训练模型
@@ -2118,9 +2118,9 @@ python src/ml_dl/abu_pattern_weight_optimizer.py --optimize
   - ✅ 去重机制：SHA1检查、输出文件检查、缓存检查
   - ✅ 断点续传：状态文件保存，支持中断后继续
   - ✅ 健壮性：完整错误处理、重试机制、详细日志
-- `scripts/abu_parse_gemini_output.py` - 智能解析Gemini输出（标准化格式）
-- `scripts/abu_update_pattern_library_from_gemini.py` - 更新模式库数据
-- `scripts/abu_verify_gemini_analysis.py` - 验证Gemini分析结果质量
+- `scripts/abu/abu_parse_gemini_output.py` - 智能解析Gemini输出（标准化格式）
+- `scripts/abu/abu_update_pattern_library_from_gemini.py` - 更新模式库数据
+- `scripts/abu/abu_verify_gemini_analysis.py` - 验证Gemini分析结果质量
 
 #### 阶段1-2: ML模型相关
 - `src/ml_dl/abu_price_action_learner.py` - 价格行为特征学习器（最高优先级）
@@ -2129,15 +2129,15 @@ python src/ml_dl/abu_pattern_weight_optimizer.py --optimize
 - `src/ml_dl/abu_candidate_scorer.py` - ML评分器
 
 #### 阶段1: 数据准备相关
-- `scripts/abu_record_match_history.py` - 记录匹配历史
-- `scripts/abu_evaluate_signals.py` - 评估ABU信号
-- `scripts/abu_backtest_pattern_matches.py` - 回测历史匹配
-- `scripts/abu_init_ml_tables.py` - 初始化ML相关表
+- `scripts/abu/abu_record_match_history.py` - 记录匹配历史
+- `scripts/abu/abu_evaluate_signals.py` - 评估ABU信号
+- `scripts/abu/abu_backtest_pattern_matches.py` - 回测历史匹配
+- `scripts/abu/abu_init_ml_tables.py` - 初始化ML相关表
 
 #### 阶段3-4: 模型集成与监控
-- `scripts/abu_retrain_ml_models.py` - 定期重训练模型
-- `scripts/abu_ml_model_evaluation.py` - 模型评估脚本
-- `scripts/check_abu_db_size.py` - 数据库容量检查脚本
+- `scripts/abu/abu_retrain_ml_models.py` - 定期重训练模型
+- `scripts/abu/abu_ml_model_evaluation.py` - 模型评估脚本
+- `scripts/abu/check_abu_db_size.py` - 数据库容量检查脚本
 
 #### 现有文件增强
 - `src/abu/detectors.py` - 需要增强：集成Gemini模式匹配和价格行为学习
@@ -2309,8 +2309,8 @@ python src/ml_dl/abu_pattern_weight_optimizer.py --optimize
    - 根据实际输出调整解析脚本
 
 3. **阶段0.5: 解析和更新模式库** 🗄️
-   - 运行 `scripts/abu_parse_gemini_output.py`
-   - 运行 `scripts/abu_update_pattern_library_from_gemini.py`
+   - 运行 `scripts/abu/abu_parse_gemini_output.py`
+   - 运行 `scripts/abu/abu_update_pattern_library_from_gemini.py`
    - 验证数据库更新结果
 
 ## 成本控制
@@ -2684,9 +2684,9 @@ def get_market_data(symbol: str, exchange: str = None):
 
 ```
 src/abu/gemini_vision_analyzer.py  # 核心分析模块（独立）
-scripts/abu_parse_gemini_output.py  # 解析输出
-scripts/abu_update_pattern_library_from_gemini.py  # 更新数据库
-scripts/abu_verify_gemini_analysis.py  # 验证结果
+scripts/abu/abu_parse_gemini_output.py  # 解析输出
+scripts/abu/abu_update_pattern_library_from_gemini.py  # 更新数据库
+scripts/abu/abu_verify_gemini_analysis.py  # 验证结果
 ```
 
 ## 🚀 快速开始
@@ -2719,16 +2719,16 @@ python -m src.abu.gemini_vision_analyzer --status
 
 ```bash
 # 解析Gemini输出
-python scripts/abu_parse_gemini_output.py \
+python scripts/abu/abu_parse_gemini_output.py \
     --input outputs/abu_gemini_annotations_enhanced.jsonl
 
 # 更新模式库（先预览）
-python scripts/abu_update_pattern_library_from_gemini.py \
+python scripts/abu/abu_update_pattern_library_from_gemini.py \
     --input outputs/abu_gemini_parsed.jsonl \
     --dry-run
 
 # 实际更新
-python scripts/abu_update_pattern_library_from_gemini.py \
+python scripts/abu/abu_update_pattern_library_from_gemini.py \
     --input outputs/abu_gemini_parsed.jsonl
 ```
 

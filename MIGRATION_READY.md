@@ -11,10 +11,10 @@
 | 文件 | 用途 |
 |------|------|
 | `src/db_manager_postgres.py` | PostgreSQL 数据库管理器（支持连接池） |
-| `scripts/init_postgres_abu_db.py` | 数据库表结构初始化脚本 |
+| `scripts/abu/init_postgres_abu_db.py` | 数据库表结构初始化脚本 |
 | `scripts/migrate_duckdb_to_postgres.py` | 数据迁移工具 |
 | `scripts/create_db_interactive.bat` | 交互式数据库创建脚本 |
-| `scripts/create_abu_database.sql` | SQL 创建脚本 |
+| `scripts/abu/create_abu_database.sql` | SQL 创建脚本 |
 | `.env.postgres` | PostgreSQL 配置示例 |
 | `POSTGRES_MIGRATION_STEPS.md` | 详细执行步骤指南 |
 | `docs/PostgreSQL_Migration_Plan.md` | 完整迁移方案文档 |
@@ -28,7 +28,7 @@
 ### Step 1: 停止 Abu 系统（必须）
 
 ```cmd
-Abu停止所有.bat
+scripts/abu/Abu停止所有.bat
 ```
 
 ### Step 2: 配置环境变量
@@ -64,7 +64,7 @@ scripts\create_db_interactive.bat
 ### Step 4: 初始化数据库表
 
 ```cmd
-python scripts\init_postgres_abu_db.py
+python scripts\abu\init_postgres_abu_db.py
 ```
 
 预期输出：
@@ -113,7 +113,7 @@ python scripts\auto_signal_generator.py --once --coins 3
 ### Step 9: 重启 Abu 系统
 
 ```cmd
-Abu全部启动.bat
+scripts/abu/Abu全部启动.bat
 ```
 
 ---

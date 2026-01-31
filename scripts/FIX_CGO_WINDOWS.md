@@ -32,7 +32,7 @@
    ```powershell
    cd C:\Users\zuoho\code\qingniao\scripts
    $env:CGO_ENABLED=1
-   go build -o abu_kline_fetcher.exe abu_kline_fetcher.go
+   go build -o abu/abu_kline_fetcher.exe abu/abu_kline_fetcher.go
    ```
 
 ### 方案2：手动安装 TDM-GCC（不需要管理员权限，推荐）
@@ -60,7 +60,7 @@
    ```powershell
    cd C:\Users\zuoho\code\qingniao\scripts
    $env:CGO_ENABLED=1
-   go build -o abu_kline_fetcher.exe abu_kline_fetcher.go
+   go build -o abu/abu_kline_fetcher.exe abu/abu_kline_fetcher.go
    ```
 
 ### 方案3：使用 MSYS2（如果已安装）
@@ -79,7 +79,7 @@
 
 ## 快速安装脚本
 
-创建 `scripts/install_gcc.ps1`：
+创建 `scripts/abu/install_gcc.ps1`：
 
 ```powershell
 # 检查是否已有 gcc
@@ -110,10 +110,10 @@ go env CGO_ENABLED  # 应该输出: 1
 
 # 4. 编译测试
 cd C:\Users\zuoho\code\qingniao\scripts
-go build -o abu_kline_fetcher.exe abu_kline_fetcher.go
+go build -o abu/abu_kline_fetcher.exe abu/abu_kline_fetcher.go
 
 # 5. 如果成功，测试运行
-.\abu_kline_fetcher.exe --help
+.\abu\abu_kline_fetcher.exe --help
 ```
 
 ## 常见问题

@@ -145,7 +145,7 @@ def generate_signal_from_match(match, current_price, klines_15m):
 
 ### 2. ABU Gemini信号扫描器
 
-**文件**: `scripts/abu_gemini_signal_scanner.py`
+**文件**: `scripts/abu/abu_gemini_signal_scanner.py`
 
 **主要流程**：
 
@@ -212,13 +212,13 @@ score = (similarity * 0.7 + probability * 0.3) * 100
 
 ```bash
 # 生成Top 10信号
-python scripts/abu_gemini_signal_scanner.py --top 10 --exchange binance --write-db 1
+python scripts/abu/abu_gemini_signal_scanner.py --top 10 --exchange binance --write-db 1
 
 # 调整匹配阈值（更严格）
-python scripts/abu_gemini_signal_scanner.py --top 10 --min-similarity 0.6
+python scripts/abu/abu_gemini_signal_scanner.py --top 10 --min-similarity 0.6
 
 # 每个币种匹配更多模式
-python scripts/abu_gemini_signal_scanner.py --top 10 --max-matches-per-symbol 5
+python scripts/abu/abu_gemini_signal_scanner.py --top 10 --max-matches-per-symbol 5
 ```
 
 ### 参数说明
