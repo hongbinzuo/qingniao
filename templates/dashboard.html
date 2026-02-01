@@ -53,6 +53,16 @@
         .alert { background: #7f1d1d; border: 2px solid #dc2626; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none; }
         .alert.show { display: block; }
         .alert-text { color: #fca5a5; font-weight: 600; }
+        .banner {
+            background: #111827;
+            border: 1px solid #334155;
+            border-left: 4px solid #60a5fa;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 0.9rem;
+            color: #cbd5f5;
+        }
         .status-stopped { color: #ef4444; }
         .status-unknown { color: #f59e0b; }
         .signals-table {
@@ -109,18 +119,11 @@
         <div class="alert" id="alert-banner">
             <div class="alert-text">⚠️ WARNING: No signals detected in last 48 hours! Scanner may be down.</div>
         </div>
+        <div class="banner" id="uptime-banner">Uptime: loading...</div>
         <div class="status-grid">
             <div class="card">
                 <h2>Scanner Status</h2>
                 <div class="value" id="scanner-status">Loading...</div>
-            </div>
-            <div class="card">
-                <h2>Total Uptime</h2>
-                <div class="value" id="scanner-uptime">-</div>
-            </div>
-            <div class="card">
-                <h2>Last Signal Age</h2>
-                <div class="value" id="last-signal-age">-</div>
             </div>
             <div class="card">
                 <h2>Signals (24h)</h2>
@@ -205,8 +208,12 @@
                 statusEl.className = 'value ' + (data.running ? 'status-running' : 'status-stopped');
                 
                 document.getElementById('signals-24h').textContent = data.signals_24h || 0;
-                document.getElementById('scanner-uptime').textContent = data.uptime_human || '-';
-                document.getElementById('last-signal-age').textContent = data.last_signal_age_human || 'N/A';
+                const banner = document.getElementById('uptime-banner');
+                const current = data.current_uptime_human || '-';
+                const total = data.total_uptime_human || '-';
+                const firstStart = data.first_start_time || 'N/A';
+                const lastAge = data.last_signal_age_human || 'N/A';
+                banner.textContent = `Uptime: current ${current} | total ${total} (since ${firstStart}) | last signal age ${lastAge}`;
 
                 // Show alert if no signals in 48 hours
                 const alertBanner = document.getElementById("alert-banner");

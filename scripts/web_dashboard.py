@@ -31,9 +31,33 @@ from generate_comprehensive_trading_plans import get_kline_gateio  # type: ignor
 
 app = Flask(__name__, template_folder=str(ROOT / "templates"))
 
+LOG_DIR = ROOT / "logs"
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+UPTIME_LOG_PATH = LOG_DIR / "service_uptime.log"
+
 TREND_CACHE = {}
 TREND_CACHE_TTL_SEC = int(os.getenv("TREND_CACHE_TTL_SEC", "60"))
 SERVICE_START_TS = time.time()
+
+
+def _init_uptime_log() -> float:
+    now = time.time()
+    first_ts = now
+    try:
+        if UPTIME_LOG_PATH.exists():
+            first_line = UPTIME_LOG_PATH.read_text(encoding="utf-8").splitlines()[:1]
+            if first_line:
+                parts = first_line[0].split()
+                if parts:
+                    first_ts = float(parts[0])
+        with UPTIME_LOG_PATH.open("a", encoding="utf-8") as f:
+            f.write(f"{int(now)} {datetime.now().isoformat()}\\n")
+    except Exception:
+        return now
+    return first_ts
+
+
+FIRST_START_TS = _init_uptime_log()
 
 
 def _format_uptime(seconds: float) -> str:
@@ -262,7 +286,9 @@ def get_status():
         cur.close()
         conn.close()
 
-        uptime_seconds = max(0, int(time.time() - SERVICE_START_TS))
+        now_ts = time.time()
+        uptime_seconds = max(0, int(now_ts - SERVICE_START_TS))
+        total_uptime_seconds = max(0, int(now_ts - FIRST_START_TS))
         return jsonify(
             {
                 "running": is_running,
@@ -271,8 +297,11 @@ def get_status():
                 if last_signal_time
                 else None,
                 "signals_24h": result["total_signals_24h"],
-                "uptime_seconds": uptime_seconds,
-                "uptime_human": _format_uptime(uptime_seconds),
+                "current_uptime_seconds": uptime_seconds,
+                "current_uptime_human": _format_uptime(uptime_seconds),
+                "total_uptime_seconds": total_uptime_seconds,
+                "total_uptime_human": _format_uptime(total_uptime_seconds),
+                "first_start_time": datetime.fromtimestamp(FIRST_START_TS).isoformat(),
                 "last_signal_age_seconds": last_signal_age_seconds,
                 "last_signal_age_human": _format_uptime(last_signal_age_seconds)
                 if last_signal_age_seconds is not None
