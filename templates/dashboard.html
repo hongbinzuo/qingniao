@@ -62,6 +62,16 @@
             overflow: hidden;
             border: 1px solid #334155;
         }
+        .trend-label {
+            font-weight: 600;
+            color: #fbbf24;
+        }
+        .range {
+            color: #a5b4fc;
+        }
+        .trend-row td {
+            font-size: 0.9rem;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -125,6 +135,29 @@
                 <div class="value" id="running">-</div>
             </div>
         </div>
+
+        <!-- Trend & Range (Brooks-style context) -->
+        <div class="card">
+            <h2>Brooks Trend & Range (4h / 1d)</h2>
+            <div class="signals-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Symbol</th>
+                            <th>TF</th>
+                            <th>Price</th>
+                            <th>Range</th>
+                            <th>Trend</th>
+                            <th>Regime</th>
+                            <th>Strength</th>
+                        </tr>
+                    </thead>
+                    <tbody id="trend-table">
+                        <tr><td colspan="7" class="loading">Loading trend...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
         
         <!-- Recent Signals Table -->
         <div class="card">
@@ -164,8 +197,7 @@
                 statusEl.className = 'value ' + (data.running ? 'status-running' : 'status-stopped');
                 
                 document.getElementById('signals-24h').textContent = data.signals_24h || 0;
-            } catch (error) {
-                
+
                 // Show alert if no signals in 48 hours
                 const alertBanner = document.getElementById("alert-banner");
                 if (data.last_signal_time) {
@@ -179,6 +211,7 @@
                 } else {
                     alertBanner.classList.add("show");
                 }
+            } catch (error) {
                 console.error('Error fetching status:', error);
             }
         }
@@ -231,12 +264,55 @@
                 console.error('Error fetching signals:', error);
             }
         }
+
+        async function fetchTrend() {
+            try {
+                const response = await fetch('/api/trend?symbols=BTC,ETH,SOL&timeframes=4h,1d');
+                const data = await response.json();
+                const tbody = document.getElementById('trend-table');
+                const items = data.items || [];
+                if (items.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="loading">No trend data</td></tr>';
+                    return;
+                }
+
+                items.sort((a, b) => {
+                    if (a.symbol === b.symbol) {
+                        return (a.timeframe || '').localeCompare(b.timeframe || '');
+                    }
+                    return (a.symbol || '').localeCompare(b.symbol || '');
+                });
+
+                tbody.innerHTML = items.map(item => {
+                    const price = (item.price || 0).toFixed(2);
+                    const low = (item.range_low || 0).toFixed(2);
+                    const high = (item.range_high || 0).toFixed(2);
+                    const trend = item.trend_label || item.trend_direction || '-';
+                    const regime = item.regime_36 || '-';
+                    const strength = (item.trend_strength || 0).toFixed(3);
+                    return `
+                        <tr class="trend-row">
+                            <td>${item.symbol}</td>
+                            <td>${item.timeframe}</td>
+                            <td>${price}</td>
+                            <td class="range">${low} - ${high}</td>
+                            <td class="trend-label">${trend}</td>
+                            <td>${regime}</td>
+                            <td>${strength}</td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error fetching trend:', error);
+            }
+        }
         
         // Refresh all data
         function refreshAll() {
             fetchStatus();
             fetchAuditing();
             fetchSignals();
+            fetchTrend();
         }
         
         // Initial load

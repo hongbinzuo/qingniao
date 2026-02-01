@@ -11,6 +11,7 @@ Simple web interface to view:
 
 import os
 import sys
+import time
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -23,7 +24,14 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
+from abu.kline_feature_extractor import extract_basic_kline_features  # type: ignore
+from abu.market_context import classify_market_context  # type: ignore
+from generate_comprehensive_trading_plans import get_kline_gateio  # type: ignore
+
 app = Flask(__name__, template_folder=str(ROOT / "templates"))
+
+TREND_CACHE = {}
+TREND_CACHE_TTL_SEC = int(os.getenv("TREND_CACHE_TTL_SEC", "300"))
 
 
 # Database connection
@@ -46,6 +54,91 @@ def get_db_connection():
 def index():
     """Main dashboard page"""
     return render_template("dashboard.html")
+
+def _normalize_symbol(sym: str) -> str:
+    return (sym or "").strip().upper()
+
+
+def _safe_float(value, default=0.0):
+    try:
+        return float(value)
+    except Exception:
+        return float(default)
+
+
+def _compute_trend_payload(symbol: str, timeframe: str, klines: list) -> dict:
+    if not klines or len(klines) < 50:
+        return {
+            "symbol": symbol,
+            "timeframe": timeframe,
+            "error": "kline_insufficient",
+        }
+
+    highs = [k.get("high") for k in klines if k.get("high") is not None]
+    lows = [k.get("low") for k in klines if k.get("low") is not None]
+    last_close = klines[-1].get("close")
+
+    features = extract_basic_kline_features(klines)
+    context = classify_market_context(klines, features)
+
+    range_high = max(highs) if highs else None
+    range_low = min(lows) if lows else None
+
+    return {
+        "symbol": symbol,
+        "timeframe": timeframe,
+        "price": _safe_float(last_close, 0.0),
+        "range_low": _safe_float(range_low, 0.0),
+        "range_high": _safe_float(range_high, 0.0),
+        "trend_label": context.get("label"),
+        "trend_direction": context.get("trend_direction"),
+        "trend_strength": _safe_float(context.get("trend_strength"), 0.0),
+        "regime_36": context.get("regime_36"),
+        "overlap_ratio": _safe_float(context.get("overlap_ratio"), 0.0),
+        "range_pct": _safe_float(features.get("range_pct"), 0.0),
+        "updated_at": datetime.now().isoformat(),
+    }
+
+
+@app.route("/api/trend")
+def get_trend():
+    """Get Brooks-style trend + range (4h/1d) for BTC/ETH/SOL."""
+    symbols_raw = request.args.get("symbols", "BTC,ETH,SOL")
+    tfs_raw = request.args.get("timeframes", "4h,1d")
+    symbols = [_normalize_symbol(s) for s in symbols_raw.split(",") if s.strip()]
+    timeframes = [tf.strip().lower() for tf in tfs_raw.split(",") if tf.strip()]
+
+    limit_map = {
+        "4h": 200,
+        "1d": 200,
+    }
+
+    now_ts = time.time()
+    items = []
+    for sym in symbols:
+        for tf in timeframes:
+            cache_key = f"{sym}:{tf}"
+            cached = TREND_CACHE.get(cache_key)
+            if cached:
+                age = now_ts - cached.get("ts", 0)
+                if age <= TREND_CACHE_TTL_SEC:
+                    items.append(cached["payload"])
+                    continue
+
+            klines = get_kline_gateio(symbol=sym, timeframe=tf, limit=limit_map.get(tf, 200))
+            payload = _compute_trend_payload(sym, tf, klines or [])
+            TREND_CACHE[cache_key] = {"ts": now_ts, "payload": payload}
+            items.append(payload)
+
+    return jsonify(
+        {
+            "symbols": symbols,
+            "timeframes": timeframes,
+            "items": items,
+            "cached_ttl_sec": TREND_CACHE_TTL_SEC,
+            "server_time": datetime.now().isoformat(),
+        }
+    )
 
 
 @app.route("/api/status")
