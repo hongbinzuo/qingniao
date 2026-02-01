@@ -33,6 +33,22 @@ app = Flask(__name__, template_folder=str(ROOT / "templates"))
 
 TREND_CACHE = {}
 TREND_CACHE_TTL_SEC = int(os.getenv("TREND_CACHE_TTL_SEC", "60"))
+SERVICE_START_TS = time.time()
+
+
+def _format_uptime(seconds: float) -> str:
+    try:
+        total = int(seconds)
+    except Exception:
+        return "N/A"
+    days, rem = divmod(total, 86400)
+    hours, rem = divmod(rem, 3600)
+    minutes, _ = divmod(rem, 60)
+    if days > 0:
+        return f"{days}d {hours}h {minutes}m"
+    if hours > 0:
+        return f"{hours}h {minutes}m"
+    return f"{minutes}m"
 
 
 # Database connection
@@ -231,6 +247,7 @@ def get_status():
         is_running = False
         status_message = "Unknown"
 
+        last_signal_age_seconds = None
         if last_signal_time:
             time_diff = datetime.now() - last_signal_time.replace(tzinfo=None)
             if time_diff < timedelta(minutes=30):
@@ -238,12 +255,14 @@ def get_status():
                 status_message = "Running"
             else:
                 status_message = f"Stopped (last signal {int(time_diff.total_seconds() / 60)} min ago)"
+            last_signal_age_seconds = int(time_diff.total_seconds())
         else:
             status_message = "No signals yet"
 
         cur.close()
         conn.close()
 
+        uptime_seconds = max(0, int(time.time() - SERVICE_START_TS))
         return jsonify(
             {
                 "running": is_running,
@@ -252,6 +271,12 @@ def get_status():
                 if last_signal_time
                 else None,
                 "signals_24h": result["total_signals_24h"],
+                "uptime_seconds": uptime_seconds,
+                "uptime_human": _format_uptime(uptime_seconds),
+                "last_signal_age_seconds": last_signal_age_seconds,
+                "last_signal_age_human": _format_uptime(last_signal_age_seconds)
+                if last_signal_age_seconds is not None
+                else None,
             }
         )
     except Exception as e:

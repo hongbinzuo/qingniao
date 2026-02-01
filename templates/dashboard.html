@@ -115,6 +115,14 @@
                 <div class="value" id="scanner-status">Loading...</div>
             </div>
             <div class="card">
+                <h2>Total Uptime</h2>
+                <div class="value" id="scanner-uptime">-</div>
+            </div>
+            <div class="card">
+                <h2>Last Signal Age</h2>
+                <div class="value" id="last-signal-age">-</div>
+            </div>
+            <div class="card">
                 <h2>Signals (24h)</h2>
                 <div class="value" id="signals-24h">-</div>
             </div>
@@ -197,6 +205,8 @@
                 statusEl.className = 'value ' + (data.running ? 'status-running' : 'status-stopped');
                 
                 document.getElementById('signals-24h').textContent = data.signals_24h || 0;
+                document.getElementById('scanner-uptime').textContent = data.uptime_human || '-';
+                document.getElementById('last-signal-age').textContent = data.last_signal_age_human || 'N/A';
 
                 // Show alert if no signals in 48 hours
                 const alertBanner = document.getElementById("alert-banner");
