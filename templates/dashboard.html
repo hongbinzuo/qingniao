@@ -290,11 +290,12 @@
                     const trend = item.trend_label || item.trend_direction || '-';
                     const regime = item.regime_36 || '-';
                     const strength = (item.trend_strength || 0).toFixed(3);
+                    const priceSource = item.price_source || 'kline_close';
                     return `
                         <tr class="trend-row">
                             <td>${item.symbol}</td>
                             <td>${item.timeframe}</td>
-                            <td>${price}</td>
+                            <td title="price source: ${priceSource}">${price}</td>
                             <td class="range">${low} - ${high}</td>
                             <td class="trend-label">${trend}</td>
                             <td>${regime}</td>

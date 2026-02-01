@@ -85,8 +85,38 @@ def _fetch_gate_ticker_price(symbol: str) -> float:
     return 0.0
 
 
+def _fetch_binance_ticker_price(symbol: str) -> float:
+    sym = f"{symbol}USDT"
+    try:
+        resp = requests.get(
+            "https://api.binance.com/api/v3/ticker/price",
+            params={"symbol": sym},
+            timeout=10,
+        )
+        if resp.status_code != 200:
+            return 0.0
+        data = resp.json()
+        return _safe_float(data.get("price"), 0.0)
+    except Exception:
+        return 0.0
+
+
+def _fetch_live_price(symbol: str) -> tuple:
+    price = _fetch_gate_ticker_price(symbol)
+    if price > 0:
+        return price, "gate"
+    price = _fetch_binance_ticker_price(symbol)
+    if price > 0:
+        return price, "binance"
+    return 0.0, "kline_close"
+
+
 def _compute_trend_payload(
-    symbol: str, timeframe: str, klines: list, live_price: float = 0.0
+    symbol: str,
+    timeframe: str,
+    klines: list,
+    live_price: float = 0.0,
+    price_source: str = "kline_close",
 ) -> dict:
     if not klines or len(klines) < 50:
         return {
@@ -105,10 +135,16 @@ def _compute_trend_payload(
     range_high = max(highs) if highs else None
     range_low = min(lows) if lows else None
 
+    price_val = _safe_float(live_price, 0.0)
+    if price_val <= 0:
+        price_val = _safe_float(last_close, 0.0)
+        price_source = "kline_close"
+
     return {
         "symbol": symbol,
         "timeframe": timeframe,
-        "price": _safe_float(live_price, last_close or 0.0),
+        "price": price_val,
+        "price_source": price_source,
         "range_low": _safe_float(range_low, 0.0),
         "range_high": _safe_float(range_high, 0.0),
         "trend_label": context.get("label"),
@@ -135,7 +171,10 @@ def get_trend():
     }
 
     now_ts = time.time()
-    live_prices = {sym: _fetch_gate_ticker_price(sym) for sym in symbols}
+    live_prices = {}
+    for sym in symbols:
+        price, source = _fetch_live_price(sym)
+        live_prices[sym] = {"price": price, "source": source}
     items = []
     for sym in symbols:
         for tf in timeframes:
@@ -150,8 +189,13 @@ def get_trend():
             klines = get_kline_gateio(
                 symbol=sym, timeframe=tf, limit=limit_map.get(tf, 200)
             )
+            live_meta = live_prices.get(sym, {})
             payload = _compute_trend_payload(
-                sym, tf, klines or [], live_price=live_prices.get(sym, 0.0)
+                sym,
+                tf,
+                klines or [],
+                live_price=live_meta.get("price", 0.0),
+                price_source=live_meta.get("source", "kline_close"),
             )
             TREND_CACHE[cache_key] = {"ts": now_ts, "payload": payload}
             items.append(payload)
