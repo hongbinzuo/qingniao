@@ -50,6 +50,9 @@
             color: #60a5fa;
         }
         .status-running { color: #10b981; }
+        .alert { background: #7f1d1d; border: 2px solid #dc2626; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none; }
+        .alert.show { display: block; }
+        .alert-text { color: #fca5a5; font-weight: 600; }
         .status-stopped { color: #ef4444; }
         .status-unknown { color: #f59e0b; }
         .signals-table {
@@ -91,6 +94,11 @@
         <h1>🔍 Abu Scanner Dashboard</h1>
         
         <!-- Status Cards -->
+        
+        <!-- Alert Banner -->
+        <div class="alert" id="alert-banner">
+            <div class="alert-text">⚠️ WARNING: No signals detected in last 48 hours! Scanner may be down.</div>
+        </div>
         <div class="status-grid">
             <div class="card">
                 <h2>Scanner Status</h2>
@@ -157,6 +165,20 @@
                 
                 document.getElementById('signals-24h').textContent = data.signals_24h || 0;
             } catch (error) {
+                
+                // Show alert if no signals in 48 hours
+                const alertBanner = document.getElementById("alert-banner");
+                if (data.last_signal_time) {
+                    const lastSignal = new Date(data.last_signal_time);
+                    const hoursSince = (Date.now() - lastSignal) / (1000 * 60 * 60);
+                    if (hoursSince > 48) {
+                        alertBanner.classList.add("show");
+                    } else {
+                        alertBanner.classList.remove("show");
+                    }
+                } else {
+                    alertBanner.classList.add("show");
+                }
                 console.error('Error fetching status:', error);
             }
         }
