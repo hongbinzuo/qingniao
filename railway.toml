@@ -2,7 +2,7 @@
 builder = "nixpacks"
 
 [build.nixpacksPlan.phases.setup]
-nixPkgs = ["ta-lib"]
+nixPkgs = ["python311", "ta-lib"]
 
 [deploy]
 restartPolicyType = "ON_FAILURE"
