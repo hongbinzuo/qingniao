@@ -16,6 +16,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 import psycopg2
+import requests
 from flask import Flask, jsonify, render_template, request
 from psycopg2.extras import RealDictCursor
 
@@ -31,7 +32,7 @@ from generate_comprehensive_trading_plans import get_kline_gateio  # type: ignor
 app = Flask(__name__, template_folder=str(ROOT / "templates"))
 
 TREND_CACHE = {}
-TREND_CACHE_TTL_SEC = int(os.getenv("TREND_CACHE_TTL_SEC", "300"))
+TREND_CACHE_TTL_SEC = int(os.getenv("TREND_CACHE_TTL_SEC", "60"))
 
 
 # Database connection
@@ -66,7 +67,27 @@ def _safe_float(value, default=0.0):
         return float(default)
 
 
-def _compute_trend_payload(symbol: str, timeframe: str, klines: list) -> dict:
+def _fetch_gate_ticker_price(symbol: str) -> float:
+    pair = f"{symbol}_USDT"
+    try:
+        resp = requests.get(
+            "https://api.gateio.ws/api/v4/spot/tickers",
+            params={"currency_pair": pair},
+            timeout=10,
+        )
+        if resp.status_code != 200:
+            return 0.0
+        data = resp.json()
+        if isinstance(data, list) and data:
+            return _safe_float(data[0].get("last"), 0.0)
+    except Exception:
+        return 0.0
+    return 0.0
+
+
+def _compute_trend_payload(
+    symbol: str, timeframe: str, klines: list, live_price: float = 0.0
+) -> dict:
     if not klines or len(klines) < 50:
         return {
             "symbol": symbol,
@@ -87,7 +108,7 @@ def _compute_trend_payload(symbol: str, timeframe: str, klines: list) -> dict:
     return {
         "symbol": symbol,
         "timeframe": timeframe,
-        "price": _safe_float(last_close, 0.0),
+        "price": _safe_float(live_price, last_close or 0.0),
         "range_low": _safe_float(range_low, 0.0),
         "range_high": _safe_float(range_high, 0.0),
         "trend_label": context.get("label"),
@@ -114,6 +135,7 @@ def get_trend():
     }
 
     now_ts = time.time()
+    live_prices = {sym: _fetch_gate_ticker_price(sym) for sym in symbols}
     items = []
     for sym in symbols:
         for tf in timeframes:
@@ -125,8 +147,12 @@ def get_trend():
                     items.append(cached["payload"])
                     continue
 
-            klines = get_kline_gateio(symbol=sym, timeframe=tf, limit=limit_map.get(tf, 200))
-            payload = _compute_trend_payload(sym, tf, klines or [])
+            klines = get_kline_gateio(
+                symbol=sym, timeframe=tf, limit=limit_map.get(tf, 200)
+            )
+            payload = _compute_trend_payload(
+                sym, tf, klines or [], live_price=live_prices.get(sym, 0.0)
+            )
             TREND_CACHE[cache_key] = {"ts": now_ts, "payload": payload}
             items.append(payload)
 
