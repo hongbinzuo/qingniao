@@ -153,16 +153,27 @@ class PostgresDBManager:
         """初始化连接池（只初始化一次）"""
         if cls._connection_pool is None:
             try:
-                cls._connection_pool = psycopg2.pool.ThreadedConnectionPool(
-                    minconn=int(os.getenv('PG_POOL_MIN_SIZE', 2)),
-                    maxconn=int(os.getenv('PG_POOL_MAX_SIZE', 10)),
-                    host=os.getenv('PG_HOST', 'localhost'),
-                    port=int(os.getenv('PG_PORT', 5432)),
-                    database=os.getenv('PG_DATABASE', 'qingniao_abu'),
-                    user=os.getenv('PG_USER', 'abu_user'),
-                    password=os.getenv('PG_PASSWORD', ''),
-                    cursor_factory=RealDictCursor
-                )
+                db_url = os.getenv('DATABASE_URL')
+                minconn = int(os.getenv('PG_POOL_MIN_SIZE', 2))
+                maxconn = int(os.getenv('PG_POOL_MAX_SIZE', 10))
+                if db_url:
+                    cls._connection_pool = psycopg2.pool.ThreadedConnectionPool(
+                        minconn=minconn,
+                        maxconn=maxconn,
+                        dsn=db_url,
+                        cursor_factory=RealDictCursor,
+                    )
+                else:
+                    cls._connection_pool = psycopg2.pool.ThreadedConnectionPool(
+                        minconn=minconn,
+                        maxconn=maxconn,
+                        host=os.getenv('PG_HOST', 'localhost'),
+                        port=int(os.getenv('PG_PORT', 5432)),
+                        database=os.getenv('PG_DATABASE', 'qingniao_abu'),
+                        user=os.getenv('PG_USER', 'abu_user'),
+                        password=os.getenv('PG_PASSWORD', ''),
+                        cursor_factory=RealDictCursor,
+                    )
                 print(f"[INFO] PostgreSQL 连接池已初始化", file=sys.stderr)
             except Exception as e:
                 print(f"[ERROR] 无法初始化 PostgreSQL 连接池: {e}", file=sys.stderr)
