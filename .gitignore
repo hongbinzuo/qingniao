@@ -34,9 +34,10 @@ src/data/*.db
 # =============================================================================
 # 数据文件（可能包含敏感信息）
 # =============================================================================
-data/
-!data/.gitkeep
+# Allow data/vectors/ for Railway deployment
+data/*
 !data/vectors/
+data/vectors/*
 !data/vectors/*.ann
 !data/vectors/*.json
 data/de_*.json
