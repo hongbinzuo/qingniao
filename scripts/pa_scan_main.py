@@ -135,13 +135,45 @@ LEVERAGED_SUFFIXES = (
     "10L",
     "10S",
 )
-MIN_STOP_PCT = {"5m": 0.005, "15m": 0.008, "1h": 0.01}
-EMA_DEVIATION_MIN = {"5m": 0.006, "15m": 0.01, "1h": 0.015}
+MIN_STOP_PCT = {
+    "5m": 0.005,
+    "15m": 0.008,
+    "1h": 0.01,
+    "4h": 0.015,
+    "12h": 0.02,
+    "1d": 0.025,
+    "3d": 0.03,
+}
+EMA_DEVIATION_MIN = {
+    "5m": 0.006,
+    "15m": 0.01,
+    "1h": 0.015,
+    "4h": 0.02,
+    "12h": 0.025,
+    "1d": 0.03,
+    "3d": 0.035,
+}
 EMA_DEVIATION_PENALTY_MAX = 0.6
-STOP_LOOKBACK = {"5m": 10, "15m": 20, "1h": 20}
+STOP_LOOKBACK = {"5m": 10, "15m": 20, "1h": 20, "4h": 30, "12h": 40, "1d": 50, "3d": 60}
 ATR_BUFFER_MULT = 0.2
-ATR_K_TREND = {"5m": 3.0, "15m": 1.2, "1h": 1.2}
-ATR_K_COUNTER = {"5m": 3.0, "15m": 1.5, "1h": 1.5}
+ATR_K_TREND = {
+    "5m": 3.0,
+    "15m": 1.2,
+    "1h": 1.2,
+    "4h": 1.0,
+    "12h": 0.9,
+    "1d": 0.8,
+    "3d": 0.7,
+}
+ATR_K_COUNTER = {
+    "5m": 3.0,
+    "15m": 1.5,
+    "1h": 1.5,
+    "4h": 1.3,
+    "12h": 1.2,
+    "1d": 1.1,
+    "3d": 1.0,
+}
 EXCHANGES = ("gate", "bybit", "bitget")
 SYMBOL_CACHE_DIR = ROOT / "data" / "exchange_symbols"
 SYMBOL_CACHE_TTL_HOURS = 12
@@ -1422,7 +1454,12 @@ def main() -> None:
         description="Qingniao-PA Top scanner (Gate/Bybit/Bitget)"
     )
     ap.add_argument("--top", type=int, default=10)
-    ap.add_argument("--timeframe", type=str, default="15m", choices=["5m", "15m", "1h"])
+    ap.add_argument(
+        "--timeframe",
+        type=str,
+        default="15m",
+        choices=["5m", "15m", "1h", "4h", "12h", "1d", "3d"],
+    )
     ap.add_argument(
         "--rank-by", type=str, default="volume", choices=["volume", "marketcap"]
     )
