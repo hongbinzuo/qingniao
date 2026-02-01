@@ -1,1 +1,1 @@
-web: python scripts/railway_scanner_service.py
+web: python scripts/railway_service_runner.py
