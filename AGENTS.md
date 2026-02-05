@@ -82,6 +82,12 @@ qingniao/
 2. **DuckDB** (备用): 仅在PostgreSQL不可用时使用 / Use only as fallback when PostgreSQL unavailable
 3. **SQLite** (禁止): 不要在任何情况下使用 / DO NOT use in any case
 
+**DuckDB 专用规则 / DuckDB Specific Rule**:
+- **DuckDB 仅用于存储历史K线数据** / DuckDB is ONLY for storing historical kline data
+- 不要用DuckDB存储信号、特征、模型或其他数据 / Do NOT use DuckDB for signals, features, models, or other data
+- ML backtest的K线数据存储在 `data/ml_backtest/backtest.duckdb`
+- 其他数据使用JSON文件或PostgreSQL
+
 **数据库管理器**:
 - **PostgreSQL**: `src/db_manager_postgres.py`, `src/db_manager_trader.py`
 - **DuckDB** (备用): `src/db_manager_duckdb.py`
@@ -309,6 +315,22 @@ from system_logger import log_signal_generation
 2. **提取函数**: 将重复的逻辑提取为独立函数
 3. **使用参数**: 通过参数化处理差异，而不是复制代码
 4. **单一职责**: 每个函数只做一件事，便于复用
+
+### 5.5 NO QUICK WINS / 不要追求快速方案
+
+**核心原则**: 追求正确的解决方案，而不是快速但低质量的方案
+
+**规则**:
+1. **不要走捷径**: 即使有更快的临时方案，也要选择正确的长期方案
+2. **不要绕过问题**: 直面问题本质，不要用hack绕过
+3. **质量优先**: 宁可多花时间做对，也不要快速做错
+4. **避免技术债务**: 快速方案往往带来更多后续问题
+5. **完整实现**: 功能要完整实现，不要只做一半就说"够用了"
+
+**示例**:
+- ❌ "先用硬编码，以后再改" → ✅ 一开始就用配置文件
+- ❌ "先跳过错误处理" → ✅ 正确处理所有边界情况
+- ❌ "Quick win: 直接过滤信号" → ✅ 完整实现信号评估系统
 
 ---
 

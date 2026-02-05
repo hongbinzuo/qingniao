@@ -28,8 +28,11 @@ build/
 # =============================================================================
 src/data/*.duckdb
 src/data/*.db
-*.duckdb
 *.db
+
+# Allow ml_backtest duckdb for ML training data
+!data/ml_backtest/
+!data/ml_backtest/*.duckdb
 
 # =============================================================================
 # 数据文件（可能包含敏感信息）
@@ -37,6 +40,7 @@ src/data/*.db
 # Allow data/vectors/ for Railway deployment
 data/*
 !data/vectors/
+!data/ml_backtest/
 data/vectors/*
 !data/vectors/*.ann
 !data/vectors/*.json

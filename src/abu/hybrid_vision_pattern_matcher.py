@@ -21,6 +21,7 @@ try:
     from abu.gemini_pattern_matcher_enhanced import EnhancedGeminiPatternMatcher
     from abu.chart_renderer import ChartRenderer
     from abu.ai_vision_matcher import AIVisionMatcher, VisionMatchResult
+    from abu.vision_utils import resolve_pattern_image_path, render_chart_image
     IMPORTS_AVAILABLE = True
 except ImportError as e:
     IMPORTS_AVAILABLE = False
@@ -100,10 +101,12 @@ class HybridVisionPatternMatcher:
             signal_completeness=signal_completeness
         )
         
-        # 初始化图表渲染器
+        # 初始化图表渲染器（支持环境变量覆盖）
+        chart_width = int(os.getenv("ABU_VISION_CHART_WIDTH", "2560") or 2560)
+        chart_height = int(os.getenv("ABU_VISION_CHART_HEIGHT", "1440") or 1440)
         self.chart_renderer = ChartRenderer(
-            width=1200,
-            height=800,
+            width=chart_width,
+            height=chart_height,
             style='dark_background'
         )
         
@@ -312,37 +315,11 @@ class HybridVisionPatternMatcher:
         return None
 
     def _resolve_pattern_image_path(self, pattern: Dict) -> Optional[Path]:
-        """解析模式库图片路径，支持Windows路径与按页码回退"""
-        image_path = pattern.get('image_path')
-        source_page = pattern.get('source_page')
-
-        if image_path:
-            # 直接路径
-            p = Path(image_path)
-            if p.exists():
-                return p
-
-            # Windows路径转WSL
-            if ':' in image_path[:3]:
-                drive, rest = image_path.split(':', 1)
-                drive = drive.lower()
-                rest = rest.replace('\\', '/').lstrip('/')
-                wsl_path = Path('/mnt') / drive / rest
-                if wsl_path.exists():
-                    return wsl_path
-
-            # 相对路径尝试
-            rel_path = ROOT / image_path
-            if rel_path.exists():
-                return rel_path
-
-        # 按页码回退匹配（选取第一页图片）
-        if isinstance(source_page, int):
-            candidates = sorted((ROOT / 'data' / 'abu' / 'images').glob(f'page_{source_page:04d}_img_*.png'))
-            if candidates:
-                return candidates[0]
-
-        return None
+        """解析模式库图片路径（统一解析逻辑）"""
+        return resolve_pattern_image_path(
+            pattern.get('image_path'),
+            pattern.get('source_page')
+        )
     
     def _get_cache_key(self, symbol: str, timeframe: str, klines: List[Dict]) -> str:
         """生成缓存键"""
@@ -354,6 +331,68 @@ class HybridVisionPatternMatcher:
         # 使用价格的哈希值（简化为字符串）
         price_hash = hash(tuple(recent_closes))
         return f"{symbol}_{timeframe}_{price_hash}"
+
+    def match_candidates(
+        self,
+        matches: List[Dict],
+        klines_dict: Dict[str, List[Dict]],
+        symbol: str,
+        timeframe: str = "15m",
+    ) -> List[Optional[VisionMatchResult]]:
+        """
+        对指定候选执行视觉匹配（保证与候选顺序一致）
+        """
+        if not self.use_vision or not self.vision_matcher:
+            return [None] * len(matches)
+
+        realtime_klines = klines_dict.get(timeframe) or klines_dict.get("15m") or []
+        if not realtime_klines:
+            return [None] * len(matches)
+
+        chart_path = self.temp_dir / f"{symbol}_{int(time.time())}_cand.png"
+        chart_image = render_chart_image(
+            self.chart_renderer,
+            realtime_klines,
+            chart_path,
+            include_volume=False,
+            include_ema=True,
+            ema_periods=[20],
+            show_grid=False,
+            show_axes=False,
+            show_title=False,
+            show_legend=False,
+        )
+        if not chart_image:
+            return [None] * len(matches)
+
+        results: List[Optional[VisionMatchResult]] = []
+        try:
+            for match in matches:
+                pattern = match.get("pattern") or {}
+                pattern_image_path = resolve_pattern_image_path(
+                    pattern.get("image_path"),
+                    pattern.get("page_number") or pattern.get("source_page"),
+                )
+                if not pattern_image_path:
+                    results.append(None)
+                    continue
+                try:
+                    vision_result = self.vision_matcher.compare_two_images(
+                        image1_path=pattern_image_path,
+                        image2_path=chart_path,
+                        context=f"{symbol} {timeframe}",
+                    )
+                    results.append(vision_result)
+                except Exception:
+                    results.append(None)
+        finally:
+            try:
+                if chart_path.exists():
+                    chart_path.unlink()
+            except Exception:
+                pass
+
+        return results
     
     def _save_temp_chart(self, symbol: str, chart_bytes: bytes) -> Path:
         """保存临时图表文件"""

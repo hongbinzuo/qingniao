@@ -229,7 +229,18 @@ class EnhancedHybridMatcher:
             # 更新视觉分数
             for i, vision_result in enumerate(vision_results):
                 if i < len(matches):
-                    matches[i]['vision_score'] = vision_result.vision_score if vision_result else None
+                    if vision_result is None:
+                        matches[i]['vision_score'] = None
+                        continue
+                    if isinstance(vision_result, dict):
+                        raw_score = vision_result.get('similarity_score')
+                        matches[i]['vision_score'] = raw_score / 100.0 if isinstance(raw_score, (int, float)) else None
+                    elif hasattr(vision_result, 'similarity_score'):
+                        matches[i]['vision_score'] = vision_result.similarity_score / 100.0
+                    elif hasattr(vision_result, 'vision_score'):
+                        matches[i]['vision_score'] = vision_result.vision_score
+                    else:
+                        matches[i]['vision_score'] = None
         
         # 3. 转换为增强版结果
         enhanced_results = self._convert_to_enhanced_results(matches)
@@ -301,18 +312,23 @@ class EnhancedHybridMatcher:
         if not self.vision_matcher:
             return [None] * len(matches)
         
-        # 使用视觉匹配器
+        # 使用视觉匹配器对指定候选打分，保证与候选顺序一致
         loop = asyncio.get_event_loop()
+        timeframe = '15m'
+        if isinstance(klines_dict, dict) and klines_dict:
+            if '15m' in klines_dict:
+                timeframe = '15m'
+            else:
+                timeframe = next(iter(klines_dict.keys()))
         vision_results = await loop.run_in_executor(
             None,
-            self.vision_matcher.match_patterns,
+            self.vision_matcher.match_candidates,
+            matches,
             klines_dict,
             symbol,
-            '15m'
+            timeframe
         )
-        
-        # 映射到原始匹配结果
-        # 这里简化处理，实际可能需要更复杂的映射逻辑
+
         return vision_results[:len(matches)]
     
     def _convert_to_enhanced_results(self, matches: List[Dict]) -> List[EnhancedMatchResult]:

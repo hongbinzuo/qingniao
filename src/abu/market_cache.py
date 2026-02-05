@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """DuckDB-backed OHLCV cache with incremental updates."""
+
 from __future__ import annotations
 
+import threading
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
-import threading
-import time
+
 import requests
 
 try:
     import duckdb  # type: ignore
+
     DUCKDB_AVAILABLE = True
 except Exception:
     duckdb = None
@@ -63,7 +66,9 @@ class CacheStats:
 
 
 class MarketDataCache:
-    def __init__(self, db_path: Optional[Path] = None, default_exchange: str = "gate") -> None:
+    def __init__(
+        self, db_path: Optional[Path] = None, default_exchange: str = "gate"
+    ) -> None:
         self.db_path = db_path or DEFAULT_DB
         self.default_exchange = (default_exchange or "gate").lower()
         self.error_count = 0
@@ -111,7 +116,9 @@ class MarketDataCache:
             )
             conn.close()
 
-    def _fetch_cached(self, symbol: str, timeframe: str, limit: int, source: str) -> List[Dict]:
+    def _fetch_cached(
+        self, symbol: str, timeframe: str, limit: int, source: str
+    ) -> List[Dict]:
         if not self._duckdb_enabled:
             return []
         with DB_LOCK:
@@ -142,7 +149,9 @@ class MarketDataCache:
             for r in rows
         ]
 
-    def _get_last_timestamp(self, symbol: str, timeframe: str, source: str) -> Optional[int]:
+    def _get_last_timestamp(
+        self, symbol: str, timeframe: str, source: str
+    ) -> Optional[int]:
         if not self._duckdb_enabled:
             return None
         with DB_LOCK:
@@ -162,7 +171,9 @@ class MarketDataCache:
             return None
         return int(row[0])
 
-    def _insert_rows(self, symbol: str, timeframe: str, rows: List[Dict], source: str) -> int:
+    def _insert_rows(
+        self, symbol: str, timeframe: str, rows: List[Dict], source: str
+    ) -> int:
         if not self._duckdb_enabled or not rows:
             return 0
         inserted = 0
@@ -224,7 +235,11 @@ class MarketDataCache:
         for attempt in range(self.max_retries + 1):
             self._throttle("gate")
             try:
-                resp = requests.get("https://api.gateio.ws/api/v4/spot/candlesticks", params=params, timeout=20)
+                resp = requests.get(
+                    "https://api.gateio.ws/api/v4/spot/candlesticks",
+                    params=params,
+                    timeout=20,
+                )
             except Exception:
                 self.error_count += 1
                 self.last_error = "gate_request_error"
@@ -260,7 +275,9 @@ class MarketDataCache:
         for attempt in range(self.max_retries + 1):
             self._throttle("bybit")
             try:
-                resp = requests.get("https://api.bybit.com/v5/market/kline", params=params, timeout=20)
+                resp = requests.get(
+                    "https://api.bybit.com/v5/market/kline", params=params, timeout=20
+                )
             except Exception:
                 self.error_count += 1
                 self.last_error = "bybit_request_error"
@@ -273,7 +290,10 @@ class MarketDataCache:
             if resp.status_code != 200:
                 self.error_count += 1
                 self.last_error = f"bybit_status_{resp.status_code}"
-                if resp.status_code in (429, 500, 502, 503, 504) and attempt < self.max_retries:
+                if (
+                    resp.status_code in (429, 500, 502, 503, 504)
+                    and attempt < self.max_retries
+                ):
                     time.sleep(backoff)
                     backoff *= 2
                     continue
@@ -299,7 +319,11 @@ class MarketDataCache:
         for attempt in range(self.max_retries + 1):
             self._throttle("bitget")
             try:
-                resp = requests.get("https://api.bitget.com/api/spot/v1/market/candles", params=params, timeout=20)
+                resp = requests.get(
+                    "https://api.bitget.com/api/spot/v1/market/candles",
+                    params=params,
+                    timeout=20,
+                )
             except Exception:
                 self.error_count += 1
                 self.last_error = "bitget_request_error"
@@ -312,7 +336,10 @@ class MarketDataCache:
             if resp.status_code != 200:
                 self.error_count += 1
                 self.last_error = f"bitget_status_{resp.status_code}"
-                if resp.status_code in (429, 500, 502, 503, 504) and attempt < self.max_retries:
+                if (
+                    resp.status_code in (429, 500, 502, 503, 504)
+                    and attempt < self.max_retries
+                ):
                     time.sleep(backoff)
                     backoff *= 2
                     continue
@@ -342,7 +369,15 @@ class MarketDataCache:
         from_ts: Optional[int] = None,
         to_ts: Optional[int] = None,
     ) -> List[Dict]:
-        tf_map = {"1m": "1m", "3m": "3m", "5m": "5m", "15m": "15m", "1h": "1h", "4h": "4h", "1d": "1d"}
+        tf_map = {
+            "1m": "1m",
+            "3m": "3m",
+            "5m": "5m",
+            "15m": "15m",
+            "1h": "1h",
+            "4h": "4h",
+            "1d": "1d",
+        }
         interval = tf_map.get(timeframe, timeframe)
         pair = f"{symbol}_USDT"
         limit = min(int(limit), 1000)
@@ -367,6 +402,8 @@ class MarketDataCache:
                     "volume": float(k[1]),
                 }
             )
+        # Sort by timestamp to ensure newest is last
+        klines.sort(key=lambda x: x["timestamp"])
         return klines
 
     def _fetch_bybit_klines(
@@ -478,7 +515,9 @@ class MarketDataCache:
             collected: List[Dict] = []
             current_from = from_ts
             for _ in range(max_pages):
-                batch = self._fetch_gate_klines(symbol, timeframe, 1000, from_ts=current_from, to_ts=to_ts)
+                batch = self._fetch_gate_klines(
+                    symbol, timeframe, 1000, from_ts=current_from, to_ts=to_ts
+                )
                 requests += 1
                 if not batch:
                     break
@@ -496,7 +535,9 @@ class MarketDataCache:
         current_to = to_ts
         while remaining > 0:
             batch_limit = min(1000, remaining)
-            batch = self._fetch_gate_klines(symbol, timeframe, batch_limit, to_ts=current_to)
+            batch = self._fetch_gate_klines(
+                symbol, timeframe, batch_limit, to_ts=current_to
+            )
             requests += 1
             if not batch:
                 break
@@ -521,7 +562,9 @@ class MarketDataCache:
         if from_ts:
             start_ms = int(from_ts) * 1000
             end_ms = int(to_ts) * 1000 if to_ts else int(time.time()) * 1000
-            batch = self._fetch_bybit_klines(symbol, timeframe, 1000, start_ms=start_ms, end_ms=end_ms)
+            batch = self._fetch_bybit_klines(
+                symbol, timeframe, 1000, start_ms=start_ms, end_ms=end_ms
+            )
             return batch, 1
 
         remaining = max(0, int(limit))
@@ -530,7 +573,9 @@ class MarketDataCache:
         current_end = int(to_ts) * 1000 if to_ts else None
         while remaining > 0:
             batch_limit = min(1000, remaining)
-            batch = self._fetch_bybit_klines(symbol, timeframe, batch_limit, end_ms=current_end)
+            batch = self._fetch_bybit_klines(
+                symbol, timeframe, batch_limit, end_ms=current_end
+            )
             requests += 1
             if not batch:
                 break
@@ -555,7 +600,9 @@ class MarketDataCache:
         if from_ts:
             start_ms = int(from_ts) * 1000
             end_ms = int(to_ts) * 1000 if to_ts else int(time.time()) * 1000
-            batch = self._fetch_bitget_klines(symbol, timeframe, 1000, start_ms=start_ms, end_ms=end_ms)
+            batch = self._fetch_bitget_klines(
+                symbol, timeframe, 1000, start_ms=start_ms, end_ms=end_ms
+            )
             return batch, 1
 
         remaining = max(0, int(limit))
@@ -564,7 +611,9 @@ class MarketDataCache:
         current_end = int(to_ts) * 1000 if to_ts else None
         while remaining > 0:
             batch_limit = min(1000, remaining)
-            batch = self._fetch_bitget_klines(symbol, timeframe, batch_limit, end_ms=current_end)
+            batch = self._fetch_bitget_klines(
+                symbol, timeframe, batch_limit, end_ms=current_end
+            )
             requests += 1
             if not batch:
                 break
@@ -620,13 +669,22 @@ class MarketDataCache:
         requests = 0
         start = time.time()
 
-        if last_ts:
+        # Check if cache is stale (older than 2x timeframe interval)
+        tf_seconds = TIMEFRAME_SECONDS.get(timeframe, 900)
+        max_age = tf_seconds * 2
+        now_ts = int(time.time())
+        cache_is_stale = (not last_ts) or (now_ts - last_ts > max_age)
+
+        if last_ts and not cache_is_stale:
+            # Incremental update - cache is fresh enough
             from_ts = last_ts + 1
             new_rows, reqs = fetcher(symbol, timeframe, limit=1000, from_ts=from_ts)
             requests += reqs
             fetched += len(new_rows)
             inserted += self._insert_rows(symbol, timeframe, new_rows, exchange)
-        if len(cached) < limit:
+
+        # Always fetch fresh data if cache is stale or insufficient
+        if cache_is_stale or len(cached) < limit:
             fresh, reqs = fetcher(symbol, timeframe, limit=limit)
             requests += reqs
             fetched += len(fresh)

@@ -11,7 +11,8 @@
       "Bash(pip install:*)",
       "Bash(timeout /t 3)",
       "Bash(ls:*)",
-      "Bash(iconv:*)"
+      "Bash(iconv:*)",
+      "WebFetch(domain:github.com)"
     ]
   }
 }

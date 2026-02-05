@@ -10,6 +10,7 @@
 import sys
 import asyncio
 import requests
+from dataclasses import asdict
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Optional
@@ -33,6 +34,8 @@ try:
     from abu.chart_renderer import ChartRenderer
     from abu.ai_vision_matcher import AIVisionMatcher
     from abu.direct_vision_analyzer import DirectVisionAnalyzer
+    from abu.vision_storage import VisionMatchRecorder
+    from abu.vision_utils import resolve_pattern_image_path
     IMPORTS_AVAILABLE = True
 except ImportError as e:
     IMPORTS_AVAILABLE = False
@@ -209,7 +212,9 @@ async def generate_coin_plan_with_vision(
     chart_renderer: ChartRenderer,
     common_extractor: CommonPatternExtractor,
     brooks_extractor: BrooksParameterExtractor,
-    use_direct_vision: bool = True  # 使用方案1：直接分析
+    use_direct_vision: bool = True,  # 使用方案1：直接分析
+    recorder: Optional[VisionMatchRecorder] = None,
+    batch_id: Optional[str] = None,
 ) -> Optional[Dict]:
     """为单个币种生成带视觉验证的交易计划"""
     # 获取K线数据
@@ -283,13 +288,43 @@ async def generate_coin_plan_with_vision(
                     'direction': vision_result.direction,
                     'key_features': vision_result.key_features
                 }
+                if recorder:
+                    recorder.record_match({
+                        "source": "vision_enhanced_plan_direct",
+                        "batch_id": batch_id,
+                        "symbol": symbol,
+                        "timeframe": timeframe,
+                        "pattern_id": getattr(best_match, "pattern_id", None),
+                        "pattern_name": vision_result.pattern_name,
+                        "pattern_type": vision_result.pattern_type,
+                        "algorithm_score": best_match.algorithm_score,
+                        "vision_score": vision_score,
+                        "final_score": best_match.final_score,
+                        "accepted": None,
+                        "model": vision_result.ai_model,
+                        "pattern_image": getattr(best_match.pattern, "image_path", None) if best_match.pattern else None,
+                        "chart_image": str(chart_image_path),
+                        "vision_result": {
+                            "pattern_name": vision_result.pattern_name,
+                            "pattern_type": vision_result.pattern_type,
+                            "direction": vision_result.direction,
+                            "confidence": vision_result.confidence,
+                            "key_features": vision_result.key_features,
+                            "trading_signals": vision_result.trading_signals,
+                            "reasoning": vision_result.reasoning,
+                        },
+                        "extra": {"direct_analysis": True},
+                    })
             except Exception as e:
                 print(f"  [WARN] 视觉分析失败: {e}", file=sys.stderr)
         
         # 备用：图片对比（如果模式有图片且未使用直接分析）
         elif vision_matcher and best_match.pattern and hasattr(best_match.pattern, 'image_path') and best_match.pattern.image_path:
-            pattern_image_path = Path(best_match.pattern.image_path)
-            if pattern_image_path.exists():
+            pattern_image_path = resolve_pattern_image_path(
+                best_match.pattern.image_path,
+                getattr(best_match.pattern, "page_number", None),
+            )
+            if pattern_image_path and pattern_image_path.exists():
                 try:
                     vision_result_compare = vision_matcher.compare_two_images(
                         pattern_image_path,
@@ -297,6 +332,25 @@ async def generate_coin_plan_with_vision(
                         context=f"{symbol} {timeframe} chart"
                     )
                     vision_score = vision_result_compare.similarity_score / 100.0
+                    if recorder:
+                        recorder.record_match({
+                            "source": "vision_enhanced_plan_compare",
+                            "batch_id": batch_id,
+                            "symbol": symbol,
+                            "timeframe": timeframe,
+                            "pattern_id": getattr(best_match, "pattern_id", None),
+                            "pattern_name": best_match.pattern_name,
+                            "pattern_type": best_match.pattern_type,
+                            "algorithm_score": best_match.algorithm_score,
+                            "vision_score": vision_score,
+                            "final_score": best_match.final_score,
+                            "accepted": None,
+                            "model": vision_result_compare.ai_model,
+                            "pattern_image": str(pattern_image_path),
+                            "chart_image": str(chart_image_path),
+                            "vision_result": asdict(vision_result_compare),
+                            "extra": {"direct_analysis": False},
+                        })
                 except Exception as e:
                     print(f"  [WARN] 视觉对比失败: {e}", file=sys.stderr)
         
@@ -464,6 +518,8 @@ async def main():
     # 3. 生成交易计划
     print("3. 生成交易计划...")
     all_plans = []
+    batch_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+    recorder = VisionMatchRecorder(enabled=True)
     
     for i, coin in enumerate(coins, 1):
         symbol = coin['symbol']
@@ -473,14 +529,18 @@ async def main():
         plan_5m = await generate_coin_plan_with_vision(
             symbol, '5m', matcher, vision_matcher, direct_vision_analyzer,
             chart_renderer, common_extractor, brooks_extractor,
-            use_direct_vision=True
+            use_direct_vision=True,
+            recorder=recorder,
+            batch_id=batch_id
         )
         
         # 15分钟信号
         plan_15m = await generate_coin_plan_with_vision(
             symbol, '15m', matcher, vision_matcher, direct_vision_analyzer,
             chart_renderer, common_extractor, brooks_extractor,
-            use_direct_vision=True
+            use_direct_vision=True,
+            recorder=recorder,
+            batch_id=batch_id
         )
         
         if plan_5m or plan_15m:

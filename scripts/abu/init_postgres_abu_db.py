@@ -171,7 +171,7 @@ def init_database():
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_pattern_source_page ON pattern_library(source_page)')
         print("   [OK] pattern_library 表创建成功")
         
-        print("\n[4/5] 创建 ml_optimization_results 表...")
+        print("\n[4/6] 创建 ml_optimization_results 表...")
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS ml_optimization_results (
                 id SERIAL PRIMARY KEY,
@@ -185,7 +185,7 @@ def init_database():
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_ml_model_type ON ml_optimization_results(model_type)')
         print("   [OK] ml_optimization_results 表创建成功")
         
-        print("\n[5/5] 创建 system_configs 表...")
+        print("\n[5/6] 创建 system_configs 表...")
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS system_configs (
                 id SERIAL PRIMARY KEY,
@@ -198,6 +198,35 @@ def init_database():
         
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_config_key ON system_configs(config_key)')
         print("   [OK] system_configs 表创建成功")
+
+        print("\n[6/6] 创建 vision_match_records 表...")
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS vision_match_records (
+                id SERIAL PRIMARY KEY,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                source TEXT,
+                batch_id TEXT,
+                symbol TEXT,
+                timeframe TEXT,
+                pattern_id TEXT,
+                pattern_name TEXT,
+                pattern_type TEXT,
+                algorithm_score DOUBLE PRECISION,
+                vision_score DOUBLE PRECISION,
+                final_score DOUBLE PRECISION,
+                accepted BOOLEAN,
+                model TEXT,
+                pattern_image TEXT,
+                chart_image TEXT,
+                vision_result JSONB,
+                extra JSONB
+            )
+        ''')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_vision_symbol ON vision_match_records(symbol)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_vision_timeframe ON vision_match_records(timeframe)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_vision_created_at ON vision_match_records(created_at)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_vision_batch ON vision_match_records(batch_id)')
+        print("   [OK] vision_match_records 表创建成功")
         
         conn.commit()
         cursor.close()
@@ -217,6 +246,7 @@ def init_database():
         print("  3. pattern_library (模式库)")
         print("  4. ml_optimization_results (ML优化结果)")
         print("  5. system_configs (系统配置)")
+        print("  6. vision_match_records (视觉匹配记录)")
         
     except Exception as e:
         print(f"\n❌ 数据库初始化失败: {e}", file=sys.stderr)

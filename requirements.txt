@@ -21,3 +21,7 @@ duckdb>=0.9.0
 
 # TA-Lib (system dependency handled by nixpacks)
 TA-Lib>=0.4.28
+
+# Chart rendering
+mplfinance>=0.12.10b0
+matplotlib>=3.5.0
